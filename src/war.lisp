@@ -37,11 +37,10 @@
 			       (- screen-y y-shift)
 			       (- (- screen-y y-shift) (/ (cdr tile-size) 2)))
 			   (cdr tile-size)))))
-    
-    ;;(format t "~&x :~a y :~a"tile-x tile-y)
     (cons tile-x tile-y)))
 
 (defun cursor-coordinates-on-screen (screen-x screen-y x-shift y-shift tile-x)
+  "Returns as (x . y) the coordinates to draw a selection cursor to screen"
   (let* (
 	 ;;There are a bunch of hexes on screen. Which one are we pointing at?
 	 ;;used for multiplying pixel coordinates
@@ -62,19 +61,19 @@
 			      (rem y-shift (cdr tile-size))
 			      (floor (/ (cdr tile-size) 2)))))
 	 )
-    (format t "~&~a ~a" adj-tile-x adj-tile-y)
     (cons adj-screen-x adj-screen-y)))
 
 
 (defun test ()
   (sdl:with-init()
-    (defparameter window (sdl:window 800 600 :title-caption "a test window"))
+    (defparameter window (sdl:window 1500 900 :title-caption "a test window"))
     (setf (sdl:frame-rate) 60)
 
     (load-tiles)
 
     (let ((x-shift 0) (y-shift 0)
-	  (selector-tile '(0 . 0)) (selector-graphics '(0 . 0)))
+	  (selector-tile '(0 . 0)) (selector-graphics '(0 . 0))
+	  (selected-tile nil))
 
 	  (sdl:with-events ()
 	    (:quit-event () t)
@@ -97,12 +96,18 @@
 	     (cond ((equal button sdl:sdl-button-right)
 		    (sdl:clear-display sdl:*black*)
 		    (setf x-shift (- x-shift (- x (floor (/ (sdl:width window) 2)))))
-		    (setf y-shift (- y-shift (- y (floor (/ (sdl:height window) 2))))))))
+		    (setf y-shift (- y-shift (- y (floor (/ (sdl:height window) 2))))))
+		   
+		   ((equal button sdl:sdl-button-left)
+		    (setf selected-tile selector-tile))
+
+		   ((equal button sdl:sdl-button-wheel-up)
+		    (set-tile-size 'large))
+		   ((equal button sdl:sdl-button-wheel-down)
+		    (set-tile-size 'small))))
+
 	    
 	    (:idle ()
-
-		   (when (sdl:mouse-right-p)
-		     )
 
 		   (do ((x 0)
 			(y 0))
