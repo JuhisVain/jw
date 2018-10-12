@@ -174,6 +174,8 @@
   (defparameter grass-small (sdl-image:load-image "graphics/GRASS_SMALL.png"))
   (setf (sdl:alpha-enabled-p grass-small) t)
 
+  (defparameter selector-large (sdl-image:load-image "graphics/SELECT.png"))
+  (setf (sdl:alpha-enabled-p selector-large) t)
   (defparameter selector-small (sdl-image:load-image "graphics/SELECT_SMALL.png"))
   (setf (sdl:alpha-enabled-p selector-small) t)
 
@@ -186,7 +188,7 @@
   (sdl:clear-display sdl:*black*)
 
   (cond ((equal var 'large)
-	 ;;TODO: go make large selector
+	 (defparameter selector selector-large)
 	 (defparameter tile-size tile-large-size)
 	 (defparameter sea sea-large)
 	 (defparameter grass grass-large))
