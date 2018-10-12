@@ -161,11 +161,25 @@
 (defun load-tiles ()
   "Initializes tile graphics"
   ;;98,80 is tile size -> 78 is distance from right point to lower left point:
-  (defparameter tile-large-size '(78 . 80))
-  (defparameter sea-large (sdl-image:load-image "graphics/SEA.png"))
+  ;;(defparameter tile-large-size '(78 . 80)) ;these are for the medium ones
+  (defparameter tile-large-size '(102 . 104))
+  (defparameter sea-large (sdl-image:load-image "graphics/SEA_LARGE.png"))
   (setf (sdl:alpha-enabled-p sea-large) t)
-  (defparameter grass-large (sdl-image:load-image "graphics/GRASS.png"))
+  (defparameter grass-large (sdl-image:load-image "graphics/GRASS_LARGE.png"))
   (setf (sdl:alpha-enabled-p grass-large) t)
+
+  (defparameter sea-large-border-south (sdl-image:load-image "graphics/SEA_LARGE_BORDER_S.png"))
+  (setf (sdl:alpha-enabled-p sea-large-border-south) t)
+  (defparameter sea-large-border-north (sdl-image:load-image "graphics/SEA_LARGE_BORDER_N.png"))
+  (setf (sdl:alpha-enabled-p sea-large-border-north) t)
+  (defparameter sea-large-border-south-east (sdl-image:load-image "graphics/SEA_LARGE_BORDER_SE.png"))
+  (setf (sdl:alpha-enabled-p sea-large-border-south-east) t)
+  (defparameter sea-large-border-south-west (sdl-image:load-image "graphics/SEA_LARGE_BORDER_SW.png"))
+  (setf (sdl:alpha-enabled-p sea-large-border-south-west) t)
+  (defparameter sea-large-border-north-east (sdl-image:load-image "graphics/SEA_LARGE_BORDER_NE.png"))
+  (setf (sdl:alpha-enabled-p sea-large-border-north-east) t)
+  (defparameter sea-large-border-north-west (sdl-image:load-image "graphics/SEA_LARGE_BORDER_NW.png"))
+  (setf (sdl:alpha-enabled-p sea-large-border-north-west) t)
 
   ;;(62,52) -> 49
   (defparameter tile-small-size '(49 . 52))
@@ -204,6 +218,7 @@
     (setf (world-height world) (- height 1))
     (setf (world-map world) (make-array `(,width ,height)))
 
+    ;; Make totally random map:
     (do ((x 0)
 	 (y 0))
 	((>= x (array-dimension (world-map world) 0)))
@@ -212,8 +227,57 @@
       (if (>= y (array-dimension (world-map world) 1))
 	  (progn (incf x)
 		 (setf y 0))))
-    
+
+    ;; Add in sea coasts to land tiles:
+    (do ((x 0)
+	 (y 0))
+	((>= x (array-dimension (world-map world) 0)))
+
+      (format t "~&~a,~a" x y)
+
+      (if (not (equal (aref (world-map world) x y) 'sea)) ; don't do for sea tiles
+	  (dolist (direction (list 'N 'NE 'SE 'S 'SW 'NW))
+	    (format t "doing list~%")
+	    (let ((neighbour-tile (neighbour-tile-coords x y direction)))
+	      (format t "~&neigbour: ~a,~a" (car neighbour-tile) (cdr neighbour-tile))
+	      (if neighbour-tile
+		  (if (equal (tile-type (aref (world-map world) (car neighbour-tile) (cdr neighbour-tile)))
+			     'sea)
+		      (push (intern (concatenate 'string "COAST-" (symbol-name direction)))
+			    (tile-variant (aref (world-map world) x y))))))))
+	  
+      
+
+      (incf y)
+      (if (>= y (array-dimension (world-map world) 1))
+	  (progn (incf x)
+		 (setf y 0))))
+
     world))
+
+(defun neighbour-tile-coords (here-x here-y direction)
+  (let* ((map-width (1- (array-dimension (world-map *world*) 0)))
+	 (map-height (1- (array-dimension (world-map *world*) 1)))
+	 (shift (if (evenp here-x) -1 0))
+	 (neighbour-x (cond ((member direction '(SW NW)) (1- here-x))
+			    ((member direction '(SE NE)) (1+ here-x))
+			    (t here-x)))
+	 (neighbour-y (cond ((equal direction 'N) (1- here-y))
+			    ((equal direction 'S) (1+ here-y))
+			    ((member direction '(NE NW)) (+ here-y shift))
+			    ((member direction '(SE SW)) (+ 1 here-y shift)))))
+
+    (if (or (< neighbour-x 0) ; Check if out of bounds
+	    (> neighbour-x map-width)
+	    (< neighbour-y 0)
+	    (> neighbour-y map-height))
+	(return-from neighbour-tile-coords nil))
+
+    ;;(aref (world-map *world*) neighbour-x neighbour-y)
+    (cons neighbour-x neighbour-y)
+    ))
+    
+	   
 
 (defun make-map (width height faction-count)
   (init-world width height)
