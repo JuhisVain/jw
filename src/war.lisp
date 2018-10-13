@@ -71,7 +71,7 @@
 
 (defun test ()
   (sdl:with-init()
-    (defparameter window (sdl:window 800 600 :title-caption "a test window"))
+    (defparameter window (sdl:window 1500 900 :title-caption "a test window"))
     (setf (sdl:frame-rate) 60)
 
     (load-tiles)
@@ -128,30 +128,60 @@
 		   (sdl:update-display))))))
 
 (defun draw-world (x-shift y-shift selector-graphics)
-  (do ((x 0)
-       (y 0))
-      ((>= x (array-dimension (world-map *world*) 0)))
-    (sdl:draw-surface-at-* (eval (tile-type (aref (world-map *world*) x y)))
-			   (+ (* x (car tile-size))
-			      x-shift)
-			   (+ (if (evenp x) (* y (cdr tile-size))
-				  (+ (* y (cdr tile-size)) (/ (cdr tile-size) 2)))
-			      y-shift))
-    (dolist (variant (tile-variant (aref (world-map *world*) x y)))
+
+  (let* ((draw-count 0)
+	 (x-start-void (floor (/ x-shift (car tile-size))))
+	 (x-start (if (> (+ x-shift (car tile-size)) 0) 0
+		      (1- (abs x-start-void))))
+	 (x-end (min
+		 (+ (- x-start-void) (ceiling (/ (sdl:width window) (car tile-size))))
+		 (1- (array-dimension (world-map *world*) 0))))
+	 (y-start-void (floor (/ y-shift (cdr tile-size))))
+	 (y-start (min (if (> (+ y-shift (cdr tile-size)) 0) 0
+			   (1- (abs y-start-void)))
+		       (1- (array-dimension (world-map *world*) 1))))
+	 (y-end (min
+		 (+ (- y-start-void) (ceiling (/ (sdl:height window) (cdr tile-size))))
+		 (1- (array-dimension (world-map *world*) 1)))))
+
+    (do ((x x-start)
+	 (y y-start))
+	(nil)
+
+      (cond ((> y y-end)
+	     (setf y y-start)
+	     (incf x)))
+      (if (> x x-end)
+	  (return))
+
+      (setf draw-count (+ draw-count 1))
+
+      (draw-tile x y x-shift y-shift)
+
+      (incf y)
+      
+      ))
+  
+  (sdl:draw-surface-at-*
+   (eval selector)
+   (car selector-graphics) (cdr selector-graphics))
+  )
+
+(defun draw-tile (x y x-shift y-shift)
+  (sdl:draw-surface-at-* (eval (tile-type (aref (world-map *world*) x y)))
+			 (+ (* x (car tile-size))
+			    x-shift)
+			 (+ (if (evenp x) (* y (cdr tile-size))
+				(+ (* y (cdr tile-size)) (/ (cdr tile-size) 2)))
+			    y-shift))
+
+  (dolist (variant (tile-variant (aref (world-map *world*) x y)))
       (sdl:draw-surface-at-* (eval variant)
 			     (+ (* x (car tile-size))
 				x-shift)
 			     (+ (if (evenp x) (* y (cdr tile-size))
 				    (+ (* y (cdr tile-size)) (/ (cdr tile-size) 2)))
-				y-shift)))
-    
-    (incf y)
-    (if (>= y (array-dimension (world-map *world*) 1))
-	(progn (incf x)
-	       (setf y 0))))
-
-  (sdl:draw-surface-at-* (eval selector)
-			 (car selector-graphics) (cdr selector-graphics)))
+				y-shift))))
 
 ;;Should have x and y coordinate floating free to be used: TODO REWRITE
 (defmacro dotiles ((tile map &optional result-form) &body body)
@@ -196,7 +226,7 @@
   (defparameter grass-small (sdl-image:load-image "graphics/GRASS_SMALL.png"))
   (setf (sdl:alpha-enabled-p grass-small) t)
 
-  (defparameter selector-large (sdl-image:load-image "graphics/SELECT.png"))
+  (defparameter selector-large (sdl-image:load-image "graphics/SELECT_LARGE.png"))
   (setf (sdl:alpha-enabled-p selector-large) t)
   (defparameter selector-small (sdl-image:load-image "graphics/SELECT_SMALL.png"))
   (setf (sdl:alpha-enabled-p selector-small) t)
