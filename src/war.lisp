@@ -29,8 +29,8 @@
 
 (defvar *world* nil)
 
-(defun init-test ()
-  (setf *world* (init-world 50 25))
+(defun init-test (height width)
+  (setf *world* (init-world height width))
   nil)
 
 
@@ -137,6 +137,14 @@
 			   (+ (if (evenp x) (* y (cdr tile-size))
 				  (+ (* y (cdr tile-size)) (/ (cdr tile-size) 2)))
 			      y-shift))
+    (dolist (variant (tile-variant (aref (world-map *world*) x y)))
+      (sdl:draw-surface-at-* (eval variant)
+			     (+ (* x (car tile-size))
+				x-shift)
+			     (+ (if (evenp x) (* y (cdr tile-size))
+				    (+ (* y (cdr tile-size)) (/ (cdr tile-size) 2)))
+				y-shift)))
+    
     (incf y)
     (if (>= y (array-dimension (world-map *world*) 1))
 	(progn (incf x)
@@ -193,7 +201,7 @@
   (defparameter selector-small (sdl-image:load-image "graphics/SELECT_SMALL.png"))
   (setf (sdl:alpha-enabled-p selector-small) t)
 
-  (defparameter current-tile-size 'small)
+  (defparameter current-tile-size 'large)
   (set-tile-size current-tile-size)
   )
 
@@ -205,7 +213,15 @@
 	 (defparameter selector selector-large)
 	 (defparameter tile-size tile-large-size)
 	 (defparameter sea sea-large)
-	 (defparameter grass grass-large))
+	 (defparameter grass grass-large)
+
+	 (defparameter coast-s sea-large-border-south)
+	 (defparameter coast-se sea-large-border-south-east)
+	 (defparameter coast-sw sea-large-border-south-west)
+	 (defparameter coast-n sea-large-border-north)
+	 (defparameter coast-ne sea-large-border-north-east)
+	 (defparameter coast-nw sea-large-border-north-west)
+	 )
 	((equal var 'small)
 	 (defparameter selector selector-small)
 	 (defparameter tile-size tile-small-size)
@@ -238,7 +254,7 @@
       (if (not (equal (aref (world-map world) x y) 'sea)) ; don't do for sea tiles
 	  (dolist (direction (list 'N 'NE 'SE 'S 'SW 'NW))
 	    (format t "doing list~%")
-	    (let ((neighbour-tile (neighbour-tile-coords x y direction)))
+	    (let ((neighbour-tile (neighbour-tile-coords x y direction world)))
 	      (format t "~&neigbour: ~a,~a" (car neighbour-tile) (cdr neighbour-tile))
 	      (if neighbour-tile
 		  (if (equal (tile-type (aref (world-map world) (car neighbour-tile) (cdr neighbour-tile)))
@@ -255,9 +271,9 @@
 
     world))
 
-(defun neighbour-tile-coords (here-x here-y direction)
-  (let* ((map-width (1- (array-dimension (world-map *world*) 0)))
-	 (map-height (1- (array-dimension (world-map *world*) 1)))
+(defun neighbour-tile-coords (here-x here-y direction world)
+  (let* ((map-width (1- (array-dimension (world-map world) 0)))
+	 (map-height (1- (array-dimension (world-map world) 1)))
 	 (shift (if (evenp here-x) -1 0))
 	 (neighbour-x (cond ((member direction '(SW NW)) (1- here-x))
 			    ((member direction '(SE NE)) (1+ here-x))
