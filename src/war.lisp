@@ -117,15 +117,16 @@
 		    (set-tile-size 'large))
 		   ((equal button sdl:sdl-button-wheel-down)
 		    (set-tile-size 'small)))
+	     )
 
-	     (draw-world x-shift y-shift selector-graphics))
 
 	    
 	    (:idle ()
 
 		   (draw-world x-shift y-shift selector-graphics)
 		   
-		   (sdl:update-display))))))
+		   (sdl:update-display)
+		   )))))
 
 (defun draw-world (x-shift y-shift selector-graphics)
 
@@ -196,44 +197,61 @@
      ,@body))
 
 
+(defmacro tile-graphics-setup (tile-symbol color-key)
+  `(progn (setf (sdl:color-key-enabled-p ,tile-symbol) t)
+	  (setf (sdl:color-key ,tile-symbol) ,color-key)))
+
 (defun load-tiles ()
-  "Initializes tile graphics"
-  ;;98,80 is tile size -> 78 is distance from right point to lower left point:
-  ;;(defparameter tile-large-size '(78 . 80)) ;these are for the medium ones
-  (defparameter tile-large-size '(102 . 104))
-  (defparameter sea-large (sdl-image:load-image "graphics/SEA_LARGE.png"))
-  (setf (sdl:alpha-enabled-p sea-large) t)
-  (defparameter grass-large (sdl-image:load-image "graphics/GRASS_LARGE.png"))
-  (setf (sdl:alpha-enabled-p grass-large) t)
 
-  (defparameter sea-large-border-south (sdl-image:load-image "graphics/SEA_LARGE_BORDER_S.png"))
-  (setf (sdl:alpha-enabled-p sea-large-border-south) t)
-  (defparameter sea-large-border-north (sdl-image:load-image "graphics/SEA_LARGE_BORDER_N.png"))
-  (setf (sdl:alpha-enabled-p sea-large-border-north) t)
-  (defparameter sea-large-border-south-east (sdl-image:load-image "graphics/SEA_LARGE_BORDER_SE.png"))
-  (setf (sdl:alpha-enabled-p sea-large-border-south-east) t)
-  (defparameter sea-large-border-south-west (sdl-image:load-image "graphics/SEA_LARGE_BORDER_SW.png"))
-  (setf (sdl:alpha-enabled-p sea-large-border-south-west) t)
-  (defparameter sea-large-border-north-east (sdl-image:load-image "graphics/SEA_LARGE_BORDER_NE.png"))
-  (setf (sdl:alpha-enabled-p sea-large-border-north-east) t)
-  (defparameter sea-large-border-north-west (sdl-image:load-image "graphics/SEA_LARGE_BORDER_NW.png"))
-  (setf (sdl:alpha-enabled-p sea-large-border-north-west) t)
+  (let ((color-key (sdl:color :r 255 :g 0 :b 255)))
+    
+    "Initializes tile graphics"
+    ;;98,80 is tile size -> 78 is distance from right point to lower left point:
+    ;;(defparameter tile-large-size '(78 . 80)) ;these are for the medium ones
+    (defparameter tile-large-size '(102 . 104))
+    (defparameter sea-large (sdl-image:load-image "graphics/SEA_LARGE.png"))
+    ;;(setf (sdl:alpha-enabled-p sea-large) t)
+    (tile-graphics-setup sea-large color-key)
+    (defparameter grass-large (sdl-image:load-image "graphics/GRASS_LARGE.png"))
+    ;;(setf (sdl:alpha-enabled-p grass-large) t)
+    (tile-graphics-setup grass-large color-key)
+    (defparameter sea-large-border-south (sdl-image:load-image "graphics/SEA_LARGE_BORDER_S.png"))
+    ;;(setf (sdl:alpha-enabled-p sea-large-border-south) t)
+    (tile-graphics-setup sea-large-border-south color-key)
+    (defparameter sea-large-border-north (sdl-image:load-image "graphics/SEA_LARGE_BORDER_N.png"))
+    ;;(setf (sdl:alpha-enabled-p sea-large-border-north) t)
+    (tile-graphics-setup sea-large-border-north color-key)
+    (defparameter sea-large-border-south-east (sdl-image:load-image "graphics/SEA_LARGE_BORDER_SE.png"))
+    ;;(setf (sdl:alpha-enabled-p sea-large-border-south-east) t)
+    (tile-graphics-setup sea-large-border-south-east color-key)
+    (defparameter sea-large-border-south-west (sdl-image:load-image "graphics/SEA_LARGE_BORDER_SW.png"))
+    ;;(setf (sdl:alpha-enabled-p sea-large-border-south-west) t)
+    (tile-graphics-setup sea-large-border-south-west color-key)
+    (defparameter sea-large-border-north-east (sdl-image:load-image "graphics/SEA_LARGE_BORDER_NE.png"))
+    ;;(setf (sdl:alpha-enabled-p sea-large-border-north-east) t)
+    (tile-graphics-setup sea-large-border-north-east color-key)
+    (defparameter sea-large-border-north-west (sdl-image:load-image "graphics/SEA_LARGE_BORDER_NW.png"))
+    ;;(setf (sdl:alpha-enabled-p sea-large-border-north-west) t)
+    (tile-graphics-setup sea-large-border-north-west color-key)
 
-  ;;(62,52) -> 49
-  (defparameter tile-small-size '(49 . 52))
-  (defparameter sea-small (sdl-image:load-image "graphics/SEA_SMALL.png"))
-  (setf (sdl:alpha-enabled-p sea-small) t)
-  (defparameter grass-small (sdl-image:load-image "graphics/GRASS_SMALL.png"))
-  (setf (sdl:alpha-enabled-p grass-small) t)
+    ;;(62,52) -> 49
+    (defparameter tile-small-size '(49 . 52))
+    (defparameter sea-small (sdl-image:load-image "graphics/SEA_SMALL.png"))
+    (setf (sdl:alpha-enabled-p sea-small) t)
+    (defparameter grass-small (sdl-image:load-image "graphics/GRASS_SMALL.png"))
+    (setf (sdl:alpha-enabled-p grass-small) t)
 
-  (defparameter selector-large (sdl-image:load-image "graphics/SELECT_LARGE.png"))
-  (setf (sdl:alpha-enabled-p selector-large) t)
-  (defparameter selector-small (sdl-image:load-image "graphics/SELECT_SMALL.png"))
-  (setf (sdl:alpha-enabled-p selector-small) t)
+    (defparameter selector-large (sdl-image:load-image "graphics/SELECT_LARGE.png"))
+    ;;(setf (sdl:alpha-enabled-p selector-large) t)
+    (setf (sdl:color-key-enabled-p selector-large) t)
+    (setf (sdl:color-key selector-large) color-key)
+    
+    (defparameter selector-small (sdl-image:load-image "graphics/SELECT_SMALL.png"))
+    (setf (sdl:alpha-enabled-p selector-small) t)
 
-  (defparameter current-tile-size 'large)
-  (set-tile-size current-tile-size)
-  )
+    (defparameter current-tile-size 'large)
+    (set-tile-size current-tile-size)
+    ))
 
 (defun set-tile-size (var)
   "Switches between tile sizes"
