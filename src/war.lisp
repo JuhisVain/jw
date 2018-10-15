@@ -4,12 +4,13 @@
 
 (ql:quickload :lispbuilder-sdl)
 (ql:quickload :lispbuilder-sdl-image)
+(ql:quickload :lispbuilder-sdl-ttf)
 
 (defstruct world
   (width nil)     ;amount of columns
   (height nil)    ;hexes in a column
   ;;If wrapping required on x-axis, column count must be even 
-  (map nil)       ;an array (of what?)
+  (map nil)       ;a 2d array
   (factions nil)  ;list of faction structs
   )
 
@@ -71,8 +72,10 @@
 
 (defun test ()
   (sdl:with-init()
-    (defparameter window (sdl:window 1500 900 :title-caption "a test window"))
+    (defparameter window (sdl:window 1500 900 :title-caption "a war game"))
     (setf (sdl:frame-rate) 60)
+    
+    (sdl:initialise-default-font)
 
     (load-tiles)
 
@@ -131,19 +134,19 @@
 (defun draw-world (x-shift y-shift selector-graphics)
 
   (let* ((draw-count 0)
-	 (x-start-void (floor (/ x-shift (car tile-size))))
+	 (x-start-void (floor x-shift (car tile-size)))
 	 (x-start (if (> (+ x-shift (car tile-size)) 0) 0
-		      (1- (abs x-start-void))))
+		      (- (abs x-start-void) 2)))
 	 (x-end (min
-		 (+ (- x-start-void) (ceiling (/ (sdl:width window) (car tile-size))))
-		 (1- (array-dimension (world-map *world*) 0))))
-	 (y-start-void (floor (/ y-shift (cdr tile-size))))
+		 (+ (- x-start-void) (floor (sdl:width window) (car tile-size)))
+		 (1- (array-dimension (world-map *world*) 0)))) ;; The last column
+	 (y-start-void (floor y-shift (cdr tile-size)))
 	 (y-start (min (if (> (+ y-shift (cdr tile-size)) 0) 0
-			   (1- (abs y-start-void)))
+			   (- (abs y-start-void) 2))
 		       (1- (array-dimension (world-map *world*) 1))))
 	 (y-end (min
-		 (+ (- y-start-void) (ceiling (/ (sdl:height window) (cdr tile-size))))
-		 (1- (array-dimension (world-map *world*) 1)))))
+		 (+ (- y-start-void) (floor (sdl:height window) (cdr tile-size)))
+		 (1- (array-dimension (world-map *world*) 1))))) ;; The last row
 
     (do ((x x-start)
 	 (y y-start))
@@ -169,6 +172,7 @@
   )
 
 (defun draw-tile (x y x-shift y-shift)
+  ;; Draw tile's basic type
   (sdl:draw-surface-at-* (eval (tile-type (aref (world-map *world*) x y)))
 			 (+ (* x (car tile-size))
 			    x-shift)
@@ -176,13 +180,27 @@
 				(+ (* y (cdr tile-size)) (/ (cdr tile-size) 2)))
 			    y-shift))
 
+  ;; Draw tile's variant list
   (dolist (variant (tile-variant (aref (world-map *world*) x y)))
-      (sdl:draw-surface-at-* (eval variant)
-			     (+ (* x (car tile-size))
-				x-shift)
-			     (+ (if (evenp x) (* y (cdr tile-size))
-				    (+ (* y (cdr tile-size)) (/ (cdr tile-size) 2)))
-				y-shift))))
+    (sdl:draw-surface-at-* (eval variant)
+			   (+ (* x (car tile-size))
+			      x-shift)
+			   (+ (if (evenp x) (* y (cdr tile-size))
+				  (+ (* y (cdr tile-size)) (/ (cdr tile-size) 2)))
+			      y-shift))))
+
+(defun draw-coords (x y x-shift y-shift)
+  ;;Add this to end of draw-tile to write map coords on tiles
+  (let ((left-top-x (+ (* x (car tile-size))
+		       x-shift))
+	(left-top-y (+ (if (evenp x) (* y (cdr tile-size))
+			   (+ (* y (cdr tile-size)) (/ (cdr tile-size) 2)))
+		       y-shift)))
+    (sdl:draw-string-solid-* (concatenate 'string
+					  "\\(" (write-to-string x) "," (write-to-string y) ")")
+			     left-top-x
+			     left-top-y
+			     :color sdl:*white*)))
 
 ;;Should have x and y coordinate floating free to be used: TODO REWRITE
 (defmacro dotiles ((tile map &optional result-form) &body body)
@@ -206,32 +224,23 @@
   (let ((color-key (sdl:color :r 255 :g 0 :b 255)))
     
     "Initializes tile graphics"
-    ;;98,80 is tile size -> 78 is distance from right point to lower left point:
-    ;;(defparameter tile-large-size '(78 . 80)) ;these are for the medium ones
+    ;;128,104 is tile size -> 102 is distance from right point to lower left point:
     (defparameter tile-large-size '(102 . 104))
     (defparameter sea-large (sdl-image:load-image "graphics/SEA_LARGE.png"))
-    ;;(setf (sdl:alpha-enabled-p sea-large) t)
     (tile-graphics-setup sea-large color-key)
     (defparameter grass-large (sdl-image:load-image "graphics/GRASS_LARGE.png"))
-    ;;(setf (sdl:alpha-enabled-p grass-large) t)
     (tile-graphics-setup grass-large color-key)
     (defparameter sea-large-border-south (sdl-image:load-image "graphics/SEA_LARGE_BORDER_S.png"))
-    ;;(setf (sdl:alpha-enabled-p sea-large-border-south) t)
     (tile-graphics-setup sea-large-border-south color-key)
     (defparameter sea-large-border-north (sdl-image:load-image "graphics/SEA_LARGE_BORDER_N.png"))
-    ;;(setf (sdl:alpha-enabled-p sea-large-border-north) t)
     (tile-graphics-setup sea-large-border-north color-key)
     (defparameter sea-large-border-south-east (sdl-image:load-image "graphics/SEA_LARGE_BORDER_SE.png"))
-    ;;(setf (sdl:alpha-enabled-p sea-large-border-south-east) t)
     (tile-graphics-setup sea-large-border-south-east color-key)
     (defparameter sea-large-border-south-west (sdl-image:load-image "graphics/SEA_LARGE_BORDER_SW.png"))
-    ;;(setf (sdl:alpha-enabled-p sea-large-border-south-west) t)
     (tile-graphics-setup sea-large-border-south-west color-key)
     (defparameter sea-large-border-north-east (sdl-image:load-image "graphics/SEA_LARGE_BORDER_NE.png"))
-    ;;(setf (sdl:alpha-enabled-p sea-large-border-north-east) t)
     (tile-graphics-setup sea-large-border-north-east color-key)
     (defparameter sea-large-border-north-west (sdl-image:load-image "graphics/SEA_LARGE_BORDER_NW.png"))
-    ;;(setf (sdl:alpha-enabled-p sea-large-border-north-west) t)
     (tile-graphics-setup sea-large-border-north-west color-key)
 
     ;;(62,52) -> 49
@@ -242,7 +251,6 @@
     (setf (sdl:alpha-enabled-p grass-small) t)
 
     (defparameter selector-large (sdl-image:load-image "graphics/SELECT_LARGE.png"))
-    ;;(setf (sdl:alpha-enabled-p selector-large) t)
     (setf (sdl:color-key-enabled-p selector-large) t)
     (setf (sdl:color-key selector-large) color-key)
     
