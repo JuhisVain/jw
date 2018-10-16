@@ -174,25 +174,28 @@
   )
 
 (defun draw-tile (x y x-shift y-shift)
+  
   ;; Draw tile's basic type
-  (sdl:draw-surface-at-* (graphics-surface (eval (tile-type (aref (world-map *world*) x y))))
-			 (+ (* x (car tile-size))
-			    x-shift)
-			 (+ (if (evenp x) (* y (cdr tile-size))
-				(+ (* y (cdr tile-size)) (/ (cdr tile-size) 2)))
-			    y-shift))
+  (let ((graphics-struct (eval (tile-type (aref (world-map *world*) x y)))))
+    (sdl:draw-surface-at-* (graphics-surface graphics-struct)
+			   (+ (* x (car tile-size))
+			      x-shift (graphics-x-at graphics-struct))
+			   (+ (if (evenp x) (* y (cdr tile-size))
+				  (+ (* y (cdr tile-size)) (/ (cdr tile-size) 2)))
+			      y-shift (graphics-y-at graphics-struct))))
 
   ;; Draw tile's variant list
   (dolist (variant (tile-variant (aref (world-map *world*) x y)))
-    (sdl:draw-surface-at-* (graphics-surface (eval variant))
-			   (+ (* x (car tile-size))
-			      x-shift)
-			   (+ (if (evenp x) (* y (cdr tile-size))
-				  (+ (* y (cdr tile-size)) (/ (cdr tile-size) 2)))
-			      y-shift))))
+    (let ((variant (eval variant)))
+      (sdl:draw-surface-at-* (graphics-surface variant)
+			     (+ (* x (car tile-size))
+				x-shift (graphics-x-at variant))
+			     (+ (if (evenp x) (* y (cdr tile-size))
+				    (+ (* y (cdr tile-size)) (/ (cdr tile-size) 2)))
+				y-shift (graphics-y-at variant))))))
 
 (defun draw-coords (x y x-shift y-shift)
-  ;;Add this to end of draw-tile to write map coords on tiles
+  ;;Add this to end of draw-tile to write map coords as text on tiles
   (let ((left-top-x (+ (* x (car tile-size))
 		       x-shift))
 	(left-top-y (+ (if (evenp x) (* y (cdr tile-size))
@@ -258,23 +261,6 @@
     "Initializes tile graphics"
     ;; 128,104 is tile size -> 102 is distance from right point to lower left point:
     (defparameter tile-large-size '(102 . 104))
-    
-;;    (defparameter sea-large (sdl-image:load-image "graphics/SEA_LARGE.png"))
-;;    (tile-graphics-setup sea-large color-key
-;;    (defparameter grass-large (sdl-image:load-image "graphics/GRASS_LARGE.png"))
-;;    (tile-graphics-setup grass-large color-key)
-;;    (defparameter sea-large-border-south (sdl-image:load-image "graphics/SEA_LARGE_BORDER_S.png"))
-;;    (tile-graphics-setup sea-large-border-south color-key)
-;;    (defparameter sea-large-border-north (sdl-image:load-image "graphics/SEA_LARGE_BORDER_N.png"))
-;;    (tile-graphics-setup sea-large-border-north color-key)
-;;    (defparameter sea-large-border-south-east (sdl-image:load-image "graphics/SEA_LARGE_BORDER_SE.png"))
-;;    (tile-graphics-setup sea-large-border-south-east color-key)
-;;    (defparameter sea-large-border-south-west (sdl-image:load-image "graphics/SEA_LARGE_BORDER_SW.png"))
-;;    (tile-graphics-setup sea-large-border-south-west color-key)
-;;    (defparameter sea-large-border-north-east (sdl-image:load-image "graphics/SEA_LARGE_BORDER_NE.png"))
-;;    (tile-graphics-setup sea-large-border-north-east color-key)
-;;    (defparameter sea-large-border-north-west (sdl-image:load-image "graphics/SEA_LARGE_BORDER_NW.png"))
-;;    (tile-graphics-setup sea-large-border-north-west color-key)
 
     (tile-graphics-setup sea-large)
     (tile-graphics-setup grass-large)
@@ -285,17 +271,12 @@
     (tile-graphics-setup sea-large-border-north-west)
     (tile-graphics-setup sea-large-border-north-east)
 
-;;    (defparameter stream-large-north-east (sdl-image:load-image "graphics/STREAM_LARGE_NE.png"))
-;;    (tile-graphics-setup stream-large-north-east color-key)
-;;    (defparameter stream-large-south-east (sdl-image:load-image "graphics/STREAM_LARGE_SE.png"))
-;;    (tile-graphics-setup stream-large-south-east color-key)
-;;    (defparameter stream-large-south (sdl-image:load-image "graphics/STREAM_LARGE_S.png"))
-;;    (tile-graphics-setup stream-large-south color-key)
+    (tile-graphics-setup stream-large-north-west -2 -2)
+    (tile-graphics-setup stream-large-south-west -2 50)
+    (tile-graphics-setup stream-large-north 24 -8)
 
-    (tile-graphics-setup stream-large-north-east)
-    (tile-graphics-setup stream-large-south-east)
-    (tile-graphics-setup stream-large-south)
-    
+
+    ;;TODO small tiles not working
     ;;(62,52) -> 49
     (defparameter tile-small-size '(49 . 52))
     (defparameter sea-small (sdl-image:load-image "graphics/SEA_SMALL.png"))
@@ -303,12 +284,7 @@
     (defparameter grass-small (sdl-image:load-image "graphics/GRASS_SMALL.png"))
     (setf (sdl:alpha-enabled-p grass-small) t)
 
-
     
-;;    (defparameter selector-large (sdl-image:load-image "graphics/SELECT_LARGE.png"))
-;;    (setf (sdl:color-key-enabled-p selector-large) t)
-    ;;    (setf (sdl:color-key selector-large) color-key)
-
     (tile-graphics-setup selector-large)
     
     (defparameter selector-small (sdl-image:load-image "graphics/SELECT_SMALL.png"))
@@ -335,9 +311,9 @@
 	 (defparameter coast-ne sea-large-border-north-east)
 	 (defparameter coast-nw sea-large-border-north-west)
 
-	 (defparameter stream-ne stream-large-north-east)
-	 (defparameter stream-se stream-large-south-east)
-	 (defparameter stream-s stream-large-south)
+	 (defparameter stream-nw stream-large-north-west)
+	 (defparameter stream-sw stream-large-south-west)
+	 (defparameter stream-n stream-large-north)
 	 )
 	((equal var 'small)
 	 (defparameter selector selector-small)
@@ -355,7 +331,7 @@
     (pushnew river-symbol
 	     (tile-river-borders (aref (world-map *world*) tile-x tile-y)))
     ;; Graphic rivers
-    (if (member direction '(S SE NE))
+    (if (member direction '(N SW NW))
 	(pushnew river-symbol
 		 (tile-variant (aref (world-map *world*) tile-x tile-y))))
 
