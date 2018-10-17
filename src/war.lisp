@@ -5,6 +5,7 @@
 (ql:quickload :lispbuilder-sdl)
 (ql:quickload :lispbuilder-sdl-image)
 (ql:quickload :lispbuilder-sdl-ttf)
+(ql:quickload :lispbuilder-sdl-gfx)
 
 (defstruct world
   (width nil)     ;amount of columns
@@ -86,7 +87,7 @@
 
     (let ((x-shift 0) (y-shift 0)
 	  (selector-tile '(0 . 0)) (selector-graphics '(0 . 0))
-	  (selected-tile nil))
+	  (selected-tile nil) (selected-graphics nil))
 
 	  (sdl:with-events ()
 	    (:quit-event () t)
@@ -116,7 +117,9 @@
 			   x y x-shift y-shift (car selector-tile))))
 		   
 		   ((equal button sdl:sdl-button-left)
-		    (setf selected-tile selector-tile))
+		    (setf selected-tile selector-tile)
+		    (setf selected-graphics selector-graphics)
+		    (format t "~&Selected ~a~%" selected-tile))
 
 		   ((equal button sdl:sdl-button-wheel-up)
 		    (set-tile-size 'large))
@@ -128,12 +131,60 @@
 	    
 	    (:idle ()
 
-		   (draw-world x-shift y-shift selector-graphics)
-		   
+		   (draw-world x-shift y-shift selector-graphics selector-tile)
 		   (sdl:update-display)
 		   )))))
 
-(defun draw-world (x-shift y-shift selector-graphics)
+(defun compute-path (start end)
+  ;; neighbour-tile-coords (here-x here-y direction world)
+  (do ((shortest-path (list (cons start 0)))  ;( ((x . y) . 0) )
+       (end-counter 0 (if (> end-counter 0) (incf end-counter) 0)))
+      ((> end-counter 5) shortest-path)
+
+    ;;(format t "~&end counter:~a~%" end-counter)
+    
+    (dolist (tile-distance shortest-path)     ;  ((x . y) . w) iterate on elements in list
+      ;;(format t "~&do tiledistances~%")
+      (dolist (coordinate                     ;  (x . y) * 6  iterate on generated neighbours
+		
+		(mapcar #'(lambda (x)
+			    (neighbour-tile-coords (caar tile-distance)
+						   (cdar tile-distance)
+						   x *world*))
+			'(n ne se s sw nw)))
+
+	;;(format t "~&do coordinates ~a~%" coordinate)
+	(if coordinate
+	    (let* ((tile-struct (aref (world-map *world*)
+				      (car coordinate)
+				      (cdr coordinate)))
+
+		   (old-tile (car (member coordinate shortest-path
+					  :test #'equal :key #'car)))
+
+		   (move-cost (cond ((eq (tile-type tile-struct) 'sea) 50)
+				    ((eq (tile-type tile-struct) 'grass) 3))))
+
+
+	      (cond (old-tile
+		     (setf (cdar (member coordinate shortest-path
+					 :test #'equal :key #'car))
+			   (min (cdr old-tile) (+ (cdr tile-distance) move-cost))))
+		    (t
+		     (nconc shortest-path (list (cons coordinate (+ (cdr tile-distance) move-cost))))
+		     (if (and (equal coordinate end) (zerop end-counter)) (setf end-counter 1))
+		     ))
+	      ;;(format t "~&--------------~%~a~%" shortest-path)
+	      ))))
+
+   shortest-path))
+
+(defun draw-path (start end)
+  (sdl:draw-aa-line-* (car start) (cdr start)
+		      (car end) (cdr end)
+		      :color sdl:*white*))
+
+(defun draw-world (x-shift y-shift selector-graphics selector-tile)
 
   (let* ((draw-count 0)
 	 (x-start-void (floor x-shift (car tile-size)))
@@ -171,6 +222,7 @@
   (sdl:draw-surface-at-*
    (graphics-surface (eval selector))
    (car selector-graphics) (cdr selector-graphics))
+  (draw-coords (car selector-tile) (cdr selector-tile) x-shift y-shift)
   )
 
 (defun draw-tile (x y x-shift y-shift)
@@ -202,7 +254,7 @@
 			   (+ (* y (cdr tile-size)) (/ (cdr tile-size) 2)))
 		       y-shift)))
     (sdl:draw-string-solid-* (concatenate 'string
-					  "\\(" (write-to-string x) "," (write-to-string y) ")")
+					  (write-to-string x) "," (write-to-string y))
 			     left-top-x
 			     left-top-y
 			     :color sdl:*white*)))
@@ -219,10 +271,6 @@
      (setf ,tile (aref mapxxx (floor (/ ixxx y-dimxxx)) (mod ixxx y-dimxxx)))
      ,@body))
 
-
-;;(defmacro tile-graphics-setup (tile-symbol color-key)
-;;  `(progn (setf (sdl:color-key-enabled-p ,tile-symbol) t)
-;;	  (setf (sdl:color-key ,tile-symbol) ,color-key)))
 
 (defmacro tile-graphics-setup (tile-symbol &optional (x-offset 0) (y-offset 0))
   (let* ((symbol-string (symbol-name tile-symbol))
