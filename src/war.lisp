@@ -27,7 +27,8 @@
   (river-borders nil)
   (road-links nil)
   (rail-links nil)
-  (units nil))
+  (units nil)
+  (temp nil))
 
 (defstruct graphics
   (surface nil)
@@ -135,16 +136,15 @@
 		   (sdl:update-display)
 		   )))))
 
-(defun compute-path (start end)
+
+(defun compute-path-2 (start end)
   ;; neighbour-tile-coords (here-x here-y direction world)
   (do ((shortest-path (list (cons start 0)))  ;( ((x . y) . 0) )
-       (end-counter 0 (if (> end-counter 0) (incf end-counter) 0)))
-      ((> end-counter 5) shortest-path)
+       (best-end nil)
+       (end-counter 0))
+      ((> end-counter 50) shortest-path)
 
-    ;;(format t "~&end counter:~a~%" end-counter)
-    
     (dolist (tile-distance shortest-path)     ;  ((x . y) . w) iterate on elements in list
-      ;;(format t "~&do tiledistances~%")
       (dolist (coordinate                     ;  (x . y) * 6  iterate on generated neighbours
 		
 		(mapcar #'(lambda (x)
@@ -153,31 +153,161 @@
 						   x *world*))
 			'(n ne se s sw nw)))
 
-	;;(format t "~&do coordinates ~a~%" coordinate)
-	(if coordinate
-	    (let* ((tile-struct (aref (world-map *world*)
-				      (car coordinate)
-				      (cdr coordinate)))
+	(and coordinate ; if coordinate not nil, aka. outside map
+	     (not best-end) ; this function overall is not best
 
-		   (old-tile (car (member coordinate shortest-path
-					  :test #'equal :key #'car)))
+	     (let* ((tile-struct (aref (world-map *world*)
+				       (car coordinate)
+				       (cdr coordinate)))
 
-		   (move-cost (cond ((eq (tile-type tile-struct) 'sea) 50)
-				    ((eq (tile-type tile-struct) 'grass) 3))))
+		    ;; This is most likely a problem:
+		    (old-tile (car (member coordinate shortest-path
+					   :test #'equal :key #'car)))
+
+		    (move-cost (cond ((eq (tile-type tile-struct) 'sea) 50)
+				     ((eq (tile-type tile-struct) 'grass) 3))))
 
 
-	      (cond (old-tile
-		     (setf (cdar (member coordinate shortest-path
-					 :test #'equal :key #'car))
-			   (min (cdr old-tile) (+ (cdr tile-distance) move-cost))))
-		    (t
-		     (nconc shortest-path (list (cons coordinate (+ (cdr tile-distance) move-cost))))
-		     (if (and (equal coordinate end) (zerop end-counter)) (setf end-counter 1))
-		     ))
-	      ;;(format t "~&--------------~%~a~%" shortest-path)
-	      ))))
-
+	       (cond (old-tile
+		      (if (equal (car old-tile) end)
+			  (progn 
+			    (format t "~&Found end with pot distance: ~a, old was ~a~%"
+				    (+ (cdr tile-distance) move-cost) (cdr old-tile))
+			    (incf end-counter)))
+		      (setf (cdar (member coordinate shortest-path
+					  :test #'equal :key #'car))
+			    (min (cdr old-tile) (+ (cdr tile-distance) move-cost))))
+		     (t
+		      (nconc shortest-path (list (cons coordinate (+ (cdr tile-distance) move-cost))))
+		      (if (and (equal coordinate end) (zerop end-counter)) (setf end-counter 1))
+		      ))))))
    shortest-path))
+
+(defun compute-path (start-x start-y end-x end-y)
+  ;; tile-temp to hold  (:pathfinder (distance (start-x start-y end-x end-y)))
+  ;;                      ^what for    ^small is good   ^id
+
+  (let ((old-tile-temp
+	 (getf (tile-temp (aref (world-map *world*) x y)) :pathfinder)))
+    (if (equal (cdar old-tile-temp)
+	       (list start-x start-y end-x end-y))
+	(setf (car (getf (tile-temp (aref (world-map *world*) x y)) :pathfinder))
+	      (min (car old-tile-temp)
+		   (   ))))))
+
+
+(defun min-map (hashmap)
+  (format t "~&minmap called~%")
+  (let ((lowest-key nil)
+	(lowest-value 999999))
+    (format t "~&maphashing~%")
+    (maphash #'(lambda (key value)
+		 (format t "~&Checking key:~a value:~a~%" key value)
+		 (cond ((< (cdr value) lowest-value)
+			(setf lowest-key key)
+			(setf lowest-value (cdr value)))))
+	     hashmap)
+    (format t "~&returning: ~a~%" lowest-key)
+    lowest-key))
+
+
+(defun make-path (came-from current)
+  (let ((path (list current)))
+    (maphash #'(lambda (key value)
+		 (push key path))
+	     came-from)
+    path))
+
+;;not good
+(defun cp (start-x start-y end-x end-y)
+  (let ((start (cons start-x start-y))
+	(end (cons end-x end-y))
+	(closed-set (make-hash-table :test 'equal))
+	(open-set (make-hash-table :test 'equal))
+	(came-from (make-hash-table :test 'equal)))
+
+    (format t "~&first letting done~%")
+
+    (setf (gethash start open-set)
+	  (cons 0 (* (min (abs (- start-x end-x))
+			  (abs (- start-y end-y)))
+		     5)))
+
+    (format t "~&first setting done~%")
+
+    (do ((lowest-total start (min-map open-set)))
+	((or (zerop (hash-table-count open-set))
+	     (equal lowest-total end))
+	 (make-path came-from lowest-total))
+
+      (format t "~&do loop start~%")
+
+      (setf (gethash lowest-total closed-set)
+	    (gethash lowest-total open-set))
+      (remhash lowest-total open-set)
+
+      (format t "~&moved data from open to closed set~%")
+
+      (dolist (neighbour (mapcar
+			  #'(lambda (x)
+			      (neighbour-tile-coords
+			       (car lowest-total)
+			       (cdr lowest-total)
+			       x *world*))
+			  '(n ne se s sw nw)))
+
+	(format t "~&doing mapcarred list: ~a~%" neighbour)
+	
+	(if (and neighbour (not (gethash neighbour closed-set)))
+	    (let* ((neighbour-tile (aref (world-map *world*)
+					 (car neighbour)
+					 (cdr neighbour)))
+		   (move-cost (eval (cond ((equal (tile-type neighbour-tile) 'sea)
+					   50)
+					  ((equal (tile-type neighbour-tile) 'grass)
+					   3))))
+		   (pot-g-score
+		    (+ (car (gethash lowest-total closed-set))
+		       move-cost)))
+
+	      (format t "~&there was no neighbour in closed set~%")
+	      
+	      (if (null (gethash neighbour open-set))
+		  (progn (format t "~&none in open set, potgscore: ~a car neigh:~a cdr neigh:~a~%"
+				 pot-g-score (car neighbour) (cdr neighbour))
+			 (setf (gethash neighbour open-set)
+			       (cons pot-g-score (+ pot-g-score
+						    (* (max (abs (- (car neighbour) end-x))
+							    (abs (- (cdr neighbour) end-y)))
+						       5))))
+			 )
+		  (progn (format t "~&there was one in open set~%")
+			 (format t "~&pot-g-score:~a other-score:~a~%" pot-g-score
+				 (cdr (gethash neighbour closed-set)))
+			 (unless (>= pot-g-score (cdr (gethash neighbour open-set)))
+			   (progn
+			     (format t "got here~%")
+			     (setf (gethash neighbour came-from) lowest-total)
+			     (setf (gethash neighbour closed-set)
+				   (cons pot-g-score (+ pot-g-score
+							(* (max (abs (- (car neighbour) end-x))
+								(abs (- (cdr neighbour) end-y)))
+							   5))))))))))))))
+
+
+	    
+		  
+			  
+	    
+
+	
+      
+      
+
+      
+  
+  
+  
 
 (defun draw-path (start end)
   (sdl:draw-aa-line-* (car start) (cdr start)
