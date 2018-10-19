@@ -1,33 +1,10 @@
-;;;; war.lisp
 
-;;(in-package #:war)
+(in-package #:war)
 
 (ql:quickload :lispbuilder-sdl)
 (ql:quickload :lispbuilder-sdl-image)
 (ql:quickload :lispbuilder-sdl-ttf)
 (ql:quickload :lispbuilder-sdl-gfx)
-
-(defstruct world
-  (width nil)     ;amount of columns
-  (height nil)    ;hexes in a column
-  ;;If wrapping required on x-axis, column count must be even 
-  (map nil)       ;a 2d array
-  (factions nil)  ;list of faction structs
-  )
-
-(defstruct faction
-  (units nil)
-  (techs nil)
-  )
-
-(defstruct tile
-  (type 'sea)
-  (variant nil)  ;to be used as variant graphics for coast lines etc.
-  (location nil) ;city/resource/airfield etc.
-  (river-borders nil)
-  (road-links nil)
-  (rail-links nil)
-  (units nil))
 
 (defstruct graphics
   (surface nil)
@@ -140,6 +117,9 @@
   (sdl:draw-aa-line-* (car start) (cdr start)
 		      (car end) (cdr end)
 		      :color sdl:*white*))
+
+(defun path-find (start end)
+  )
 
 (defun draw-world (x-shift y-shift selector-graphics selector-tile)
 
@@ -421,50 +401,9 @@
     (cons neighbour-x neighbour-y)
     ))
     
-	   
-
 (defun make-map (width height faction-count)
   (init-world width height)
   )
-
-
-
-(defun make-perlin-map (world node-resolution)
-  (let* ((width (world-width world))
-	(height (world-height world))
-	(nodes (make-array
-		`(,(+ 1 (ceiling (/ width node-resolution)))
-		   ,(+ 1 (ceiling (/ height node-resolution)))))))
-
-    (dotimes (x (array-dimension nodes 0))
-      (dotimes (y (array-dimension nodes 1))
-	(setf (aref nodes x y) (generate-gradient))))
-	
-    (dotimes (x width)
-      (dotimes (y height)
-
-	(setf (aref (world-map world) x y)
-	      (/ (+ (dot-product-shift (cons x y)
-				       (aref nodes
-					     (floor (/ x node-resolution))
-					     (floor (/ y node-resolution)))))
-		 (+ (dot-product-shift (cons x y)
-				       (aref nodes
-					     (ceiling (/ x node-resolution))
-					     (floor (/ y node-resolution)))))
-		 (+ (dot-product-shift (cons x y)
-				       (aref nodes
-					     (ceiling (/ x node-resolution))
-					     (ceiling (/ y node-resolution)))))
-		 (+ (dot-product-shift (cons x y)
-				       (aref nodes
-					     (floor (/ x node-resolution))
-					     (ceiling (/ y node-resolution)))))
-		 4))))))
-        
-
-    
-    
 
 (defun generate-gradient ()
   (let ((radians (* (/ (random 3600) (random 3600)) pi)))
