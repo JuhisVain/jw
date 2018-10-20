@@ -118,6 +118,48 @@
 		      (car end) (cdr end)
 		      :color sdl:*white*))
 
+(defun move-area (start move-range)
+  ;; return currently the came-from hash table with (cons x1 y1) as key
+  ;;   value is (movement-left-after-this-move (cons x0 y0))
+  ;; 0.004s to every point on 50x30 map good enough
+
+;;   check with this:
+;;    (maphash #'(lambda (key value)
+;;	 (format t "~&~a :: ~a~%" key value)) ma)
+  
+  (let ((sea 100) ; temporary shadows for move costs
+	(grass 3)
+
+	(frontier (make-heap))
+	(came-from (make-hash-table :test 'equal)))
+    (heap-insert frontier start move-range)
+    (setf (gethash start came-from) 'nowhere)
+
+    (do ((current))
+	((heap-empty frontier))
+      (setf current (heap-remove-max frontier))
+
+      (dolist (neighbour (mapcar #'(lambda (direction)
+				     (neighbour-tile-coords
+				      (cadr current)
+				      (cddr current)
+				      direction *world*))
+				 '(n ne se s sw nw)))
+	
+	  (cond ((null neighbour) nil)
+		((null (gethash neighbour came-from))
+		 (let ((move-cost (- (car current)
+				     (eval (tile-type (aref (world-map *world*)
+							    (car neighbour)
+							    (cdr neighbour)))))))
+		   
+		   (heap-insert frontier neighbour move-cost)
+		   (setf (gethash neighbour came-from)
+			 (cons move-cost (cdr current))))))))
+     came-from))
+  
+  
+
 (defun path-find (start end)
   )
 
