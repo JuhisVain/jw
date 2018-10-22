@@ -118,17 +118,23 @@
 		      (car end) (cdr end)
 		      :color sdl:*white*))
 
+(defun draw-move-area (start move-range)
+  (let ((move-area (move-area start move-range)))
+    (maphash #'(lambda (key value)
+		 ))))
+
 (defun move-area (start move-range)
   ;; return currently the came-from hash table with (cons x1 y1) as key
   ;;   value is (movement-left-after-this-move (cons x0 y0))
   ;; 0.004s to every point on 50x30 map good enough
 
-;;   check with this: ??compile this function first??
+  ;; ???Function must be compiled before tile-type shadowing will work
+;;   check with this:
 ;;    (maphash #'(lambda (key value)
 ;;	 (format t "~&~a :: ~a~%" key value)) xxx)
   
   (let ((sea 100) ; temporary shadows for move costs
-	(grass 3)
+	(grass 2)
 
 	(frontier (make-heap))
 	(came-from (make-hash-table :test 'equal)))
@@ -153,7 +159,7 @@
 				       (eval (tile-type (aref (world-map *world*)
 							      (car neighbour)
 							      (cdr neighbour)))))))
-		     (cond ((> move-cost 0)
+		     (cond ((>= move-cost 0)
 			    (heap-insert frontier neighbour move-cost)
 			    (setf (gethash neighbour came-from)
 				  (cons move-cost (cdr current)))))))))))
@@ -205,26 +211,22 @@
   (draw-coords (car selector-tile) (cdr selector-tile) x-shift y-shift)
   )
 
+(defun draw-at (x y x-shift y-shift graphics)
+  (sdl:draw-surface-at-* (graphics-surface graphics)
+			 (+ (* x (car tile-size))
+			    x-shift (graphics-x-at graphics))
+			 (+ (if (evenp x) (* y (cdr tile-size))
+				(+ (* y (cdr tile-size)) (/ (cdr tile-size) 2)))
+			    y-shift (graphics-y-at graphics))))
+
 (defun draw-tile (x y x-shift y-shift)
-  
   ;; Draw tile's basic type
-  (let ((graphics-struct (eval (tile-type (aref (world-map *world*) x y)))))
-    (sdl:draw-surface-at-* (graphics-surface graphics-struct)
-			   (+ (* x (car tile-size))
-			      x-shift (graphics-x-at graphics-struct))
-			   (+ (if (evenp x) (* y (cdr tile-size))
-				  (+ (* y (cdr tile-size)) (/ (cdr tile-size) 2)))
-			      y-shift (graphics-y-at graphics-struct))))
+  (draw-at x y x-shift y-shift (eval (tile-type (aref (world-map *world*) x y))))
 
   ;; Draw tile's variant list
   (dolist (variant (tile-variant (aref (world-map *world*) x y)))
-    (let ((variant (eval variant)))
-      (sdl:draw-surface-at-* (graphics-surface variant)
-			     (+ (* x (car tile-size))
-				x-shift (graphics-x-at variant))
-			     (+ (if (evenp x) (* y (cdr tile-size))
-				    (+ (* y (cdr tile-size)) (/ (cdr tile-size) 2)))
-				y-shift (graphics-y-at variant))))))
+    (draw-at x y x-shift y-shift (eval variant)))
+  )
 
 (defun draw-coords (x y x-shift y-shift)
   ;;Add this to end of draw-tile to write map coords as text on tiles
