@@ -86,14 +86,7 @@
 	     (cond ((equal button sdl:sdl-button-right)
 		    (sdl:clear-display sdl:*black*)
 		    (setf x-shift (- x-shift (- x (floor (/ (sdl:width window) 2)))))
-		    (setf y-shift (- y-shift (- y (floor (/ (sdl:height window) 2)))))
-
-		    (setf selector-tile
-			  (cursor-coordinates-on-map
-			   x y x-shift y-shift))
-		    (setf selector-graphics 
-			  (cursor-coordinates-on-screen
-			   x y x-shift y-shift (car selector-tile))))
+		    (setf y-shift (- y-shift (- y (floor (/ (sdl:height window) 2))))))
 		   
 		   ((equal button sdl:sdl-button-left)
 		    (setf selected-tile selector-tile)
@@ -103,30 +96,60 @@
 		   ((equal button sdl:sdl-button-wheel-up)
 		    (set-tile-size 'large))
 		   ((equal button sdl:sdl-button-wheel-down)
-		    (set-tile-size 'small)))
-	     )
+		    (set-tile-size 'small))))
 
-
-	    
 	    (:idle ()
 
-		   (draw-world x-shift y-shift selector-graphics selector-tile)
+		   (draw-world x-shift y-shift
+			       selector-graphics selector-tile
+			       selected-tile)
 		   (sdl:update-display)
 		   )))))
 
+(defun tc-gc (tile-coords x-shift y-shift) ;; Tile Coordinate to Graphics Coordinate
+  (if (null (car tile-coords)) (return-from tc-gc nil))
+  (let* ((x (car tile-coords))
+	 (y (cdr tile-coords))
+	 (tile-width (car tile-size))
+	 (tile-height (cdr tile-size))
+	 (gx-location (* x tile-width))
+	 (gy-location (* y tile-height)))
+    (cons (+ gx-location
+	     x-shift)
+	  (+ (if (evenp x) gy-location
+		 (+ gy-location (floor tile-height 2)))
+	     y-shift))))
 
-(defun draw-path (start end)
-  (sdl:draw-aa-line-* (car start) (cdr start)
-		      (car end) (cdr end)
-		      :color sdl:*white*))
 
-(defun draw-move-area (start move-range x-shift y-shift)
+(defun draw-move-area (start move-range x-shift y-shift end)
   (let ((move-area (move-area start move-range)))
-    (maphash #'(lambda (key value)
-		 (draw-string-at (car key) (cdr key)
-				 x-shift y-shift
-				 (write-to-string (car value))))
-	     move-area)))
+    
+    (labels ((draw-path (current)
+	       (let* ((next (cdr (gethash current move-area)))
+		     (current-g (tc-gc current
+				       x-shift y-shift))
+		     (next-g (tc-gc next
+				    x-shift y-shift)))
+		 (cond ((car next)
+			(sdl:draw-line-* (+ (car current-g) (floor (car tile-size) 2))
+					 (+ (cdr current-g) (floor (cdr tile-size) 2))
+					 (+ (car next-g) (floor (car tile-size) 2))
+					 (+ (cdr next-g) (floor (cdr tile-size) 2))
+					 :color sdl:*white*)
+			(draw-path next))))))
+
+      
+
+      (maphash #'(lambda (key value)
+		   (draw-string-at (car key) (cdr key)
+				   x-shift y-shift
+				   (write-to-string (car value))))
+	       move-area)
+
+      (if end
+	  (draw-path end)))))
+
+
 
 (defun move-area (start move-range)
   ;; return currently the came-from hash table with (cons x1 y1) as key
@@ -169,13 +192,8 @@
 			    (setf (gethash neighbour came-from)
 				  (cons move-cost (cdr current)))))))))))
     came-from))
-  
-  
 
-(defun path-find (start end)
-  )
-
-(defun draw-world (x-shift y-shift selector-graphics selector-tile)
+(defun draw-world (x-shift y-shift selector-graphics selector-tile selected-tile)
 
   (let* ((draw-count 0)
 	 (x-start-void (floor x-shift (car tile-size)))
@@ -214,9 +232,10 @@
    (graphics-surface (eval selector))
    (car selector-graphics) (cdr selector-graphics))
   (draw-coords (car selector-tile) (cdr selector-tile) x-shift y-shift)
-  (draw-move-area (cons (car selector-tile)
-			(cdr selector-tile))
-		  20 x-shift y-shift)
+  (if selected-tile (draw-move-area (cons (car selected-tile)
+					  (cdr selected-tile))
+				    20 x-shift y-shift
+				    selector-tile))
   )
 
 (defun draw-at (x y x-shift y-shift graphics)
