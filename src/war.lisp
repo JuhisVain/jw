@@ -77,7 +77,9 @@
 					x y x-shift y-shift))
 				 (setf selector-graphics 
 				       (cursor-coordinates-on-screen
-					x y x-shift y-shift (car selector-tile))))
+					x y x-shift y-shift (car selector-tile)))
+				 
+				 )
 	    
 	    (:mouse-button-down-event
 	     (:button button :x x :y y)
@@ -118,17 +120,20 @@
 		      (car end) (cdr end)
 		      :color sdl:*white*))
 
-(defun draw-move-area (start move-range)
+(defun draw-move-area (start move-range x-shift y-shift)
   (let ((move-area (move-area start move-range)))
     (maphash #'(lambda (key value)
-		 ))))
+		 (draw-string-at (car key) (cdr key)
+				 x-shift y-shift
+				 (write-to-string (car value))))
+	     move-area)))
 
 (defun move-area (start move-range)
   ;; return currently the came-from hash table with (cons x1 y1) as key
   ;;   value is (movement-left-after-this-move (cons x0 y0))
-  ;; 0.004s to every point on 50x30 map good enough
-
+  
   ;; ???Function must be compiled before tile-type shadowing will work
+  
 ;;   check with this:
 ;;    (maphash #'(lambda (key value)
 ;;	 (format t "~&~a :: ~a~%" key value)) xxx)
@@ -139,7 +144,7 @@
 	(frontier (make-heap))
 	(came-from (make-hash-table :test 'equal)))
     (heap-insert frontier start move-range)
-    (setf (gethash start came-from) 'nowhere)
+    (setf (gethash start came-from) `(,move-range nil))
 
     (do ((current))
 	((heap-empty frontier))
@@ -209,15 +214,36 @@
    (graphics-surface (eval selector))
    (car selector-graphics) (cdr selector-graphics))
   (draw-coords (car selector-tile) (cdr selector-tile) x-shift y-shift)
+  (draw-move-area (cons (car selector-tile)
+			(cdr selector-tile))
+		  20 x-shift y-shift)
   )
 
 (defun draw-at (x y x-shift y-shift graphics)
+  (let* ((tile-width (car tile-size))
+	 (tile-height (cdr tile-size))
+	 (gx-location (* x tile-width))
+	 (gy-location (* y tile-height)))
   (sdl:draw-surface-at-* (graphics-surface graphics)
-			 (+ (* x (car tile-size))
+			 (+ gx-location
 			    x-shift (graphics-x-at graphics))
-			 (+ (if (evenp x) (* y (cdr tile-size))
-				(+ (* y (cdr tile-size)) (/ (cdr tile-size) 2)))
-			    y-shift (graphics-y-at graphics))))
+			 (+ (if (evenp x) gy-location
+				(+ gy-location (/ (cdr tile-size) 2)))
+			    y-shift (graphics-y-at graphics)))))
+
+(defun draw-string-at (x y x-shift y-shift string)
+  (let* ((tile-width (car tile-size))
+	 (tile-height (cdr tile-size))
+	 (gx-location (* x tile-width))
+	 (gy-location (* y tile-height)))
+    (sdl:draw-string-solid-* string
+			     (+ gx-location
+				x-shift
+				(floor (car tile-size) 2))
+			     (+ (if (evenp x) gy-location
+				    (+ gy-location (/ (cdr tile-size) 2)))
+				y-shift
+				(floor (cdr tile-size) 2)))))
 
 (defun draw-tile (x y x-shift y-shift)
   ;; Draw tile's basic type
