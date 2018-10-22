@@ -123,9 +123,9 @@
   ;;   value is (movement-left-after-this-move (cons x0 y0))
   ;; 0.004s to every point on 50x30 map good enough
 
-;;   check with this:
+;;   check with this: ??compile this function first??
 ;;    (maphash #'(lambda (key value)
-;;	 (format t "~&~a :: ~a~%" key value)) ma)
+;;	 (format t "~&~a :: ~a~%" key value)) xxx)
   
   (let ((sea 100) ; temporary shadows for move costs
 	(grass 3)
@@ -139,24 +139,25 @@
 	((heap-empty frontier))
       (setf current (heap-remove-max frontier))
 
-      (dolist (neighbour (mapcar #'(lambda (direction)
-				     (neighbour-tile-coords
-				      (cadr current)
-				      (cddr current)
-				      direction *world*))
-				 '(n ne se s sw nw)))
-	
-	  (cond ((null neighbour) nil)
-		((null (gethash neighbour came-from))
-		 (let ((move-cost (- (car current)
-				     (eval (tile-type (aref (world-map *world*)
-							    (car neighbour)
-							    (cdr neighbour)))))))
-		   
-		   (heap-insert frontier neighbour move-cost)
-		   (setf (gethash neighbour came-from)
-			 (cons move-cost (cdr current))))))))
-     came-from))
+      (if (> (car current) 0)
+	  (dolist (neighbour (mapcar #'(lambda (direction)
+					 (neighbour-tile-coords
+					  (cadr current)
+					  (cddr current)
+					  direction *world*))
+				     '(n ne se s sw nw)))
+	    
+	    (cond ((null neighbour) nil)
+		  ((null (gethash neighbour came-from))
+		   (let ((move-cost (- (car current)
+				       (eval (tile-type (aref (world-map *world*)
+							      (car neighbour)
+							      (cdr neighbour)))))))
+		     (cond ((> move-cost 0)
+			    (heap-insert frontier neighbour move-cost)
+			    (setf (gethash neighbour came-from)
+				  (cons move-cost (cdr current)))))))))))
+    came-from))
   
   
 
