@@ -155,6 +155,9 @@
   ;; return currently the came-from hash table with (cons x1 y1) as key
   ;;   value is (movement-left-after-this-move (cons x0 y0))
   
+;;?????
+  ;;;;; engine must first be initialized by running test-init and test
+  ;; then ->
   ;; ???Function must be compiled before tile-type shadowing will work
   
 ;;   check with this:
