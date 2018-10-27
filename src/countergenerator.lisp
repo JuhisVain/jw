@@ -23,6 +23,24 @@
   (hq))         ;;
 
 
+(defmacro create-nato-symbol (octagon-diameter affiliation dimension icon-list)
+  `(let ((line-color) (line-width) (fill-color)
+	 (field-surface (sdl:create-surface (compute-field-width ,octagon-diameter)
+					    (compute-field-height ,octagon-diameter)
+					    :color-key color-key))
+	 (affiliation ,affiliation)
+	 (n) (ne) (e) (se) (s) (sw) (w) (nw))
+     (sdl:clear-display color-key :surface field-surface)
+     
+     ,(eval affiliation)
+     ,(eval dimension)
+
+     (progn ,@(mapcar #'eval icon-list)) ;; ooga booga
+     
+     field-surface
+     ))
+
+
 (defun nato-gen (octagon-diameter)
   (nato-dimension-init octagon-diameter)
   (let ((width 500)
@@ -40,7 +58,7 @@
 		 (sdl:draw-rectangle-* 0 0 field-width field-height
 				       :surface main-win :color sdl:*red*)
 
-		 (sdl:draw-surface (create-nato-symbol octagon-diameter friendly land)
+		 (sdl:draw-surface (create-nato-symbol octagon-diameter friendly land (infantry mountain))
 				   :surface main-win)
 		 
 		 (sdl:update-display)))))))
@@ -61,28 +79,54 @@
 			(setf fill-color green)))
 
 (defparameter land '(cond ((equal affiliation friendly)
+			   (setf ne p-ne-rect) (setf se p-se-rect)
+			   (setf sw p-sw-rect) (setf nw p-nw-rect)
+			   (setf s p-s-octagon) (setf n p-n-octagon)
+			   (setf w (shift-coord nw 0 octagon-radius))
+			   (setf e (shift-coord ne 0 octagon-radius))
 			   (sdl:draw-filled-polygon
-			    (list p-nw-rect p-ne-rect p-se-rect p-sw-rect)
+			    (list nw ne se sw)
 			    :surface field-surface :color line-color)
 			   (sdl:draw-filled-polygon
-			    (list (shift-coord p-nw-rect line-width line-width)
-				  (shift-coord p-ne-rect (* 2 (- line-width)) line-width) ;;CLOSE ENOUGH
-				  (shift-coord p-se-rect (* 2 (- line-width)) (* 2 (- line-width)))
-				  (shift-coord p-sw-rect line-width (* 2 (- line-width))))
+			    (list (shift-coord nw line-width line-width)
+				  (shift-coord ne (- (+ 1 line-width)) line-width)
+				  (shift-coord se (- (+ 1 line-width)) (* 1 (- line-width)))
+				  (shift-coord sw line-width (* 1 (- line-width))))
 			    :surface field-surface :color fill-color))))
 
+(defparameter infantry '(progn
+			 (sdl:draw-filled-polygon ;; line from upper left to lower right
+			  (list
+			   (shift-coord nw 0 line-width)
+			   nw
+			   (shift-coord se 0 (- line-width))
+			   se)
+			  :surface field-surface :color line-color)
+			 (sdl:draw-filled-polygon ;; line from lower left to upper right
+			  (list
+			   (shift-coord sw 0 (- line-width))
+			   sw
+			   (shift-coord ne 0 line-width)
+			   ne)
+			  :surface field-surface :color line-color)))
 
-(defmacro create-nato-symbol (octagon-diameter affiliation dimension)
-  `(let ((line-color) (line-width) (fill-color)
-	 (field-surface (sdl:create-surface (compute-field-width ,octagon-diameter)
-					    (compute-field-height ,octagon-diameter)
-					    :color-key color-key ))
-	 (affiliation ,affiliation))
-     (sdl:clear-display color-key :surface field-surface)
-     ,(eval affiliation)
-     ,(eval dimension)
-     field-surface
-     ))
+;; the mountain sector 2 modifier is apparently special in that
+;; it behaves more like a full frame icon as bottom must touch frame bottom
+;; hostile non air/space requires some tricks
+(defparameter mountain '(let ((icon-size (* 0.3 octagon-diameter))
+			      (icon-bottom-y
+			       (cond ((equal affiliation 'hostile)
+				      (eval 666)) ;; TODO calculate y of base vertexes
+				     (t (aref s 1)))))
+			 (sdl:draw-filled-polygon
+			  (list
+			   (sdl:point :x (floor field-width 2) ;; peak
+				      :y (- icon-bottom-y icon-size))
+			   (shift-coord s (floor icon-size 2) 0)
+			   (shift-coord s (- (floor icon-size 2)) 0))
+			  :surface field-surface :color line-color)))
+
+
 
 (defun shift-coord (coord-arr shift-arr-x shift-arr-y)
   (make-array
