@@ -2,7 +2,7 @@
 (ql:quickload :lispbuilder-sdl-gfx)
 
 ;; Supposed to work something like:
-;; (CREATE friendly land mountain infantry corps halftrack) -> pukes out sdlsurface
+;; (CREATE friendly land mountain infantry) -> pukes out sdlsurface
 
 (defstruct frames
   (air)
@@ -29,7 +29,11 @@
 					    (compute-field-height ,octagon-diameter)
 					    :color-key color-key))
 	 (affiliation ,affiliation)
-	 (n) (ne) (e) (se) (s) (sw) (w) (nw))
+	 (n) (ne) (e) (se) (s) (sw) (w) (nw)
+	 (final-mask (sdl:create-surface (compute-field-width ,octagon-diameter)
+					    (compute-field-height ,octagon-diameter)
+					    :color-key sdl:*red*)))
+     (sdl:fill-surface color-key :surface final-mask)
      (sdl:clear-display color-key :surface field-surface)
      
      ,(eval affiliation)
@@ -37,6 +41,7 @@
 
      (progn ,@(mapcar #'eval icon-list)) ;; ooga booga
      
+     (sdl:blit-surface final-mask field-surface) ;; <- modifies second by first arg
      field-surface
      ))
 
@@ -59,7 +64,8 @@
 		 (sdl:draw-rectangle-* 0 0 field-width field-height
 				       :surface main-win :color sdl:*red*)
 
-		 (sdl:draw-surface (create-nato-symbol octagon-diameter friendly land (infantry mountain))
+		 (sdl:draw-surface
+		  (create-nato-symbol octagon-diameter friendly land (anti-tank mountain)) ;; testing
 				   :surface main-win)
 		 
 		 (sdl:update-display)))))))
@@ -74,22 +80,26 @@
 			(setf line-width 2)
 			(setf fill-color green)))
 
-(defparameter land '(cond ((equal affiliation friendly)
+(defparameter land '(cond ((equal affiliation friendly) ;; The final mask will need to be set up in these
 			   (setf ne p-ne-rect) (setf se p-se-rect)
 			   (setf sw p-sw-rect) (setf nw p-nw-rect)
 			   (setf s p-s-octagon) (setf n p-n-octagon)
 			   (setf w (shift-coord nw 0 octagon-radius))
 			   (setf e (shift-coord ne 0 octagon-radius))
-			   (sdl:draw-filled-polygon
+			   (sdl:draw-filled-polygon ;; Black background as border line
 			    (list nw ne se sw)
 			    :surface field-surface :color line-color)
-			   (sdl:draw-filled-polygon
+			   (sdl:draw-filled-polygon ;; the fill
 			    (list (shift-coord nw line-width line-width)
 				  (shift-coord ne (- (+ 1 line-width)) line-width)
 				  (shift-coord se (- (+ 1 line-width)) (* 1 (- line-width)))
 				  (shift-coord sw line-width (* 1 (- line-width))))
-			    :surface field-surface :color fill-color))))
+			    :surface field-surface :color fill-color)
+			   (sdl:draw-filled-polygon ;; Final mask
+			    (list nw ne se sw)
+			    :surface final-mask :color sdl:*red*))))
 
+;; Full frame icons:
 (defparameter infantry '(progn
 			 (sdl:draw-filled-polygon ;; line from upper left to lower right
 			  (list
@@ -105,6 +115,31 @@
 			   (shift-coord ne 0 line-width)
 			   ne)
 			  :surface field-surface :color line-color)))
+
+;; wtf is an "air assault with organic lift"? A bird?
+;; Let's just do the more useful ones...
+(defparameter air-defense '(let ((curve-y-top-shift (floor (* 0.3 octagon-diameter))))
+			    (sdl:draw-filled-ellipse                ;; line
+			     s                                        ;; centre of ellipse
+			     (floor (- (aref se 0) (aref sw 0)) 2)    ;; x-radius
+			     curve-y-top-shift                        ;; y-radius
+			     :surface field-surface :color line-color)
+			    (sdl:draw-filled-ellipse ;; fill line's underside
+			     s
+			     (- (floor (- (aref se 0) (aref sw 0)) 2) (* 2 line-width))
+			     (- curve-y-top-shift line-width)
+			     :surface field-surface :color fill-color)))
+
+(defparameter anti-tank '(progn
+			  (sdl:draw-filled-polygon
+			   (list
+			    sw
+			    (shift-coord sw 0 (- line-width))
+			    n
+			    (shift-coord se 0 (- line-width))
+			    se
+			    (shift-coord n 0 line-width))
+			   :surface field-surface :color line-color)))
 
 ;; the mountain sector 2 modifier is apparently special in that
 ;; it behaves more like a full frame icon as bottom must touch frame bottom
