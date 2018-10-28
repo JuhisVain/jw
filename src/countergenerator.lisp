@@ -43,6 +43,7 @@
 
 (defun nato-gen (octagon-diameter)
   (nato-dimension-init octagon-diameter)
+  (nato-color-init)
   (let ((width 500)
 	(height 500))
     (sdl:with-init ()
@@ -62,11 +63,6 @@
 				   :surface main-win)
 		 
 		 (sdl:update-display)))))))
-
-(defun create-field (octagon-diameter)
-  (nato-dimension-init octagon-diameter)
-  (let ((field-surface (sdl:create-surface field-width field-height)))
-    ))
 
 (defparameter friendly '(progn
 			 (setf line-color black)
@@ -125,7 +121,6 @@
 			   (shift-coord s (floor icon-size 2) 0)
 			   (shift-coord s (- (floor icon-size 2)) 0))
 			  :surface field-surface :color line-color)))
-
 
 
 (defun shift-coord (coord-arr shift-arr-x shift-arr-y)
@@ -222,12 +217,3 @@
 				       :y (+ octagon-diameter y-shift)))
     (defparameter p-nw-rect (sdl:point :x (+ (* octagon-radius -1.5) x-shift)
 				       :y (+ 0 y-shift)))))
-
-(defun draw-symbol-frame (octagon-diameter unit)
-  (let ((frame-surface (sdl:create-surface  (* octagon-diameter 1.5)
-					    (* octagon-diameter 3) ;; dunno how high air/subs go
-					    :alpha 254 :pixel-alpha t)))
-
-    
-    
-    ))
