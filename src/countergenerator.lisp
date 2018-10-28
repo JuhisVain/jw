@@ -42,6 +42,7 @@
      (progn ,@(mapcar #'eval icon-list)) ;; ooga booga
      
      (sdl:blit-surface final-mask field-surface) ;; <- modifies second by first arg
+     (sdl:free final-mask)
      field-surface
      ))
 
@@ -52,7 +53,8 @@
   (let ((width 500)
 	(height 500))
     (sdl:with-init ()
-      (let ((main-win (sdl:window width height :title-caption "counter generator test")))
+      (let ((main-win (sdl:window width height :title-caption "counter generator test"))
+	    (field-symbol))
 	(setf (sdl:frame-rate) 10)
 	(sdl:clear-display sdl:*black*)
 	
@@ -64,9 +66,9 @@
 		 (sdl:draw-rectangle-* 0 0 field-width field-height
 				       :surface main-win :color sdl:*red*)
 
-		 (sdl:draw-surface
-		  (create-nato-symbol octagon-diameter friendly land (anti-tank mountain)) ;; testing
-				   :surface main-win)
+		 (setf field-symbol (create-nato-symbol octagon-diameter friendly land (infantry mountain)))
+		 (sdl:draw-surface field-symbol :surface main-win)
+		 (sdl:free field-symbol)
 		 
 		 (sdl:update-display)))))))
 
