@@ -66,7 +66,8 @@
 		 (sdl:draw-rectangle-* 0 0 field-width field-height
 				       :surface main-win :color sdl:*red*)
 
-		 (setf field-symbol (create-nato-symbol octagon-diameter friendly land (infantry mountain)))
+		 (setf field-symbol
+		       (create-nato-symbol octagon-diameter friendly air (infantry mountain)))
 		 (sdl:draw-surface field-symbol :surface main-win)
 		 (sdl:free field-symbol)
 		 
@@ -100,6 +101,34 @@
 			   (sdl:draw-filled-polygon ;; Final mask
 			    (list nw ne se sw)
 			    :surface final-mask :color sdl:*red*))))
+
+(defparameter air '(cond ((equal affiliation friendly)
+			  (setf sw p-sw-posarc) (setf se p-se-posarc)
+			  (setf s p-s-octagon) (setf n p-n-posarc)
+			  (setf nw p-nw-posarc) (setf ne p-ne-posarc)
+			  (setf e nil) (setf w nil) ;;do later
+			  (sdl:draw-filled-ellipse
+			   s ;; centre of ellipse
+			   (floor (- (aref se 0) (aref sw 0)) 2) ;; x radius aka. semi-major axis
+			   (aref p-s-octagon 1) ;; y, semi-minor
+			   :surface field-surface :color line-color)
+			  (sdl:draw-filled-ellipse
+			   s
+			   (- (floor (- (aref se 0) (aref sw 0)) 2) (floor line-width 2))
+			   (- (aref p-s-octagon 1) (floor line-width 2))
+			   :surface field-surface :color fill-color)
+			  (sdl:draw-filled-ellipse
+			   s
+			   (floor (- (aref se 0) (aref sw 0)) 2)
+			   (aref p-s-octagon 1)
+			   :surface final-mask :color sdl:*red*)
+			  (format t "~&width of mask: ~a height: ~a~%" (sdl:width final-mask) (sdl:height final-mask))
+			  (sdl:draw-filled-polygon (list (sdl:point :x 0 :y (aref p-s-octagon 1))
+							 (sdl:point :x (- (aref p-se-rect 0) 1) :y (aref p-s-octagon 1))
+							 (sdl:point :x (- (aref p-se-rect 0) 1) :y (- (aref p-s-negarc 1) 1))
+							 (sdl:point :x 0 :y (- (aref p-s-negarc 1) 1)))
+			   :surface final-mask :color sdl:*red*))))
+
 
 ;; Full frame icons:
 (defparameter infantry '(progn
@@ -182,16 +211,21 @@
   (floor (* octagon-diameter 1.74)))
 
 (defun nato-dimension-init (octagon-diameter)
-  (let* ((x-shift (* 0.75 octagon-diameter))
-	 (y-shift (* 0.37 octagon-diameter))
+  (let* ((x-shift (* 0.75 octagon-diameter)) ;; refers to north vertex of central octagon
+	 (y-shift (* 0.37 octagon-diameter)) ;; -''-
 	 (octagon-radius (/ octagon-diameter 2))
 	 (sin45 (* (sin (* pi 1/4)) octagon-radius))
 	 (sin45b (- octagon-radius sin45))
 	 (diamond-extrusion (- octagon-diameter
-			       (sqrt (* octagon-radius octagon-radius 2))))
+			       (sqrt (* octagon-radius octagon-radius 2)))) ;; Extremities of sharp hostiles
 	 (hat-y (- octagon-radius
 		   (* (tan (* pi 1/4))
-		      (- octagon-radius diamond-extrusion)))))
+		      (- octagon-radius diamond-extrusion)))) ;; the corners between wall and roof of hostile air/sub
+	 (arc-x (* 1.1 octagon-radius)) ;; The x-coordinates for negative and positive arc beginnings
+	 ;; WRONG!
+	 (arc-x-corner (sqrt (- (expt (/ arc-x 2) 2) ;; x-coord for points where y is either octagon's N or S point
+			     (/ (* (expt (/ arc-x 2) 2) (expt y-shift 2))
+				(expt (+ octagon-diameter y-shift) 2))))))
 
     (defparameter field-width (floor (* octagon-diameter 1.5)))
     (defparameter field-height (floor (* octagon-diameter 1.74)))
@@ -212,16 +246,25 @@
     (defparameter p-w-octagon (sdl:point :x (+ (- octagon-radius) x-shift) :y (+ octagon-radius y-shift)))
     (defparameter p-nw-octagon (sdl:point :x (- (+ sin45) x-shift) :y (+ sin45b y-shift)))
 
-    (defparameter p-sw-posarc (sdl:point :x (+ (* -1.1 octagon-radius) x-shift)
+    (defparameter p-sw-posarc (sdl:point :x (+ (- arc-x) x-shift)
 					 :y (+ octagon-diameter y-shift)))
-    (defparameter p-se-posarc (sdl:point :x (+ (* 1.1 octagon-radius) x-shift)
+    (defparameter p-se-posarc (sdl:point :x (+ arc-x x-shift)
 					 :y (+ octagon-diameter y-shift)))
+    (defparameter p-n-posarc (sdl:point :x x-shift :y 0))
     (defparameter p-centre-posarc (sdl:point :x x-shift :y (+ y-shift octagon-diameter)))
-    (defparameter p-nw-negarc (sdl:point :x (+ (* -1.1 octagon-radius) x-shift)
+
+    (defparameter p-nw-posarc (sdl:point :x (- x-shift arc-x-corner) :y y-shift))
+    (defparameter p-ne-posarc (sdl:point :x (+ x-shift arc-x-corner) :y y-shift))
+    
+    (defparameter p-nw-negarc (sdl:point :x (+ (- arc-x) x-shift)
 					 :y (+ 0 y-shift)))
-    (defparameter p-ne-negarc (sdl:point :x (+ (* 1.1 octagon-radius) x-shift)
+    (defparameter p-ne-negarc (sdl:point :x (+ arc-x x-shift)
 					 :y (+ 0 y-shift)))
+    (defparameter p-s-negarc (sdl:point :x x-shift :y (+ y-shift (* 1.37 octagon-diameter))))
     (defparameter p-centre-negarc (sdl:point :x x-shift :y y-shift))
+
+    (defparameter p-sw-negarc (sdl:point :x (- x-shift arc-x-corner) :y (+ octagon-diameter y-shift)))
+    (defparameter p-se-negarc (sdl:point :x (+ x-shift arc-x-corner) :y (+ octagon-diameter y-shift)))
 
     (defparameter p-ne-box (sdl:point :x (+ octagon-radius x-shift) :y (+ 0 y-shift)))
     (defparameter p-se-box (sdl:point :x (+ octagon-radius x-shift) :y (+ octagon-radius y-shift)))
