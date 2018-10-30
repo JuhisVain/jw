@@ -67,7 +67,7 @@
 				       :surface main-win :color sdl:*red*)
 
 		 (setf field-symbol
-		       (create-nato-symbol octagon-diameter friendly air (infantry mountain)))
+		       (create-nato-symbol octagon-diameter friendly air (air-defense mountain)))
 		 (sdl:draw-surface field-symbol :surface main-win)
 		 (sdl:free field-symbol)
 		 
@@ -122,12 +122,13 @@
 			   (floor (- (aref se 0) (aref sw 0)) 2)
 			   (aref p-s-octagon 1)
 			   :surface final-mask :color sdl:*red*)
-			  (format t "~&width of mask: ~a height: ~a~%" (sdl:width final-mask) (sdl:height final-mask))
-			  (sdl:draw-filled-polygon (list (sdl:point :x 0 :y (aref p-s-octagon 1))
-							 (sdl:point :x (- (aref p-se-rect 0) 1) :y (aref p-s-octagon 1))
-							 (sdl:point :x (- (aref p-se-rect 0) 1) :y (- (aref p-s-negarc 1) 1))
-							 (sdl:point :x 0 :y (- (aref p-s-negarc 1) 1)))
-			   :surface final-mask :color sdl:*red*))))
+			  (sdl:draw-filled-polygon
+			   (list (sdl:point :x 0 :y (aref p-s-octagon 1))
+				 (sdl:point :x (- (aref p-se-rect 0) 1) :y (aref p-s-octagon 1))
+				 (sdl:point :x (- (aref p-se-rect 0) 1) :y (aref p-s-negarc 1))
+				 (sdl:point :x 0 :y (aref p-s-negarc 1)))
+			   :surface final-mask :color color-key)
+			  )))
 
 
 ;; Full frame icons:
