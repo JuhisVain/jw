@@ -67,7 +67,7 @@
 				       :surface main-win :color sdl:*red*)
 
 		 (setf field-symbol
-		       (create-nato-symbol octagon-diameter friendly air (air-defense mountain)))
+		       (create-nato-symbol octagon-diameter friendly air (infantry mountain)))
 		 (sdl:draw-surface field-symbol :surface main-win)
 		 (sdl:free field-symbol)
 		 
@@ -223,10 +223,8 @@
 		   (* (tan (* pi 1/4))
 		      (- octagon-radius diamond-extrusion)))) ;; the corners between wall and roof of hostile air/sub
 	 (arc-x (* 1.1 octagon-radius)) ;; The x-coordinates for negative and positive arc beginnings
-	 ;; WRONG!
-	 (arc-x-corner (sqrt (- (expt (/ arc-x 2) 2) ;; x-coord for points where y is either octagon's N or S point
-			     (/ (* (expt (/ arc-x 2) 2) (expt y-shift 2))
-				(expt (+ octagon-diameter y-shift) 2))))))
+
+	 )
 
     (defparameter field-width (floor (* octagon-diameter 1.5)))
     (defparameter field-height (floor (* octagon-diameter 1.74)))
@@ -254,8 +252,8 @@
     (defparameter p-n-posarc (sdl:point :x x-shift :y 0))
     (defparameter p-centre-posarc (sdl:point :x x-shift :y (+ y-shift octagon-diameter)))
 
-    (defparameter p-nw-posarc (sdl:point :x (- x-shift arc-x-corner) :y y-shift))
-    (defparameter p-ne-posarc (sdl:point :x (+ x-shift arc-x-corner) :y y-shift))
+    (defparameter p-nw-posarc (sdl:point :x (+ (- arc-x) x-shift) :y y-shift))
+    (defparameter p-ne-posarc (sdl:point :x (+ arc-x x-shift) :y y-shift))
     
     (defparameter p-nw-negarc (sdl:point :x (+ (- arc-x) x-shift)
 					 :y (+ 0 y-shift)))
@@ -264,8 +262,8 @@
     (defparameter p-s-negarc (sdl:point :x x-shift :y (+ y-shift (* 1.37 octagon-diameter))))
     (defparameter p-centre-negarc (sdl:point :x x-shift :y y-shift))
 
-    (defparameter p-sw-negarc (sdl:point :x (- x-shift arc-x-corner) :y (+ octagon-diameter y-shift)))
-    (defparameter p-se-negarc (sdl:point :x (+ x-shift arc-x-corner) :y (+ octagon-diameter y-shift)))
+    (defparameter p-sw-negarc (sdl:point :x (+ (- arc-x) x-shift) :y (+ octagon-diameter y-shift)))
+    (defparameter p-se-negarc (sdl:point :x (+ arc-x x-shift) :y (+ octagon-diameter y-shift)))
 
     (defparameter p-ne-box (sdl:point :x (+ octagon-radius x-shift) :y (+ 0 y-shift)))
     (defparameter p-se-box (sdl:point :x (+ octagon-radius x-shift) :y (+ octagon-radius y-shift)))
