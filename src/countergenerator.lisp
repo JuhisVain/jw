@@ -47,6 +47,8 @@
      ))
 
 
+
+
 (defun nato-gen (octagon-diameter)
   (nato-dimension-init octagon-diameter)
   (nato-color-init)
@@ -67,7 +69,7 @@
 				       :surface main-win :color sdl:*red*)
 
 		 (setf field-symbol
-		       (create-nato-symbol octagon-diameter friendly air (infantry mountain)))
+		       (create-nato-symbol octagon-diameter unknown land (air-defense mountain)))
 		 (sdl:draw-surface field-symbol :surface main-win)
 		 (sdl:free field-symbol)
 		 
@@ -83,24 +85,134 @@
 			(setf line-width 2)
 			(setf fill-color green)))
 
-(defparameter land '(cond ((equal affiliation friendly) ;; The final mask will need to be set up in these
-			   (setf ne p-ne-rect) (setf se p-se-rect)
-			   (setf sw p-sw-rect) (setf nw p-nw-rect)
-			   (setf s p-s-octagon) (setf n p-n-octagon)
-			   (setf w (shift-coord nw 0 octagon-radius))
-			   (setf e (shift-coord ne 0 octagon-radius))
-			   (sdl:draw-filled-polygon ;; Black background as border line
-			    (list nw ne se sw)
-			    :surface field-surface :color line-color)
-			   (sdl:draw-filled-polygon ;; the fill
-			    (list (shift-coord nw line-width line-width)
-				  (shift-coord ne (- (+ 1 line-width)) line-width)
-				  (shift-coord se (- (+ 1 line-width)) (* 1 (- line-width)))
-				  (shift-coord sw line-width (* 1 (- line-width))))
-			    :surface field-surface :color fill-color)
-			   (sdl:draw-filled-polygon ;; Final mask
-			    (list nw ne se sw)
-			    :surface final-mask :color sdl:*red*))))
+(defparameter unknown '(progn
+			(setf line-color black)
+			(setf line-width 2)
+			(setf fill-color yellow)))
+
+(defparameter hostile '(progn
+			(setf line-color black)
+			(setf line-width 2)
+			(setf fill-color red)))
+
+(defparameter land '(cond ;; not the most elegant solution
+		     ((equal affiliation friendly) ;; The final mask will need to be set up in these
+		      (setf ne p-ne-rect) (setf se p-se-rect)
+		      (setf sw p-sw-rect) (setf nw p-nw-rect)
+		      (setf s p-s-octagon) (setf n p-n-octagon)
+		      (setf w (shift-coord nw 0 octagon-radius))
+		      (setf e (shift-coord ne 0 octagon-radius))
+		      (sdl:draw-filled-polygon ;; Black background as border line
+		       (list nw ne se sw)
+		       :surface field-surface :color line-color)
+		      (sdl:draw-filled-polygon ;; the fill
+		       (list (shift-coord nw line-width line-width)
+			     (shift-coord ne (- (+ 1 line-width)) line-width)
+			     (shift-coord se (- (+ 1 line-width)) (* 1 (- line-width)))
+			     (shift-coord sw line-width (* 1 (- line-width))))
+		       :surface field-surface :color fill-color)
+		      (sdl:draw-filled-polygon ;; Final mask
+		       (list nw ne se sw)
+		       :surface final-mask :color sdl:*red*))
+		     ((equal affiliation neutral)
+		      (setf ne p-ne-box) (setf se p-se-box)
+		      (setf sw p-sw-box) (setf nw p-nw-box)
+		      (setf n p-n-octagon) (setf s p-s-octagon)
+		      (setf w p-w-octagon) (setf e p-e-octagon)
+		      (sdl:draw-filled-polygon
+		       (list nw ne se sw)
+		       :surface field-surface :color line-color)
+		      (sdl:draw-filled-polygon
+		       (list nw ne se sw)
+		       :surface final-mask :color sdl:*red*)
+		      (sdl:draw-filled-polygon
+		       (list
+			(shift-coord nw line-width line-width)
+			(shift-coord ne (- line-width) line-width)
+			(shift-coord se (- line-width) (- line-width))
+			(shift-coord sw line-width (- line-width)))
+		       :surface field-surface :color fill-color))
+		     ((equal affiliation unknown)
+		      (setf ne p-ne-octagon) (setf se p-se-octagon)
+		      (setf sw p-sw-octagon) (setf nw p-nw-octagon)
+		      (setf n p-n-flower) (setf s p-s-flower)
+		      (setf w p-w-flower) (setf e p-e-flower)
+		      
+		      (sdl:draw-filled-circle-* ;; top circle
+		       (aref p-n-octagon 0) ;; x at centre
+		       (aref ne 1) ;; y at octagon ne/nw
+		       (floor (- (aref ne 0) (aref nw 0)) 2)
+		       :surface field-surface :color line-color)
+		      (sdl:draw-filled-circle-* ;; bottom
+		       (aref p-n-octagon 0)
+		       (aref se 1)
+		       (floor (- (aref ne 0) (aref nw 0)) 2)
+		       :surface field-surface :color line-color)
+		      (sdl:draw-filled-circle-* ;; left
+		       (aref nw 0)
+		       (aref e 1)
+		       (floor (- (aref ne 0) (aref nw 0)) 2)
+		       :surface field-surface :color line-color)
+		      (sdl:draw-filled-circle-* ;; right
+		       (aref ne 0)
+		       (aref e 1)
+		       (floor (- (aref ne 0) (aref nw 0)) 2)
+		       :surface field-surface :color line-color)
+		      (sdl:draw-filled-polygon
+		       (list nw ne se sw)
+		       :surface field-surface :color line-color)
+
+		      (sdl:draw-filled-circle-* ;; top circle
+		       (aref p-n-octagon 0) ;; x at centre
+		       (aref ne 1) ;; y at octagon ne/nw
+		       (- (floor (- (aref ne 0) (aref nw 0)) 2) line-width)
+		       :surface field-surface :color fill-color)
+		      (sdl:draw-filled-circle-* ;; bottom
+		       (aref p-n-octagon 0)
+		       (aref se 1)
+		       (- (floor (- (aref ne 0) (aref nw 0)) 2) line-width)
+		       :surface field-surface :color fill-color)
+		      (sdl:draw-filled-circle-* ;; left
+		       (aref nw 0)
+		       (aref e 1)
+		       (- (floor (- (aref ne 0) (aref nw 0)) 2) line-width)
+		       :surface field-surface :color fill-color)
+		      (sdl:draw-filled-circle-* ;; right
+		       (aref ne 0)
+		       (aref e 1)
+		       (- (floor (- (aref ne 0) (aref nw 0)) 2) line-width)
+		       :surface field-surface :color fill-color)
+		      (sdl:draw-filled-polygon
+		       (list (shift-coord nw line-width line-width)
+			     (shift-coord ne (- line-width) line-width)
+			     (shift-coord se (- line-width) (- line-width))
+			     (shift-coord sw line-width (- line-width)))
+		       :surface field-surface :color fill-color)
+
+		      (sdl:draw-filled-circle-* ;; top circle. should prolly write some macro for these
+		       (aref p-n-octagon 0) ;; x at centre
+		       (aref ne 1) ;; y at octagon ne/nw
+		       (floor (- (aref ne 0) (aref nw 0)) 2)
+		       :surface final-mask :color sdl:*red*)
+		      (sdl:draw-filled-circle-* ;; bottom
+		       (aref p-n-octagon 0)
+		       (aref se 1)
+		       (floor (- (aref ne 0) (aref nw 0)) 2)
+		       :surface final-mask :color sdl:*red*)
+		      (sdl:draw-filled-circle-* ;; left
+		       (aref nw 0)
+		       (aref e 1)
+		       (floor (- (aref ne 0) (aref nw 0)) 2)
+		       :surface final-mask :color sdl:*red*)
+		      (sdl:draw-filled-circle-* ;; right
+		       (aref ne 0)
+		       (aref e 1)
+		       (floor (- (aref ne 0) (aref nw 0)) 2)
+		       :surface final-mask :color sdl:*red*)
+		      (sdl:draw-filled-polygon
+		       (list nw ne se sw)
+		       :surface final-mask :color sdl:*red*)
+		      )))
 
 (defparameter air '(cond ((equal affiliation friendly)
 			  (setf sw p-sw-posarc) (setf se p-se-posarc)
@@ -152,12 +264,19 @@
 ;; Let's just do the more useful ones...
 (defparameter air-defense '(let ((curve-y-top-shift (floor (* 0.3 octagon-diameter))))
 			    (sdl:draw-filled-ellipse                ;; line
-			     s                                        ;; centre of ellipse
+			     ;; TODO centre breaks on unknowns' frame
+			     ;; s
+			     (sdl:point
+			      :x (aref s 0)
+			      :y (aref se 1))                                 ;; centre of ellipse
 			     (floor (- (aref se 0) (aref sw 0)) 2)    ;; x-radius
 			     curve-y-top-shift                        ;; y-radius
 			     :surface field-surface :color line-color)
 			    (sdl:draw-filled-ellipse ;; fill line's underside
-			     s
+			     ;; s
+			     (sdl:point
+			      :x (aref s 0)
+			      :y (aref se 1))
 			     (- (floor (- (aref se 0) (aref sw 0)) 2) (* 2 line-width))
 			     (- curve-y-top-shift line-width)
 			     :surface field-surface :color fill-color)))
@@ -243,7 +362,7 @@
     (defparameter p-sw-octagon (sdl:point :x (+ (- sin45) x-shift)
 					  :y (+ (+ octagon-radius sin45) y-shift)))
     (defparameter p-w-octagon (sdl:point :x (+ (- octagon-radius) x-shift) :y (+ octagon-radius y-shift)))
-    (defparameter p-nw-octagon (sdl:point :x (- (+ sin45) x-shift) :y (+ sin45b y-shift)))
+    (defparameter p-nw-octagon (sdl:point :x (+ (- sin45) x-shift) :y (+ sin45b y-shift)))
 
     (defparameter p-sw-posarc (sdl:point :x (+ (- arc-x) x-shift)
 					 :y (+ octagon-diameter y-shift)))
@@ -266,8 +385,8 @@
     (defparameter p-se-negarc (sdl:point :x (+ arc-x x-shift) :y (+ octagon-diameter y-shift)))
 
     (defparameter p-ne-box (sdl:point :x (+ octagon-radius x-shift) :y (+ 0 y-shift)))
-    (defparameter p-se-box (sdl:point :x (+ octagon-radius x-shift) :y (+ octagon-radius y-shift)))
-    (defparameter p-sw-box (sdl:point :x (+ (- octagon-radius) x-shift) :y (+ octagon-radius y-shift)))
+    (defparameter p-se-box (sdl:point :x (+ octagon-radius x-shift) :y (+ octagon-diameter y-shift)))
+    (defparameter p-sw-box (sdl:point :x (+ (- octagon-radius) x-shift) :y (+ octagon-diameter y-shift)))
     (defparameter p-nw-box (sdl:point :x (+ (- octagon-radius) x-shift) :y (+ 0 y-shift)))
 
     (defparameter p-n-diamond (sdl:point :x (+ 0 x-shift)
@@ -295,4 +414,16 @@
     (defparameter p-sw-rect (sdl:point :x (+ (* octagon-radius -1.5) x-shift)
 				       :y (+ octagon-diameter y-shift)))
     (defparameter p-nw-rect (sdl:point :x (+ (* octagon-radius -1.5) x-shift)
-				       :y (+ 0 y-shift)))))
+				       :y (+ 0 y-shift)))
+
+    (defparameter p-n-flower (sdl:point :x (aref p-n-octagon 0)
+					:y (- (aref p-nw-octagon 1) ;; y at top of upper half circle
+					      (/ (- (aref p-ne-octagon 0)
+						    (aref p-nw-octagon 0))
+						 2))))
+    (defparameter p-s-flower (sdl:point :x (aref p-n-flower 0)
+					:y (- field-height (aref p-n-flower 1))))
+    (defparameter p-w-flower (sdl:point :x (aref p-n-flower 1)
+					:y (aref p-w-octagon 1)))
+    (defparameter p-e-flower (sdl:point :x (- field-width (aref p-w-flower 0))
+					:y (aref p-w-octagon 1)))))
