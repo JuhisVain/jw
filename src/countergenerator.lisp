@@ -189,7 +189,7 @@
 			     (shift-coord sw line-width (- line-width)))
 		       :surface field-surface :color fill-color)
 
-		      (sdl:draw-filled-circle-* ;; top circle. should prolly write some macro for these
+		      (sdl:draw-filled-circle-* ;; top circle
 		       (aref p-n-octagon 0) ;; x at centre
 		       (aref ne 1) ;; y at octagon ne/nw
 		       (floor (- (aref ne 0) (aref nw 0)) 2)
@@ -262,24 +262,39 @@
 
 ;; wtf is an "air assault with organic lift"? A bird?
 ;; Let's just do the more useful ones...
-(defparameter air-defense '(let ((curve-y-top-shift (floor (* 0.3 octagon-diameter))))
-			    (sdl:draw-filled-ellipse                ;; line
-			     ;; TODO centre breaks on unknowns' frame
+(defparameter air-defense '(let ((curve-y-top-shift (- (floor (* 0.3 octagon-diameter)) (- (aref p-s-octagon 1) (aref se 1))))
+				 (temp-mask (sdl:create-surface (compute-field-width octagon-diameter)
+								(compute-field-height octagon-diameter)
+								:color-key sdl:*red*)))
+			    (sdl:fill-surface sdl:*red* :surface temp-mask)
+			    (sdl:draw-filled-ellipse  ;; line
 			     ;; s
 			     (sdl:point
 			      :x (aref s 0)
-			      :y (aref se 1))                                 ;; centre of ellipse
+			      :y (aref se 1))                         ;; centre of ellipse
 			     (floor (- (aref se 0) (aref sw 0)) 2)    ;; x-radius
 			     curve-y-top-shift                        ;; y-radius
-			     :surface field-surface :color line-color)
+			     :surface temp-mask :color line-color)
 			    (sdl:draw-filled-ellipse ;; fill line's underside
 			     ;; s
 			     (sdl:point
 			      :x (aref s 0)
 			      :y (aref se 1))
-			     (- (floor (- (aref se 0) (aref sw 0)) 2) (* 2 line-width))
+			     (- (floor (- (aref se 0) (aref sw 0)) 2) line-width)
 			     (- curve-y-top-shift line-width)
-			     :surface field-surface :color fill-color)))
+			     :surface temp-mask :color sdl:*red*)
+			    (sdl:draw-filled-polygon (list
+						      (sdl:point :x 0
+								 :y (aref sw 1))
+						      (sdl:point :x field-width
+								 :y (aref sw 1))
+						      (sdl:point :x field-width
+								 :y field-height)
+						      (sdl:point :x 0
+								 :y field-height))
+			     :surface temp-mask :color sdl:*red*)
+			    (sdl:blit-surface temp-mask field-surface)
+			    (sdl:free temp-mask)))
 
 (defparameter anti-tank '(progn
 			  (sdl:draw-filled-polygon
