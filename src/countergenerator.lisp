@@ -23,7 +23,7 @@
   (hq))         ;;
 
 
-(defmacro create-nato-symbol (octagon-diameter affiliation dimension icon-list)
+(defmacro create-nato-symbol (octagon-diameter affiliation dimension icon-list echelon mobility)
   `(let ((line-color) (line-width) (fill-color)
 	 (field-surface (sdl:create-surface (compute-field-width ,octagon-diameter)
 					    (compute-field-height ,octagon-diameter)
@@ -43,11 +43,42 @@
      
      (sdl:blit-surface final-mask field-surface) ;; <- modifies second by first arg
      (sdl:free final-mask)
+     ,(eval echelon)
      field-surface
      ))
 
-
-
+(defparameter team
+  '(let*
+    ((diameter (floor octagon-diameter 6))
+     (radius (floor diameter 2))
+     (x-position (aref n 0))
+     (y-position (- (aref n 1) radius))
+     (line-width (ceiling line-width 2))
+     (temp-mask (sdl:create-surface field-width field-height :color-key sdl:*red*)))
+    (sdl:fill-surface sdl:*red* :surface temp-mask)
+    (sdl:draw-filled-circle (sdl:point
+			     :x x-position
+			     :y y-position)
+     radius
+     :surface temp-mask :color line-color)
+    (sdl:draw-filled-circle (sdl:point
+			     :x x-position
+			     :y y-position)
+     (- radius (* 2 line-width))
+     :surface temp-mask :color color-key)
+    (sdl:draw-filled-polygon (list
+			      (sdl:point :x (- x-position radius)
+					 :y (aref n 1))
+			      (sdl:point :x (- (+ x-position radius) line-width)
+					 :y (- (aref n 1) diameter))
+			      (sdl:point :x (+ x-position radius)
+					 :y (- (aref n 1) diameter))
+			      (sdl:point :x (+ (- x-position radius) line-width)
+					 :y (aref n 1)))
+     :surface temp-mask :color line-color)
+    (sdl:blit-surface temp-mask field-surface)
+    (sdl:free temp-mask)
+    ))
 
 (defun nato-gen (octagon-diameter)
   (nato-dimension-init octagon-diameter)
@@ -69,7 +100,9 @@
 				       :surface main-win :color sdl:*red*)
 
 		 (setf field-symbol
-		       (create-nato-symbol octagon-diameter hostile land (air-defense mountain)))
+		       (create-nato-symbol octagon-diameter friendly land (infantry mountain) team xxx))
+		 
+		 
 		 (sdl:draw-surface field-symbol :surface main-win)
 		 (sdl:free field-symbol)
 		 
@@ -236,22 +269,26 @@
 			  (setf sw p-sw-posarc) (setf se p-se-posarc)
 			  (setf s p-s-octagon) (setf n p-n-posarc)
 			  (setf nw p-nw-posarc) (setf ne p-ne-posarc)
-			  (setf e nil) (setf w nil) ;;do later
+			  (setf e nil) (setf w nil) ;;do later. or don't
+			  
 			  (sdl:draw-filled-ellipse
 			   s ;; centre of ellipse
 			   (floor (- (aref se 0) (aref sw 0)) 2) ;; x radius aka. semi-major axis
 			   (aref p-s-octagon 1) ;; y, semi-minor
 			   :surface field-surface :color line-color)
+			  
 			  (sdl:draw-filled-ellipse
 			   s
-			   (- (floor (- (aref se 0) (aref sw 0)) 2) (floor line-width 2))
-			   (- (aref p-s-octagon 1) (floor line-width 2))
+			   (- (floor (- (aref se 0) (aref sw 0)) 2) line-width)
+			   (- (aref p-s-octagon 1) line-width)
 			   :surface field-surface :color fill-color)
+			  
 			  (sdl:draw-filled-ellipse
 			   s
 			   (floor (- (aref se 0) (aref sw 0)) 2)
 			   (aref p-s-octagon 1)
 			   :surface final-mask :color sdl:*red*)
+			  
 			  (sdl:draw-filled-polygon
 			   (list (sdl:point :x 0 :y (aref p-s-octagon 1))
 				 (sdl:point :x (- (aref p-se-rect 0) 1) :y (aref p-s-octagon 1))
