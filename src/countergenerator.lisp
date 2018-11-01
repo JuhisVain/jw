@@ -58,7 +58,7 @@
       (let ((main-win (sdl:window width height :title-caption "counter generator test"))
 	    (field-symbol))
 	(setf (sdl:frame-rate) 10)
-	(sdl:clear-display sdl:*black*)
+	(sdl:clear-display sdl:*white*)
 	
 	(sdl:with-events ()
 	  (:quit-event () t)
@@ -69,7 +69,7 @@
 				       :surface main-win :color sdl:*red*)
 
 		 (setf field-symbol
-		       (create-nato-symbol octagon-diameter unknown land (air-defense mountain)))
+		       (create-nato-symbol octagon-diameter hostile land (air-defense mountain)))
 		 (sdl:draw-surface field-symbol :surface main-win)
 		 (sdl:free field-symbol)
 		 
@@ -108,8 +108,8 @@
 		      (sdl:draw-filled-polygon ;; the fill
 		       (list (shift-coord nw line-width line-width)
 			     (shift-coord ne (- (+ 1 line-width)) line-width)
-			     (shift-coord se (- (+ 1 line-width)) (* 1 (- line-width)))
-			     (shift-coord sw line-width (* 1 (- line-width))))
+			     (shift-coord se (- (+ 1 line-width)) (- line-width))
+			     (shift-coord sw line-width (- line-width)))
 		       :surface field-surface :color fill-color)
 		      (sdl:draw-filled-polygon ;; Final mask
 		       (list nw ne se sw)
@@ -212,7 +212,25 @@
 		      (sdl:draw-filled-polygon
 		       (list nw ne se sw)
 		       :surface final-mask :color sdl:*red*)
-		      )))
+		      )
+		     ((equal affiliation hostile)
+		      (setf n p-n-diamond) (setf s p-s-diamond)
+		      (setf w p-w-diamond) (setf e p-e-diamond)
+		      (setf nw p-nw-octagon) (setf sw p-sw-octagon)
+		      (setf ne p-ne-octagon) (setf se p-se-octagon)
+		      (sdl:draw-filled-polygon
+		       (list n e s w)
+		       :surface field-surface :color line-color)
+		      (sdl:draw-filled-polygon
+		       (list n e s w)
+		       :surface final-mask :color sdl:*red*)
+		      (sdl:draw-filled-polygon
+		       (list
+			(shift-coord n 0 line-width)
+			(shift-coord e (- line-width) 0)
+			(shift-coord s 0 (- line-width))
+			(shift-coord w line-width 0))
+		       :surface field-surface :color fill-color))))
 
 (defparameter air '(cond ((equal affiliation friendly)
 			  (setf sw p-sw-posarc) (setf se p-se-posarc)
@@ -351,8 +369,8 @@
 	 (octagon-radius (/ octagon-diameter 2))
 	 (sin45 (* (sin (* pi 1/4)) octagon-radius))
 	 (sin45b (- octagon-radius sin45))
-	 (diamond-extrusion (- octagon-diameter
-			       (sqrt (* octagon-radius octagon-radius 2)))) ;; Extremities of sharp hostiles
+	 (diamond-extrusion (- (sqrt (* octagon-radius octagon-radius 2))
+			       octagon-radius)) ;; Extremities of sharp hostiles
 	 (hat-y (- octagon-radius
 		   (* (tan (* pi 1/4))
 		      (- octagon-radius diamond-extrusion)))) ;; the corners between wall and roof of hostile air/sub
