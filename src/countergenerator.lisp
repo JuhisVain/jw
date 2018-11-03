@@ -23,7 +23,7 @@
   (hq))         ;;
 
 
-(defmacro create-nato-symbol (octagon-diameter affiliation dimension icon-list echelon mobility)
+(defmacro create-nato-symbol (octagon-diameter affiliation dimension icon-list)
   `(let ((line-color) (line-width) (fill-color)
 	 (field-surface (sdl:create-surface (compute-field-width ,octagon-diameter)
 					    (compute-field-height ,octagon-diameter)
@@ -33,7 +33,8 @@
 	 (final-mask (sdl:create-surface (compute-field-width ,octagon-diameter)
 					    (compute-field-height ,octagon-diameter)
 					    :color-key sdl:*red*))
-	 (amplifier-surface))
+	 ;;(amplifier-surface)
+	 )
      (sdl:fill-surface color-key :surface final-mask)
      (sdl:clear-display color-key :surface field-surface)
      
@@ -45,30 +46,43 @@
      ;; Draw field here:
      (sdl:blit-surface final-mask field-surface) ;; <- modifies second by first arg
      (sdl:free final-mask)
+     (list ,octagon-diameter n s w e field-surface)
 
-     (setf amplifier-surface (sdl:create-surface (- (aref e 0) (aref w 0))
-						 (+ (- (aref s 1) (aref n 1)) ;; height of symbol
-						    (floor octagon-diameter 6) ;; height of echelon amplifiers
-						    ) ;; todo: needs height of mobility amp
-						 :color-key color-key))
-     (sdl:fill-surface color-key :surface amplifier-surface)
+     ;;(setf amplifier-surface (sdl:create-surface (- (aref e 0) (aref w 0))
+;;						 (+ (- (aref s 1) (aref n 1)) ;; height of symbol
+;;						    (floor octagon-diameter 6) ;; height of echelon amplifiers
+;;						    ) ;; todo: needs height of mobility amp
+;;						 :color-key color-key))
+     ;;(sdl:fill-surface color-key :surface amplifier-surface)
 
-     (sdl:blit-surface field-surface
-		       amplifier-surface
-		       (sdl:set-cell-* (aref w 0)
-				       (- (aref n 1) (floor octagon-diameter 6))
-				       (- (aref e 0) (aref w 0))
-				       (+ (- (aref s 1) (aref n 1))
-					  (floor octagon-diameter 6))
-				       :surface field-surface))
-
-     (sdl:clear-cell :surface amplifier-surface)
-     (sdl:free field-surface)
+;;     (sdl:blit-surface field-surface
+;;		       amplifier-surface
+;;		       (sdl:set-cell-* (aref w 0)
+;;				       (- (aref n 1) (floor octagon-diameter 6))
+;;				       (- (aref e 0) (aref w 0))
+;;				       (+ (- (aref s 1) (aref n 1))
+;;					  (floor octagon-diameter 6))
+;;				       :surface field-surface))
+;;
+  ;;   (sdl:clear-cell :surface amplifier-surface)
+    ;; (sdl:free field-surface)
      
-     ,(eval echelon)
+;;     ,(eval echelon)
      ;;field-surface
-     amplifier-surface
+;;     amplifier-surface
      ))
+
+(defmacro create-nato-amplifiers (echelon mobility octagon-diameter n s w e field)
+  `(let* ((actual-field-width (- (aref e 0) (aref w 0)))
+	  (actual-field-height (- (ared s 1) (aref n 1)))
+	  (echelon-diameter (floor octagon-diameter 6))
+	  (echelon-radius (floor echelon-diameter 2))
+	  (echelon-x-position) ;; upper left x of echelon
+	  (echelon-y-poisition) ;; upper left y of echelon
+	  )
+     
+     ))
+
 
 ;;(defparameter squad)
 
@@ -131,7 +145,7 @@
 				       :surface main-win :color sdl:*red*)
 
 		 (setf field-symbol
-		       (create-nato-symbol octagon-diameter friendly land (infantry mountain) team xxx))
+		       (create-nato-symbol octagon-diameter friendly land (infantry mountain)))
 		 
 		 
 		 (sdl:draw-surface field-symbol :surface main-win)
