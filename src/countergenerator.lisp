@@ -32,7 +32,8 @@
 	 (n) (ne) (e) (se) (s) (sw) (w) (nw)
 	 (final-mask (sdl:create-surface (compute-field-width ,octagon-diameter)
 					    (compute-field-height ,octagon-diameter)
-					    :color-key sdl:*red*)))
+					    :color-key sdl:*red*))
+	 (amplifier-surface))
      (sdl:fill-surface color-key :surface final-mask)
      (sdl:clear-display color-key :surface field-surface)
      
@@ -40,43 +41,73 @@
      ,(eval dimension)
 
      (progn ,@(mapcar #'eval icon-list)) ;; ooga booga
-     
+
+     ;; Draw field here:
      (sdl:blit-surface final-mask field-surface) ;; <- modifies second by first arg
      (sdl:free final-mask)
+
+     (setf amplifier-surface (sdl:create-surface (- (aref e 0) (aref w 0))
+						 (+ (- (aref s 1) (aref n 1)) ;; height of symbol
+						    (floor octagon-diameter 6) ;; height of echelon amplifiers
+						    ) ;; todo: needs height of mobility amp
+						 :color-key color-key))
+     (sdl:fill-surface color-key :surface amplifier-surface)
+
+     (sdl:blit-surface field-surface
+		       amplifier-surface
+		       (sdl:set-cell-* (aref w 0)
+				       (- (aref n 1) (floor octagon-diameter 6))
+				       (- (aref e 0) (aref w 0))
+				       (+ (- (aref s 1) (aref n 1))
+					  (floor octagon-diameter 6))
+				       :surface field-surface))
+
+     (sdl:clear-cell :surface amplifier-surface)
+     (sdl:free field-surface)
+     
      ,(eval echelon)
-     field-surface
+     ;;field-surface
+     amplifier-surface
      ))
 
-(defparameter team
+;;(defparameter squad)
+
+(defparameter circle
+  '(let*
+    ((diameter (floor octagon-diameter 8))
+     (radius (floor diameter 2))
+     )))
+
+(defparameter team ;;todo will break on friendly air. Need to shift symbol down before doing ech
   '(let*
     ((diameter (floor octagon-diameter 6))
      (radius (floor diameter 2))
-     (x-position (aref n 0))
-     (y-position (- (aref n 1) radius))
+     (x-position (floor (- (aref e 0) (aref w 0)) 2))
+     (y-position 0);;(- (aref n 1) radius))
      (line-width (ceiling line-width 2))
      (temp-mask (sdl:create-surface field-width field-height :color-key sdl:*red*)))
     (sdl:fill-surface sdl:*red* :surface temp-mask)
     (sdl:draw-filled-circle (sdl:point
 			     :x x-position
-			     :y y-position)
+			     :y (+ y-position radius))
      radius
      :surface temp-mask :color line-color)
     (sdl:draw-filled-circle (sdl:point
 			     :x x-position
-			     :y y-position)
+			     :y (+ y-position radius))
      (- radius (* 2 line-width))
      :surface temp-mask :color color-key)
     (sdl:draw-filled-polygon (list
 			      (sdl:point :x (- x-position radius)
-					 :y (aref n 1))
+					 :y (+ y-position diameter))
 			      (sdl:point :x (- (+ x-position radius) line-width)
-					 :y (- (aref n 1) diameter))
+					 :y y-position)
 			      (sdl:point :x (+ x-position radius)
-					 :y (- (aref n 1) diameter))
+					 :y y-position)
 			      (sdl:point :x (+ (- x-position radius) line-width)
-					 :y (aref n 1)))
+					 :y (+ y-position diameter)))
      :surface temp-mask :color line-color)
-    (sdl:blit-surface temp-mask field-surface)
+    (sdl:blit-surface temp-mask amplifier-surface)
     (sdl:free temp-mask)
     ))
 
@@ -269,7 +300,7 @@
 			  (setf sw p-sw-posarc) (setf se p-se-posarc)
 			  (setf s p-s-octagon) (setf n p-n-posarc)
 			  (setf nw p-nw-posarc) (setf ne p-ne-posarc)
-			  (setf e nil) (setf w nil) ;;do later. or don't
+			  (setf e p-se-posarc) (setf w p-sw-posarc)
 			  
 			  (sdl:draw-filled-ellipse
 			   s ;; centre of ellipse
