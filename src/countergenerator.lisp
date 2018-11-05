@@ -46,40 +46,46 @@
      ;; Draw field here:
      (sdl:blit-surface final-mask field-surface) ;; <- modifies second by first arg
      (sdl:free final-mask)
-     (list ,octagon-diameter n s w e field-surface)
+     ;;(list ,octagon-diameter (list n s w e) field-surface)
 
-     ;;(setf amplifier-surface (sdl:create-surface (- (aref e 0) (aref w 0))
-;;						 (+ (- (aref s 1) (aref n 1)) ;; height of symbol
-;;						    (floor octagon-diameter 6) ;; height of echelon amplifiers
-;;						    ) ;; todo: needs height of mobility amp
-;;						 :color-key color-key))
-     ;;(sdl:fill-surface color-key :surface amplifier-surface)
+     field-surface
 
-;;     (sdl:blit-surface field-surface
-;;		       amplifier-surface
-;;		       (sdl:set-cell-* (aref w 0)
-;;				       (- (aref n 1) (floor octagon-diameter 6))
-;;				       (- (aref e 0) (aref w 0))
-;;				       (+ (- (aref s 1) (aref n 1))
-;;					  (floor octagon-diameter 6))
-;;				       :surface field-surface))
-;;
-  ;;   (sdl:clear-cell :surface amplifier-surface)
-    ;; (sdl:free field-surface)
-     
-;;     ,(eval echelon)
-     ;;field-surface
-;;     amplifier-surface
      ))
 
-(defmacro create-nato-amplifiers (echelon mobility octagon-diameter n s w e field)
-  `(let* ((actual-field-width (- (aref e 0) (aref w 0)))
-	  (actual-field-height (- (ared s 1) (aref n 1)))
-	  (echelon-diameter (floor octagon-diameter 6))
+(defmacro create-nato-amplifiers (echelon mobility octagon-diameter limits field)
+  (setf limits (eval limits))
+  `(let* ((actual-field-width ,(- (aref (cadddr limits) 0) (aref (caddr limits) 0)))
+	  (actual-field-height ,(- (aref (cadr limits) 1) (aref (car limits) 1)))
+	  (echelon-diameter ,(floor octagon-diameter 6)) ;; this is for a single symbol
 	  (echelon-radius (floor echelon-diameter 2))
+	  (echelon-width)
 	  (echelon-x-position) ;; upper left x of echelon
-	  (echelon-y-poisition) ;; upper left y of echelon
-	  )
+	  (echelon-y-position 0) ;; upper left y of echelon
+	  (amplifier-surface)
+	  (n (car limits))
+	  (s (cadr limits))
+	  (w (caddr limits))
+	  (e (cadddr limits)))
+
+     (setf amplifier-surface (sdl:create-surface actual-field-width
+						 (+ actual-field-height
+						    echelon-diameter
+						    ) ;; mobility height here
+						 :color-key color-key))
+     
+     (sdl:fill-surface color-key :surface amplifier-surface)
+     
+     (sdl:blit-surface field ;; Copy the field to amplifier-surface at correct position
+		       amplifier-surface
+		       (sdl:set-cell-* ,(aref (caddr limits) 0)
+				       ,(+ (aref (car limits) 1) (floor octagon-diameter 6))
+				       ,(- (aref (cadddr limits) 0) (aref (caddr limits) 0))
+				       ,(+ (- (aref (cadr limits) 1) (aref (car limits) 1))
+					   (floor octagon-diameter 6))
+				       :surface field))
+
+     ,(eval echelon)
+     amplifier-surface
      
      ))
 
@@ -94,32 +100,33 @@
 
 (defparameter team ;;todo will break on friendly air. Need to shift symbol down before doing ech
   '(let*
-    ((diameter (floor octagon-diameter 6))
-     (radius (floor diameter 2))
+    (
+     
      (x-position (floor (- (aref e 0) (aref w 0)) 2))
      (y-position 0);;(- (aref n 1) radius))
      (line-width (ceiling line-width 2))
      (temp-mask (sdl:create-surface field-width field-height :color-key sdl:*red*)))
+    
     (sdl:fill-surface sdl:*red* :surface temp-mask)
     (sdl:draw-filled-circle (sdl:point
 			     :x x-position
-			     :y (+ y-position radius))
-     radius
+			     :y (+ y-position echelon-radius))
+     echelon-radius
      :surface temp-mask :color line-color)
     (sdl:draw-filled-circle (sdl:point
 			     :x x-position
-			     :y (+ y-position radius))
-     (- radius (* 2 line-width))
+			     :y (+ y-position echelon-radius))
+     (- echelon-radius (* 2 line-width))
      :surface temp-mask :color color-key)
     (sdl:draw-filled-polygon (list
-			      (sdl:point :x (- x-position radius)
-					 :y (+ y-position diameter))
-			      (sdl:point :x (- (+ x-position radius) line-width)
+			      (sdl:point :x (- x-position echelon-radius)
+					 :y (+ y-position echelon-diameter))
+			      (sdl:point :x (- (+ x-position echelon-radius) line-width)
 					 :y y-position)
-			      (sdl:point :x (+ x-position radius)
+			      (sdl:point :x (+ x-position echelon-radius)
 					 :y y-position)
-			      (sdl:point :x (+ (- x-position radius) line-width)
-					 :y (+ y-position diameter)))
+			      (sdl:point :x (+ (- x-position echelon-radius) line-width)
+					 :y (+ y-position echelon-diameter)))
      :surface temp-mask :color line-color)
     (sdl:blit-surface temp-mask amplifier-surface)
     (sdl:free temp-mask)
@@ -146,7 +153,7 @@
 
 		 (setf field-symbol
 		       (create-nato-symbol octagon-diameter friendly land (infantry mountain)))
-		 
+
 		 
 		 (sdl:draw-surface field-symbol :surface main-win)
 		 (sdl:free field-symbol)
