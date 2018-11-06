@@ -7,16 +7,13 @@
 (ql:quickload :lispbuilder-sdl-gfx)
 
 (defvar *testunit* nil)
-(defstruct tarmy
-  (x) (y)
-  (graphics))
 
 (defun set-test-unit (oct-diam)
   (format t "~%Setting up testunit~&")
   (counter-gen:nato-dimension-init oct-diam)
   (setf *testunit*
-	(make-tarmy :x 2 :y 0
-		    :graphics
+	(unit:make-army :x 2 :y 0
+		    :counter
 		    (make-graphics :surface
 				   (counter-gen:create-nato-symbol
 				    oct-diam counter-gen:friendly counter-gen:land
@@ -79,6 +76,7 @@
 
     (load-tiles)
 
+    (counter-gen:nato-color-init)
     (set-test-unit 50) ;; testing army graphics
 
     (let ((x-shift 0) (y-shift 0)
@@ -255,9 +253,9 @@
 					  (cdr selected-tile))
 				    20 x-shift y-shift
 				    selector-tile))
-  (draw-at (tarmy-x *testunit*) (tarmy-y *testunit*)
+  (draw-at (unit:army-x *testunit*) (unit:army-y *testunit*)
 	   x-shift y-shift
-	   (tarmy-graphics *testunit*)) ;; Well that was easy... wtf was my problem yesterday..
+	   (unit:army-counter *testunit*)) ;; Well that was easy... wtf was my problem yesterday..
   )
 
 (defun draw-at (x y x-shift y-shift graphics)

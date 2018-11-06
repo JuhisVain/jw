@@ -3,13 +3,14 @@
 (defpackage #:wtool
   (:use #:cl))
 
-(defpackage #:war-army
+(defpackage #:unit
   (:use #:cl)
   (:export :army
-           :make-army))
+           :make-army
+	   :army-x :army-y :army-counter))
 
 (defpackage #:war
-  (:use #:cl :war-army))
+  (:use #:cl))
 
 (defpackage #:counter-gen
   (:use :cl)
@@ -18,5 +19,6 @@
 	   :friendly :neutral :unknown :hostile
 	   :land :air
 	   :infantry :anti-tank :air-defense
-	   :mountain))
+	   :mountain
+	   :nato-color-init))
 

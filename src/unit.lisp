@@ -1,4 +1,4 @@
-(in-package #:war-army)
+(in-package #:unit)
 
 (defstruct army
   (x) (y)
