@@ -7,18 +7,22 @@
 (ql:quickload :lispbuilder-sdl-gfx)
 
 (defvar *testunit* nil)
+(defvar *current-move-area* nil)
 
 (defun set-test-unit (oct-diam)
   (format t "~%Setting up testunit~&")
   (counter-gen:nato-dimension-init oct-diam)
   (setf *testunit*
-	(unit:make-army :x 2 :y 0
-		    :counter
-		    (make-graphics :surface
-				   (counter-gen:create-nato-symbol
-				    oct-diam counter-gen:friendly counter-gen:land
-				    (counter-gen:infantry counter-gen:mountain))
-				   :x-at 26 :y-at 8))))
+	(make-army :x 0 :y 0
+		   :id 666
+		   :movement 25
+		   :counter
+		   (make-graphics :surface
+				  (counter-gen:create-nato-symbol
+				   oct-diam counter-gen:friendly counter-gen:land
+				   (counter-gen:infantry counter-gen:mountain))
+				  :x-at 26 :y-at 8)))
+  (place-unit *testunit* 10 8))
 
 (defstruct graphics
   (surface nil)
@@ -81,7 +85,8 @@
 
     (let ((x-shift 0) (y-shift 0)
 	  (selector-tile '(0 . 0)) (selector-graphics '(0 . 0))
-	  (selected-tile nil) (selected-graphics nil))
+	  (selected-tile nil) (selected-graphics nil)
+	  (selected-unit nil))
 
 	  (sdl:with-events ()
 	    (:quit-event () t)
@@ -108,7 +113,17 @@
 		   ((equal button sdl:sdl-button-left)
 		    (setf selected-tile selector-tile)
 		    (setf selected-graphics selector-graphics)
-		    (format t "~&Selected ~a~%" selected-tile))
+		    (format t "~&Selected ~a~%" selected-tile)
+		    (cond ((null selected-unit)
+			   (setf selected-unit (car (tile-units ;; take the first unit from list
+						     (aref (world-map *world*)
+							   (car selected-tile)
+							   (cdr selected-tile))))))
+			  
+			  ((gethash selected-tile *current-move-area*)
+			   (place-unit selected-unit
+				       (car selected-tile)
+				       (cdr selected-tile)))))
 
 		   ((equal button sdl:sdl-button-wheel-up)
 		    (set-tile-size 'large))
@@ -119,7 +134,7 @@
 
 		   (draw-world x-shift y-shift
 			       selector-graphics selector-tile
-			       selected-tile)
+			       selected-tile selected-unit)
 		   (sdl:update-display)
 		   )))))
 
@@ -208,9 +223,9 @@
 			    (heap-insert frontier neighbour move-cost)
 			    (setf (gethash neighbour came-from)
 				  (cons move-cost (cdr current)))))))))))
-    came-from))
+    (setf *current-move-area* came-from)))
 
-(defun draw-world (x-shift y-shift selector-graphics selector-tile selected-tile)
+(defun draw-world (x-shift y-shift selector-graphics selector-tile selected-tile selected-unit)
 
   (let* ((draw-count 0)
 	 (x-start-void (floor x-shift (car tile-size)))
@@ -242,20 +257,20 @@
       (draw-tile x y x-shift y-shift)
 
       (incf y)
-      
       ))
   
   (sdl:draw-surface-at-*
    (graphics-surface (eval selector))
    (car selector-graphics) (cdr selector-graphics))
   (draw-coords (car selector-tile) (cdr selector-tile) x-shift y-shift)
-  (if selected-tile (draw-move-area (cons (car selected-tile)
-					  (cdr selected-tile))
-				    20 x-shift y-shift
+  (if selected-unit (draw-move-area (cons (army-x selected-unit)
+					  (army-y selected-unit))
+				    (army-movement selected-unit)
+				    x-shift y-shift
 				    selector-tile))
-  (draw-at (unit:army-x *testunit*) (unit:army-y *testunit*)
+  (draw-at (army-x *testunit*) (army-y *testunit*)
 	   x-shift y-shift
-	   (unit:army-counter *testunit*)) ;; Well that was easy... wtf was my problem yesterday..
+	   (army-counter *testunit*))
   )
 
 (defun draw-at (x y x-shift y-shift graphics)
@@ -291,6 +306,10 @@
   ;; Draw tile's variant list
   (dolist (variant (tile-variant (aref (world-map *world*) x y)))
     (draw-at x y x-shift y-shift (eval variant)))
+
+  (dolist (unit (tile-units (aref (world-map *world*) x y)))
+    (draw-at x y x-shift y-shift (army-counter unit)))
+  
   )
 
 (defun draw-coords (x y x-shift y-shift)

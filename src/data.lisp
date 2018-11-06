@@ -19,3 +19,19 @@
   (road-links nil)
   (rail-links nil)
   (units nil))
+
+
+(defstruct army
+  (id)
+  (x) (y)
+  (movement)
+  (counter))
+
+(defun place-unit (unit x y)
+  (setf (tile-units (aref (world-map *world*) (army-x unit) (army-y unit)))
+	(delete unit
+		(tile-units (aref (world-map *world*) (army-x unit) (army-y unit)))
+		:test #'eq))
+  (setf (army-x unit) x)
+  (setf (army-y unit) y)
+  (push unit (tile-units (aref (world-map *world*) x y))))

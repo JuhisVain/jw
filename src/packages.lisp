@@ -3,11 +3,11 @@
 (defpackage #:wtool
   (:use #:cl))
 
-(defpackage #:unit
-  (:use #:cl)
-  (:export :army
-           :make-army
-	   :army-x :army-y :army-counter))
+;;(defpackage #:unit
+;;  (:use #:cl)
+;;  (:export :army
+;;           :make-army
+;;	   :army-x :army-y :army-counter))
 
 (defpackage #:war
   (:use #:cl))
