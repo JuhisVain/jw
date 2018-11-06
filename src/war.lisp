@@ -6,6 +6,23 @@
 (ql:quickload :lispbuilder-sdl-ttf)
 (ql:quickload :lispbuilder-sdl-gfx)
 
+(defvar *testunit* nil)
+(defstruct tarmy
+  (x) (y)
+  (graphics))
+
+(defun set-test-unit (oct-diam)
+  (format t "~%Setting up testunit~&")
+  (counter-gen:nato-dimension-init oct-diam)
+  (setf *testunit*
+	(make-tarmy :x 2 :y 0
+		    :graphics
+		    (make-graphics :surface
+				   (counter-gen:create-nato-symbol
+				    oct-diam counter-gen:friendly counter-gen:land
+				    (counter-gen:infantry counter-gen:mountain))
+				   :x-at 26 :y-at 8))))
+
 (defstruct graphics
   (surface nil)
   (x-at 0)  ; modifiers for drawing
@@ -61,6 +78,8 @@
     (sdl:initialise-default-font)
 
     (load-tiles)
+
+    (set-test-unit 50) ;; testing army graphics
 
     (let ((x-shift 0) (y-shift 0)
 	  (selector-tile '(0 . 0)) (selector-graphics '(0 . 0))
@@ -123,7 +142,6 @@
 
 (defun draw-move-area (start move-range x-shift y-shift end)
   (let ((move-area (move-area start move-range)))
-    
     (labels ((draw-path (current)
 	       (let* ((next (cdr (gethash current move-area)))
 		     (current-g (tc-gc current
@@ -137,8 +155,6 @@
 					 (+ (cdr next-g) (floor (cdr tile-size) 2))
 					 :color sdl:*white*)
 			(draw-path next))))))
-
-      
 
       (maphash #'(lambda (key value)
 		   (draw-string-at (car key) (cdr key)
@@ -239,6 +255,9 @@
 					  (cdr selected-tile))
 				    20 x-shift y-shift
 				    selector-tile))
+  (draw-at (tarmy-x *testunit*) (tarmy-y *testunit*)
+	   x-shift y-shift
+	   (tarmy-graphics *testunit*)) ;; Well that was easy... wtf was my problem yesterday..
   )
 
 (defun draw-at (x y x-shift y-shift graphics)

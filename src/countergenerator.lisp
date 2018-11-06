@@ -1,3 +1,5 @@
+(in-package :counter-gen)
+
 (ql:quickload :lispbuilder-sdl)
 (ql:quickload :lispbuilder-sdl-gfx)
 
@@ -37,6 +39,7 @@
 	 )
      (sdl:fill-surface color-key :surface final-mask)
      (sdl:clear-display color-key :surface field-surface)
+     (format t "~&Creating nato symbol with: ~a~%" octagon-diameter)
      
      ,(eval affiliation)
      ,(eval dimension)
@@ -132,7 +135,39 @@
     (sdl:free temp-mask)
     ))
 
-(defun nato-gen (octagon-diameter)
+
+(defun nato-gen (octagon-diameter affiliation dimension icon-list)
+  (let ((line-color) (line-width) (fill-color)
+	(field-surface (sdl:create-surface (compute-field-width octagon-diameter)
+					   (compute-field-height octagon-diameter)
+					   :color-key color-key))
+	;;(n) (ne) (e) (se) (s) (sw) (w) (nw)
+	(final-mask (sdl:create-surface (compute-field-width octagon-diameter)
+					(compute-field-height octagon-diameter)
+					:color-key sdl:*red*))
+	)
+    ;;(declare (special n ne e se s sw w nw))
+    (sdl:fill-surface color-key :surface final-mask)
+    (sdl:clear-display color-key :surface field-surface)
+
+    (format t "~&Affiliation:~%")
+    affiliation
+    (format t "~&Dimension:~%")
+    dimension
+
+    (format t "~&~a ~a ~aVoodoo:~%" n ne e)
+    `(progn ,@(mapcar #'eval icon-list)) ;; ooga booga
+
+    (format t "~&Drawing:~%")
+    ;; Draw field here:
+    (sdl:blit-surface final-mask field-surface) ;; <- modifies second by first arg
+    (sdl:free final-mask)
+
+    (format t "~&Returning:~%")
+    field-surface))
+
+
+(defun test-nato-gen (octagon-diameter)
   (nato-dimension-init octagon-diameter)
   (nato-color-init)
   (let ((width 500)
@@ -140,25 +175,37 @@
     (sdl:with-init ()
       (let ((main-win (sdl:window width height :title-caption "counter generator test"))
 	    (field-symbol))
-	(setf (sdl:frame-rate) 10)
+	(setf (sdl:frame-rate) 1)
 	(sdl:clear-display sdl:*white*)
 	
 	(sdl:with-events ()
 	  (:quit-event () t)
 
 	  (:idle ()
-
+		 ;;(sdl:save-image (nato-gen octagon-diameter 'friendly 'land '(infantry mountain))
+		;;		 "test.bmp")
 		 (sdl:draw-rectangle-* 0 0 field-width field-height
 				       :surface main-win :color sdl:*red*)
 
 		 (setf field-symbol
-		       (create-nato-symbol octagon-diameter friendly land (infantry mountain)))
+		       (create-nato-symbol 100 friendly land (infantry mountain)))
+		       ;;(nato-gen octagon-diameter 'friendly 'land '(infantry mountain)))
 
 		 
 		 (sdl:draw-surface field-symbol :surface main-win)
 		 (sdl:free field-symbol)
 		 
 		 (sdl:update-display)))))))
+
+(defun lines-and-colors (affiliation)
+  (cond ((equal affiliation 'friendly)
+	 '(black 2 blue))
+	((equal affiliation 'neutral)
+	 '(black 2 green))
+	((equal affiliation 'unknown)
+	 '(black 2 yellow))
+	((equal affiliation 'hostile)
+	 '(black 2 red))))
 
 (defparameter friendly '(progn
 			 (setf line-color black)
@@ -180,7 +227,8 @@
 			(setf line-width 2)
 			(setf fill-color red)))
 
-(defparameter land '(cond ;; not the most elegant solution
+(defparameter land '(progn
+		     (cond ;; not the most elegant solution
 		     ((equal affiliation friendly) ;; The final mask will need to be set up in these
 		      (setf ne p-ne-rect) (setf se p-se-rect)
 		      (setf sw p-sw-rect) (setf nw p-nw-rect)
@@ -315,7 +363,7 @@
 			(shift-coord e (- line-width) 0)
 			(shift-coord s 0 (- line-width))
 			(shift-coord w line-width 0))
-		       :surface field-surface :color fill-color))))
+		       :surface field-surface :color fill-color)))))
 
 (defparameter air '(cond ((equal affiliation friendly)
 			  (setf sw p-sw-posarc) (setf se p-se-posarc)
@@ -466,6 +514,11 @@
 	 (arc-x (* 1.1 octagon-radius)) ;; The x-coordinates for negative and positive arc beginnings
 
 	 )
+
+    (defparameter n nil) (defparameter ne nil)
+    (defparameter e nil) (defparameter se nil)
+    (defparameter s nil) (defparameter sw nil)
+    (defparameter w nil) (defparameter nw nil)
 
     (defparameter field-width (floor (* octagon-diameter 1.5)))
     (defparameter field-height (floor (* octagon-diameter 1.74)))
