@@ -12,17 +12,18 @@
 (defun set-test-unit (oct-diam)
   (format t "~%Setting up testunit~&")
   (counter-gen:nato-dimension-init oct-diam)
-  (setf *testunit*
-	(make-army :x 0 :y 0
-		   :id 666
-		   :movement 25
-		   :counter
-		   (make-graphics :surface
-				  (counter-gen:create-nato-symbol
-				   oct-diam counter-gen:friendly counter-gen:land
-				   (counter-gen:infantry counter-gen:mountain))
-				  :x-at 26 :y-at 8)))
-  (place-unit *testunit* 10 8))
+  (cond ((null *testunit*)
+	 (setf *testunit*
+	       (make-army :x 0 :y 0
+			  :id 666
+			  :movement 25
+			  :counter
+			  (make-graphics :surface
+					 (counter-gen:create-nato-symbol
+					  oct-diam counter-gen:friendly counter-gen:land
+					  (counter-gen:infantry counter-gen:mountain))
+					 :x-at 26 :y-at 8)))
+	 (place-unit *testunit* 10 8))))
 
 (defstruct graphics
   (surface nil)
@@ -184,7 +185,7 @@
   ;; return currently the came-from hash table with (cons x1 y1) as key
   ;;   value is (movement-left-after-this-move (cons x0 y0))
   
-;;?????
+;;????? SHOULD BE FIXED NOW with declare specials
   ;;;;; engine must first be initialized by running test-init and test
   ;; then ->
   ;; ???Function must be compiled before tile-type shadowing will work
@@ -198,11 +199,13 @@
 
 	(frontier (make-heap))
 	(came-from (make-hash-table :test 'equal)))
+    (declare (special sea) (special grass))
     (heap-insert frontier start move-range)
     (setf (gethash start came-from) `(,move-range nil))
 
     (do ((current))
 	((heap-empty frontier))
+
       (setf current (heap-remove-max frontier))
 
       (if (> (car current) 0)
