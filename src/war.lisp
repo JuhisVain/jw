@@ -91,8 +91,9 @@
 
 	  (sdl:with-events ()
 	    (:quit-event () t)
-	    (:key-down-event ()
-			     (sdl:push-quit-event))
+	    (:key-down-event (:key keyb :mod keyb-mod)
+			     (format t "~&Key: ~a, mod: ~a~%" keyb keyb-mod)
+			     (case keyb ((:sdl-key-escape) (setf selected-unit nil))))
 
 	    (:mouse-motion-event (:x x :y y)
 				 (setf selector-tile

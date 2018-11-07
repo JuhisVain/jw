@@ -34,4 +34,4 @@
 		:test #'eq))
   (setf (army-x unit) x)
   (setf (army-y unit) y)
-  (push unit (tile-units (aref (world-map *world*) x y))))
+  (pushnew unit (tile-units (aref (world-map *world*) x y))))
