@@ -12,7 +12,7 @@
 (defun set-test-unit (oct-diam)
   (format t "~%Setting up testunit~&")
   (counter-gen:nato-dimension-init oct-diam)
-  (cond ((null *testunit*)
+  (cond (t ;; WARNING! Set to create new armies at (10,8) everytime (test) runs
 	 (setf *testunit*
 	       (make-army :x 0 :y 0
 			  :id 666
@@ -137,6 +137,7 @@
 		   (draw-world x-shift y-shift
 			       selector-graphics selector-tile
 			       selected-tile selected-unit)
+		   (draw-panel selected-tile)
 		   (sdl:update-display)
 		   )))))
 
