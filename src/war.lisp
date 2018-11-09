@@ -21,8 +21,8 @@
 			  :counter
 			  (make-graphics :surface
 					 (counter-gen:create-nato-symbol
-					  oct-diam counter-gen:friendly counter-gen:air
-					  (counter-gen:anti-tank counter-gen:mountain))
+					  oct-diam counter-gen:friendly counter-gen:land
+					  (counter-gen:infantry counter-gen:mountain))
 					 :x-at 26 :y-at 8)))
 	 (place-unit *testunit* 10 8))))
 
@@ -124,6 +124,7 @@
 							   (cdr selected-tile))))))
 			  
 			  ((gethash selected-tile *current-move-area*)
+			   (format t "~&selected-tile ~a found in hashtable~%" selected-tile)
 			   (place-unit selected-unit
 				       (car selected-tile)
 				       (cdr selected-tile)))))
@@ -516,7 +517,11 @@
     world))
 
 (defun tile-at (x y &optional (world *world*))
-  (aref (world-map world) x y))
+  "Returns struct tile at (x,y) or nil on failure"
+  (and (>= x 0) (>= y 0)
+       (< x (array-dimension (world-map world) 0))
+       (< y (array-dimension (world-map world) 1))
+       (aref (world-map world) x y)))
 
 (defun neighbour-tile (here-x here-y direction &optional (world *world*))
   (let ((neighbour-coords (neighbour-tile-coords here-x here-y direction world)))

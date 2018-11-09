@@ -19,9 +19,10 @@
   (draw-unit-list selected-tile))
 
 (defun draw-unit-list (selected-tile)
-  (if (null selected-tile) (return-from draw-unit-list))
-  (do* ((unit-list (tile-units (aref (world-map *world*)
-				     (car selected-tile) (cdr selected-tile)))
+  (if (or (null selected-tile) (< (car selected-tile) 0) (< (cdr selected-tile) 0))
+      (return-from draw-unit-list))
+  (do* ((unit-list (tile-units (tile-at
+				(car selected-tile) (cdr selected-tile)))
 		   (cdr unit-list))
 	(unit (car unit-list) (car unit-list))
 	(unit-shift 0 (+ unit-shift 100)))
