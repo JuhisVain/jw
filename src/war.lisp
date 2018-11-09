@@ -12,7 +12,8 @@
 (defun set-test-unit (oct-diam)
   (format t "~%Setting up testunit~&")
   (counter-gen:nato-dimension-init oct-diam)
-  (cond (t ;; WARNING! Set to create new armies at (10,8) everytime (test) runs
+  (cond (;;t ;; if t -> set to create new armies at (10,8) everytime (test) runs
+	 (null *testunit*) ;; no more units created
 	 (setf *testunit*
 	       (make-army :x 0 :y 0
 			  :id 666
@@ -20,8 +21,8 @@
 			  :counter
 			  (make-graphics :surface
 					 (counter-gen:create-nato-symbol
-					  oct-diam counter-gen:friendly counter-gen:land
-					  (counter-gen:infantry counter-gen:mountain))
+					  oct-diam counter-gen:friendly counter-gen:air
+					  (counter-gen:anti-tank counter-gen:mountain))
 					 :x-at 26 :y-at 8)))
 	 (place-unit *testunit* 10 8))))
 
@@ -273,9 +274,6 @@
 				    (army-movement selected-unit)
 				    x-shift y-shift
 				    selector-tile))
-  (draw-at (army-x *testunit*) (army-y *testunit*)
-	   x-shift y-shift
-	   (army-counter *testunit*))
   )
 
 (defun draw-at (x y x-shift y-shift graphics)
