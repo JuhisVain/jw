@@ -495,7 +495,7 @@
 
       (format t "~&~a,~a" x y)
 
-      (if (not (equal (aref (world-map world) x y) 'sea)) ; don't do for sea tiles
+      (if (not (eq (tile-type (tile-at x y world)) 'sea)) ; don't do for sea tiles
 	  (dolist (direction (list 'N 'NE 'SE 'S 'SW 'NW))
 	    (format t "doing list~%")
 	    (let ((neighbour-tile (neighbour-tile-coords x y direction world)))
