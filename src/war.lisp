@@ -439,31 +439,35 @@
 	 (defparameter grass grass-small))))
 
 (defun add-river (tile-x tile-y size direction &optional (recursion t))
-  (let ((river-symbol
-	 (intern
-	  (concatenate 'string
-		       (string-upcase (symbol-name size)) "-"
-		       (string-upcase (symbol-name direction))))))
-    ;; Logic rivers
-    (pushnew river-symbol
-	     (tile-river-borders (aref (world-map *world*) tile-x tile-y)))
-    ;; Graphic rivers
-    (if (member direction '(N SW NW))
-	(pushnew river-symbol
-		 (tile-variant (aref (world-map *world*) tile-x tile-y))))
+  (let ((tile-neighbour (neighbour-tile tile-x tile-y direction)))
+    (if (eq 'sea (tile-type tile-neighbour))
+	(return-from add-river)) ;; No rivers in sea
+    (let ((tile (tile-at tile-x tile-y))
+	  (river-symbol
+	   (intern
+	    (concatenate 'string
+			 (string-upcase (symbol-name size)) "-"
+			 (string-upcase (symbol-name direction))))))
+      ;; Logic rivers
+      (pushnew river-symbol
+	       (tile-river-borders tile))
+      ;; Graphic rivers
+      (if (member direction '(N SW NW))
+	  (pushnew river-symbol
+		   (tile-variant tile)))
 
-    (if recursion
-	(let ((opposing
-	       (neighbour-tile-coords tile-x tile-y direction *world*)))
-	  (add-river (car opposing) (cdr opposing) size
-		     (cond ((eq direction 'N) 'S)
-			   ((eq direction 'NE) 'SW)
-			   ((eq direction 'NW) 'SE)
-			   ((eq direction 'S) 'N)
-			   ((eq direction 'SE) 'NW)
-			   ((eq direction 'SW) 'NE))
-		     nil)))))
-  
+      (if recursion
+	  (let ((opposing
+		 (neighbour-tile-coords tile-x tile-y direction *world*)))
+	    (add-river (car opposing) (cdr opposing) size
+		       (cond ((eq direction 'N) 'S)
+			     ((eq direction 'NE) 'SW)
+			     ((eq direction 'NW) 'SE)
+			     ((eq direction 'S) 'N)
+			     ((eq direction 'SE) 'NW)
+			     ((eq direction 'SW) 'NE))
+		       nil))))))
+
 
 (defun create-rivers ()
   )
@@ -510,6 +514,13 @@
 		 (setf y 0))))
 
     world))
+
+(defun tile-at (x y &optional (world *world*))
+  (aref (world-map world) x y))
+
+(defun neighbour-tile (here-x here-y direction &optional (world *world*))
+  (let ((neighbour-coords (neighbour-tile-coords here-x here-y direction world)))
+    (aref (world-map world) (car neighbour-coords) (cdr neighbour-coords))))
 
 (defun neighbour-tile-coords (here-x here-y direction world)
   (let* ((map-width (1- (array-dimension (world-map world) 0)))
