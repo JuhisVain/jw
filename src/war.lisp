@@ -124,7 +124,6 @@
 							   (cdr selected-tile))))))
 			  
 			  ((gethash selected-tile *current-move-area*)
-			   (format t "~&selected-tile ~a found in hashtable~%" selected-tile)
 			   (place-unit selected-unit
 				       (car selected-tile)
 				       (cdr selected-tile)))))
@@ -236,13 +235,13 @@
 
   (let* ((draw-count 0)
 	 (x-start-void (floor x-shift (car tile-size)))
-	 (x-start (if (> (+ x-shift (car tile-size)) 0) 0
+	 (x-start (if (>= (+ x-shift (car tile-size)) 0) 0
 		      (- (abs x-start-void) 2)))
 	 (x-end (min
 		 (+ (- x-start-void) (floor (sdl:width window) (car tile-size)))
 		 (1- (array-dimension (world-map *world*) 0)))) ;; The last column
 	 (y-start-void (floor y-shift (cdr tile-size)))
-	 (y-start (min (if (> (+ y-shift (cdr tile-size)) 0) 0
+	 (y-start (min (if (>= (+ y-shift (cdr tile-size)) 0) 0
 			   (- (abs y-start-void) 2))
 		       (1- (array-dimension (world-map *world*) 1))))
 	 (y-end (min
