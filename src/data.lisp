@@ -24,6 +24,7 @@
 (defstruct army
   (id)
   (x) (y)
+  (troops)
   (movement)
   (counter))
 
