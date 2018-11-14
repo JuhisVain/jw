@@ -20,5 +20,6 @@
 	   :land :air
 	   :infantry :anti-tank :air-defense
 	   :mountain
-	   :nato-color-init))
+	   :nato-color-init
+	   :cns-fun))
 

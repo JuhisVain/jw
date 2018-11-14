@@ -31,7 +31,7 @@
 			   (- (sdl:width window) *panel-width*)
 			   (+ 0 unit-shift)
 			   :surface window)
-    (format t "drawing at: ~a ~a ~%" (+ (- (sdl:width window) *panel-width*) 150) (+ 125 unit-shift))
+
     (sdl:draw-string-solid-* (write-to-string (car (army-troops unit)))
 			     (+ (- (sdl:width window) *panel-width*) 100)
 			     (+ 25 unit-shift)

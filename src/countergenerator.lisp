@@ -24,6 +24,66 @@
   (mobility)    ;; Wheeled, halftrack etc..
   (hq))         ;;
 
+(defvar *generation-list*
+  (list
+   :field-surface nil
+   :final-mask nil
+   :affiliation nil
+   :dimension nil
+   :icon-list nil
+   :line-color nil
+   :line-width nil
+   :fill-color nil
+   :n nil
+   :ne nil
+   :e nil
+   :se nil
+   :s nil
+   :sw nil
+   :w nil
+   :nw nil))
+
+(defun cns-fun (octagon-diameter affiliation dimension icon-list)
+  (let ((line-color) (line-width) (fill-color)
+	(field-surface (sdl:create-surface (compute-field-width octagon-diameter)
+					   (compute-field-height octagon-diameter)
+					   :color-key color-key))
+	(affiliation affiliation)
+	(n) (ne) (e) (se) (s) (sw) (w) (nw)
+	(final-mask (sdl:create-surface (compute-field-width octagon-diameter)
+					(compute-field-height octagon-diameter)
+					:color-key sdl:*red*))
+	;;(amplifier-surface)
+	)
+
+    (setf (getf *generation-list* :field-surface) (sdl:create-surface (compute-field-width octagon-diameter)
+								      (compute-field-height octagon-diameter)
+								      :color-key color-key))
+
+    (setf (getf *generation-list* :final-mask) (sdl:create-surface (compute-field-width octagon-diameter)
+								   (compute-field-height octagon-diameter)
+								   :color-key sdl:*red*))
+    
+    (sdl:fill-surface color-key :surface (getf *generation-list* :final-mask))
+    (sdl:clear-display color-key :surface (getf *generation-list* :field-surface))
+
+    ;;(apply (lines-and-colors affiliation)
+    
+    (eval (eval affiliation))
+    (eval (eval dimension))
+
+    (format t "~&n:~a~%" n)
+
+    (mapcar #'eval (mapcar #'eval icon-list))
+		    
+    ;; Draw field here:
+    (sdl:blit-surface final-mask field-surface) ;; <- modifies second by first arg
+    (sdl:free final-mask)
+
+    field-surface
+
+    ))
+
 
 (defmacro create-nato-symbol (octagon-diameter affiliation dimension icon-list)
   `(let ((line-color) (line-width) (fill-color)
@@ -208,6 +268,8 @@
 	 '(black 2 red))))
 
 (defparameter friendly '(progn
+			 (format t "~&'friendly getting evaled~%")
+			 (format t "~&currentl in package: ~a~%" *package*)
 			 (setf line-color black)
 			 (setf line-width 2)
 			 (setf fill-color blue)))
