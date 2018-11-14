@@ -43,46 +43,50 @@
    :w nil
    :nw nil))
 
-(defun cns-fun (octagon-diameter affiliation dimension icon-list)
-  (let ((line-color) (line-width) (fill-color)
-	(field-surface (sdl:create-surface (compute-field-width octagon-diameter)
-					   (compute-field-height octagon-diameter)
-					   :color-key color-key))
-	(affiliation affiliation)
-	(n) (ne) (e) (se) (s) (sw) (w) (nw)
-	(final-mask (sdl:create-surface (compute-field-width octagon-diameter)
-					(compute-field-height octagon-diameter)
-					:color-key sdl:*red*))
-	;;(amplifier-surface)
-	)
+(defparameter line-color nil)
+(defparameter line-width nil)
+(defparameter fill-color nil)
+(defparameter field-surface nil)
+(defparameter affiliation nil)
+(defparameter final-mask nil)
+(defparameter n nil)
+(defparameter ne nil)
+(defparameter nw nil)
+(defparameter s nil)
+(defparameter se nil)
+(defparameter sw nil)
+(defparameter e nil)
+(defparameter w nil)
 
-    (setf (getf *generation-list* :field-surface) (sdl:create-surface (compute-field-width octagon-diameter)
-								      (compute-field-height octagon-diameter)
-								      :color-key color-key))
+(defun cns-fun (octagon-diameter aff-in dimension icon-list)
 
-    (setf (getf *generation-list* :final-mask) (sdl:create-surface (compute-field-width octagon-diameter)
-								   (compute-field-height octagon-diameter)
-								   :color-key sdl:*red*))
-    
-    (sdl:fill-surface color-key :surface (getf *generation-list* :final-mask))
-    (sdl:clear-display color-key :surface (getf *generation-list* :field-surface))
+  (setf field-surface (sdl:create-surface (compute-field-width octagon-diameter)
+					  (compute-field-height octagon-diameter)
+					  :color-key color-key))
+  (setf affiliation aff-in)
+  (setf final-mask (sdl:create-surface (compute-field-width octagon-diameter)
+				       (compute-field-height octagon-diameter)
+				       :color-key sdl:*red*))
+  
+  (sdl:fill-surface color-key :surface final-mask)
+  (sdl:clear-display color-key :surface field-surface)
+  (format t "~&Creating nato symbol with: ~a~%" octagon-diameter)
+  
+  (eval (eval affiliation))
+  (eval (eval dimension))
 
-    ;;(apply (lines-and-colors affiliation)
-    
-    (eval (eval affiliation))
-    (eval (eval dimension))
+  (mapcar #'eval (mapcar #'eval icon-list)) ;; ooga booga, abra kadabara
+  ;; avada kedavra, use the force and what have you
 
-    (format t "~&n:~a~%" n)
+  ;; Draw field here:
+  (sdl:blit-surface final-mask field-surface) ;; <- modifies second by first arg
+  (sdl:free final-mask)
+  ;;(list ,octagon-diameter (list n s w e) field-surface)
 
-    (mapcar #'eval (mapcar #'eval icon-list))
-		    
-    ;; Draw field here:
-    (sdl:blit-surface final-mask field-surface) ;; <- modifies second by first arg
-    (sdl:free final-mask)
+  field-surface
 
-    field-surface
+  )
 
-    ))
 
 
 (defmacro create-nato-symbol (octagon-diameter affiliation dimension icon-list)
@@ -271,6 +275,7 @@
 			 (format t "~&'friendly getting evaled~%")
 			 (format t "~&currentl in package: ~a~%" *package*)
 			 (setf line-color black)
+			 (format t "~&line-colors package ~a~%" (symbol-package 'line-color))
 			 (setf line-width 2)
 			 (setf fill-color blue)))
 
@@ -290,8 +295,9 @@
 			(setf fill-color red)))
 
 (defparameter land '(progn
+		     (format t "~&affiliation: ~a~%" affiliation)
 		     (cond ;; not the most elegant solution
-		     ((equal affiliation friendly) ;; The final mask will need to be set up in these
+		     ((equalp affiliation 'friendly) ;; The final mask will need to be set up in these
 		      (setf ne p-ne-rect) (setf se p-se-rect)
 		      (setf sw p-sw-rect) (setf nw p-nw-rect)
 		      (setf s p-s-octagon) (setf n p-n-octagon)
@@ -309,7 +315,7 @@
 		      (sdl:draw-filled-polygon ;; Final mask
 		       (list nw ne se sw)
 		       :surface final-mask :color sdl:*red*))
-		     ((equal affiliation neutral)
+		     ((equalp affiliation 'neutral)
 		      (setf ne p-ne-box) (setf se p-se-box)
 		      (setf sw p-sw-box) (setf nw p-nw-box)
 		      (setf n p-n-octagon) (setf s p-s-octagon)
@@ -327,7 +333,7 @@
 			(shift-coord se (- line-width) (- line-width))
 			(shift-coord sw line-width (- line-width)))
 		       :surface field-surface :color fill-color))
-		     ((equal affiliation unknown)
+		     ((equalp affiliation 'unknown)
 		      (setf ne p-ne-octagon) (setf se p-se-octagon)
 		      (setf sw p-sw-octagon) (setf nw p-nw-octagon)
 		      (setf n p-n-flower) (setf s p-s-flower)
@@ -408,7 +414,7 @@
 		       (list nw ne se sw)
 		       :surface final-mask :color sdl:*red*)
 		      )
-		     ((equal affiliation hostile)
+		     ((equalp affiliation 'hostile)
 		      (setf n p-n-diamond) (setf s p-s-diamond)
 		      (setf w p-w-diamond) (setf e p-e-diamond)
 		      (setf nw p-nw-octagon) (setf sw p-sw-octagon)
@@ -425,9 +431,10 @@
 			(shift-coord e (- line-width) 0)
 			(shift-coord s 0 (- line-width))
 			(shift-coord w line-width 0))
-		       :surface field-surface :color fill-color)))))
+		       :surface field-surface :color fill-color))
+		     (t (format t "~&Error. Counter generation: Dimension ~a not found.~%" dimension)))))
 
-(defparameter air '(cond ((equal affiliation friendly)
+(defparameter air '(cond ((equal affiliation 'friendly)
 			  (setf sw p-sw-posarc) (setf se p-se-posarc)
 			  (setf s p-s-octagon) (setf n p-n-posarc)
 			  (setf nw p-nw-posarc) (setf ne p-ne-posarc)
