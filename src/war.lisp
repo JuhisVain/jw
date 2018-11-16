@@ -323,7 +323,6 @@
   (dolist (unit (tile-units (aref (world-map *world*) x y)))
     (draw-at x y x-shift y-shift counterbase)
     (draw-at x y x-shift y-shift (army-counter unit)))
-  
   )
 
 (defun draw-coords (x y x-shift y-shift)
@@ -399,6 +398,8 @@
     (tile-graphics-setup sea-large-border-north-west)
     (tile-graphics-setup sea-large-border-north-east)
 
+    (tile-graphics-setup swamp-large)
+
     (tile-graphics-setup stream-large-north-west -2 -2)
     (tile-graphics-setup stream-large-south-west -2 50)
     (tile-graphics-setup stream-large-north 24 -8)
@@ -433,6 +434,8 @@
 	 (defparameter tile-size tile-large-size)
 	 (defparameter sea sea-large)
 	 (defparameter grass grass-large)
+
+	 (defparameter swamp swamp-large)
 
 	 (defparameter coast-s sea-large-border-south)
 	 (defparameter coast-se sea-large-border-south-east)
