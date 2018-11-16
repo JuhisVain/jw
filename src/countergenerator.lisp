@@ -24,25 +24,6 @@
   (mobility)    ;; Wheeled, halftrack etc..
   (hq))         ;;
 
-(defvar *generation-list*
-  (list
-   :field-surface nil
-   :final-mask nil
-   :affiliation nil
-   :dimension nil
-   :icon-list nil
-   :line-color nil
-   :line-width nil
-   :fill-color nil
-   :n nil
-   :ne nil
-   :e nil
-   :se nil
-   :s nil
-   :sw nil
-   :w nil
-   :nw nil))
-
 (defparameter line-color nil)
 (defparameter line-width nil)
 (defparameter fill-color nil)

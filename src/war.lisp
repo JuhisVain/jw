@@ -321,6 +321,7 @@
     (draw-at x y x-shift y-shift (eval variant)))
 
   (dolist (unit (tile-units (aref (world-map *world*) x y)))
+    (draw-at x y x-shift y-shift counterbase)
     (draw-at x y x-shift y-shift (army-counter unit)))
   
   )
@@ -401,6 +402,8 @@
     (tile-graphics-setup stream-large-north-west -2 -2)
     (tile-graphics-setup stream-large-south-west -2 50)
     (tile-graphics-setup stream-large-north 24 -8)
+
+    (tile-graphics-setup counterbase 24 7)
 
 
     ;;TODO small tiles not working
