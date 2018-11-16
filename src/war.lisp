@@ -12,8 +12,8 @@
 (defun set-test-unit (oct-diam)
   (format t "~%Setting up testunit~&")
   (counter-gen:nato-dimension-init oct-diam)
-  (cond (t ;; if t -> set to create new armies at (10,8) everytime (test) runs
-	 ;;(null *testunit*) ;; no more units created
+  (cond (;;t ;; if t -> set to create new armies at (10,8) everytime (test) runs
+	 (null *testunit*) ;; no more units created
 	 (setf *testunit*
 	       (make-army :x 0 :y 0
 			  :id 666
@@ -21,7 +21,7 @@
 			  :counter
 			  (make-graphics :surface
 					 (counter-gen:cns-fun
-					  oct-diam 'counter-gen:friendly 'counter-gen:land
+					  oct-diam 'counter-gen:friendly 'counter-gen:air
 					  '(counter-gen:infantry counter-gen:mountain))
 					 :x-at 26 :y-at 8)))
 	 (place-unit *testunit* 10 8))))
@@ -108,39 +108,49 @@
 	    
 	    (:mouse-button-down-event
 	     (:button button :x x :y y)
-	     (cond ((equal button sdl:sdl-button-right)
-		    (sdl:clear-display sdl:*black*)
-		    (setf x-shift (- x-shift (- x (floor (/ (sdl:width window) 2)))))
-		    (setf y-shift (- y-shift (- y (floor (/ (sdl:height window) 2))))))
-		   
-		   ((equal button sdl:sdl-button-left)
-		    (setf selected-tile selector-tile)
-		    (setf selected-graphics selector-graphics)
-		    (format t "~&Selected ~a~%" selected-tile)
-		    (cond ((null selected-unit)
-			   (setf selected-unit (car (tile-units ;; take the first unit from list
-						     (aref (world-map *world*)
-							   (car selected-tile)
-							   (cdr selected-tile))))))
+	     (cond ((equal 'world (mouse-over-what x y))
+		    (cond ((equal button sdl:sdl-button-right)
+			   (sdl:clear-display sdl:*black*)
+			   (setf x-shift (- x-shift (- x (floor (/ (sdl:width window) 2)))))
+			   (setf y-shift (- y-shift (- y (floor (/ (sdl:height window) 2))))))
 			  
-			  ((gethash selected-tile *current-move-area*)
-			   (place-unit selected-unit
-				       (car selected-tile)
-				       (cdr selected-tile)))))
+			  ((equal button sdl:sdl-button-left)
+			   (setf selected-tile selector-tile)
+			   (setf selected-graphics selector-graphics)
+			   (format t "~&Selected ~a~%" selected-tile)
+			   (cond ((null selected-unit)
+				  (setf selected-unit (car (tile-units ;; take the first unit from list
+							    (aref (world-map *world*)
+								  (car selected-tile)
+								  (cdr selected-tile))))))
+				 
+				 ((gethash selected-tile *current-move-area*)
+				  (place-unit selected-unit
+					      (car selected-tile)
+					      (cdr selected-tile)))))
 
-		   ((equal button sdl:sdl-button-wheel-up)
-		    (set-tile-size 'large))
-		   ((equal button sdl:sdl-button-wheel-down)
-		    (set-tile-size 'small))))
+			  ((equal button sdl:sdl-button-wheel-up)
+			   (set-tile-size 'large))
+			  ((equal button sdl:sdl-button-wheel-down)
+			   (set-tile-size 'small))))
+		   ((equal 'panel (mouse-over-what x y))
+		    (setf selected-unit (select-from-panel y (tile-at
+							      (car selected-tile)
+							      (cdr selected-tile)))))))
 
 	    (:idle ()
 
 		   (draw-world x-shift y-shift
 			       selector-graphics selector-tile
 			       selected-tile selected-unit)
-		   (draw-panel selected-tile)
+		   (draw-panel selected-tile selected-unit)
 		   (sdl:update-display)
 		   )))))
+
+(defun mouse-over-what (mouse-x mouse-y)
+  (if (>= mouse-x (- (sdl:width window) *panel-width*))
+      'panel
+      'world))
 
 (defun tc-gc (tile-coords x-shift y-shift) ;; Tile Coordinate to Graphics Coordinate
   (if (null (car tile-coords)) (return-from tc-gc nil))

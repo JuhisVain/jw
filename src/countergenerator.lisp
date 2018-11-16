@@ -484,6 +484,10 @@
 			   ne)
 			  :surface field-surface :color line-color)))
 
+(defun draw-aa-filled-polygon (vertices surface color) ;; don't use. aa and filled will not align
+  (sdl:draw-aa-polygon vertices :surface surface :color color)
+  (sdl:draw-filled-polygon vertices :surface surface :color color))
+
 ;; wtf is an "air assault with organic lift"? A bird?
 ;; Let's just do the more useful ones...
 (defparameter air-defense '(let ((curve-y-top-shift (- (floor (* 0.3 octagon-diameter)) (- (aref p-s-octagon 1) (aref se 1))))
