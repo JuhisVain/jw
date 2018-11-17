@@ -20,10 +20,14 @@
 			  :movement 25
 			  :counter
 			  (make-graphics :surface
-					 (counter-gen:cns-fun
-					  oct-diam 'counter-gen:friendly 'counter-gen:land
-					  '(counter-gen:infantry counter-gen:mountain))
-					 :x-at 39 :y-at 9)))
+					 ;;(counter-gen:cns-fun
+					 ;; oct-diam 'counter-gen:friendly 'counter-gen:land
+					 ;; '(counter-gen:infantry counter-gen:mountain))
+					 (counter-gen:generate
+					  80 80 oct-diam 'counter-gen:neutral 'counter-gen:land
+					  '(counter-gen:anti-tank counter-gen:mountain)
+					  'team 'half-track)
+					 :x-at 24 :y-at 7)))
 	 (place-unit *testunit* 10 8))))
 
 (defstruct graphics
