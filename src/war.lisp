@@ -12,7 +12,7 @@
 (defun set-test-unit (oct-diam)
   (format t "~%Setting up testunit~&")
   (counter-gen:nato-dimension-init oct-diam)
-  (cond (t ;; if t -> set to create new armies at (10,8) everytime (test) runs
+  (cond (t ;;if t -> set to create new armies at (10,8) everytime (test) runs
 	 ;;(null *testunit*) ;; no more units created
 	 (setf *testunit*
 	       (make-army :x 0 :y 0

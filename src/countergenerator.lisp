@@ -51,54 +51,40 @@
   
   (sdl:fill-surface color-key :surface final-mask)
   (sdl:clear-display color-key :surface field-surface)
-  (format t "~&Creating nato symbol with: ~a~%" octagon-diameter)
   
   (eval (eval affiliation))
   (eval (eval dimension))
 
   (mapcar #'eval (mapcar #'eval icon-list)) ;; ooga booga, abra kadabara
-  ;; avada kedavra, use the force and what have you
 
   ;; Draw field here:
   (sdl:blit-surface final-mask field-surface) ;; <- modifies second by first arg
   (sdl:free final-mask)
-  ;;(list ,octagon-diameter (list n s w e) field-surface)
 
   field-surface
 
   )
 
+(defun generate (counter-width counter-height oct-diameter aff dim icon-list ech mob)
+  (if (not (and (boundp 'octagon-diameter) ;; Do not initialize if diameter already initialized
+		(equalp octagon-diameter oct-diameter)))
+	(nato-dimension-init oct-diameter))
 
+  (let ((nato-symbol (sdl:create-surface counter-width counter-height
+					 :color-key color-key)))
+    (sdl:fill-surface color-key :surface nato-symbol)
 
-(defmacro create-nato-symbol (octagon-diameter affiliation dimension icon-list)
-  `(let ((line-color) (line-width) (fill-color)
-	 (field-surface (sdl:create-surface (compute-field-width ,octagon-diameter)
-					    (compute-field-height ,octagon-diameter)
-					    :color-key color-key))
-	 (affiliation ,affiliation)
-	 (n) (ne) (e) (se) (s) (sw) (w) (nw)
-	 (final-mask (sdl:create-surface (compute-field-width ,octagon-diameter)
-					    (compute-field-height ,octagon-diameter)
-					    :color-key sdl:*red*))
-	 ;;(amplifier-surface)
-	 )
-     (sdl:fill-surface color-key :surface final-mask)
-     (sdl:clear-display color-key :surface field-surface)
-     (format t "~&Creating nato symbol with: ~a~%" octagon-diameter)
-     
-     ,(eval affiliation)
-     ,(eval dimension)
+    (sdl:draw-surface-at (cns-fun octagon-diameter aff dim icon-list)
+			 (sdl:point :x (floor (- counter-width (* 1.5 oct-diameter)) 2)
+				    :y (floor octagon-diameter 6)) ;; Room for echelon
+			 :surface nato-symbol)
+    (sdl:free field-surface)
+    nato-symbol
+    ))
+  
 
-     (progn ,@(mapcar #'eval icon-list)) ;; ooga booga
-
-     ;; Draw field here:
-     (sdl:blit-surface final-mask field-surface) ;; <- modifies second by first arg
-     (sdl:free final-mask)
-     ;;(list ,octagon-diameter (list n s w e) field-surface)
-
-     field-surface
-
-     ))
+(defun cna-fun (echelon mobility octagon-diameter limits field)
+  )
 
 (defmacro create-nato-amplifiers (echelon mobility octagon-diameter limits field)
   (setf limits (eval limits))
@@ -136,6 +122,36 @@
      amplifier-surface
      
      ))
+
+
+(defun test-nato-gen (octagon-diameter1) ;;Don't use the damn dynamic variable names as formal arguments
+  ;;(nato-dimension-init octagon-diameter)
+  (nato-color-init)
+  (let ((width 500)
+	(height 500))
+    (sdl:with-init ()
+      (let ((main-win (sdl:window width height :title-caption "counter generator test"))
+	    (field-symbol))
+	(setf (sdl:frame-rate) 1)
+	(sdl:clear-display sdl:*white*)
+	
+	(sdl:with-events ()
+	  (:quit-event () t)
+
+	  (:idle ()
+		 (sdl:draw-rectangle-* 0 0 field-width field-height
+				       :surface main-win :color sdl:*red*)
+
+		 (setf field-symbol
+		       (generate 200 200 octagon-diameter1 'friendly 'land '(infantry mountain)
+				 'team 'half-track))
+		       ;;(cns-fun octagon-diameter 'friendly 'land '(infantry mountain)))
+		       ;;(nato-gen octagon-diameter 'friendly 'land '(infantry mountain)))
+		 
+		 (sdl:draw-surface field-symbol :surface main-win)
+		 (sdl:free field-symbol)
+		 
+		 (sdl:update-display)))))))
 
 
 ;;(defparameter squad)
@@ -181,67 +197,6 @@
     ))
 
 
-(defun nato-gen (octagon-diameter affiliation dimension icon-list)
-  (let ((line-color) (line-width) (fill-color)
-	(field-surface (sdl:create-surface (compute-field-width octagon-diameter)
-					   (compute-field-height octagon-diameter)
-					   :color-key color-key))
-	;;(n) (ne) (e) (se) (s) (sw) (w) (nw)
-	(final-mask (sdl:create-surface (compute-field-width octagon-diameter)
-					(compute-field-height octagon-diameter)
-					:color-key sdl:*red*))
-	)
-    ;;(declare (special n ne e se s sw w nw))
-    (sdl:fill-surface color-key :surface final-mask)
-    (sdl:clear-display color-key :surface field-surface)
-
-    (format t "~&Affiliation:~%")
-    affiliation
-    (format t "~&Dimension:~%")
-    dimension
-
-    (format t "~&~a ~a ~aVoodoo:~%" n ne e)
-    `(progn ,@(mapcar #'eval icon-list)) ;; ooga booga
-
-    (format t "~&Drawing:~%")
-    ;; Draw field here:
-    (sdl:blit-surface final-mask field-surface) ;; <- modifies second by first arg
-    (sdl:free final-mask)
-
-    (format t "~&Returning:~%")
-    field-surface))
-
-
-(defun test-nato-gen (octagon-diameter)
-  (nato-dimension-init octagon-diameter)
-  (nato-color-init)
-  (let ((width 500)
-	(height 500))
-    (sdl:with-init ()
-      (let ((main-win (sdl:window width height :title-caption "counter generator test"))
-	    (field-symbol))
-	(setf (sdl:frame-rate) 1)
-	(sdl:clear-display sdl:*white*)
-	
-	(sdl:with-events ()
-	  (:quit-event () t)
-
-	  (:idle ()
-		 ;;(sdl:save-image (nato-gen octagon-diameter 'friendly 'land '(infantry mountain))
-		;;		 "test.bmp")
-		 (sdl:draw-rectangle-* 0 0 field-width field-height
-				       :surface main-win :color sdl:*red*)
-
-		 (setf field-symbol
-		       (create-nato-symbol 100 friendly land (infantry mountain)))
-		       ;;(nato-gen octagon-diameter 'friendly 'land '(infantry mountain)))
-
-		 
-		 (sdl:draw-surface field-symbol :surface main-win)
-		 (sdl:free field-symbol)
-		 
-		 (sdl:update-display)))))))
-
 (defun lines-and-colors (affiliation)
   (cond ((equal affiliation 'friendly)
 	 '(black 2 blue))
@@ -253,10 +208,7 @@
 	 '(black 2 red))))
 
 (defparameter friendly '(progn
-			 (format t "~&'friendly getting evaled~%")
-			 (format t "~&currentl in package: ~a~%" *package*)
 			 (setf line-color black)
-			 (format t "~&line-colors package ~a~%" (symbol-package 'line-color))
 			 (setf line-width 2)
 			 (setf fill-color blue)))
 
@@ -276,7 +228,6 @@
 			(setf fill-color red)))
 
 (defparameter land '(progn
-		     (format t "~&affiliation: ~a~%" affiliation)
 		     (cond ;; not the most elegant solution
 		     ((equalp affiliation 'friendly) ;; The final mask will need to be set up in these
 		      (setf ne p-ne-rect) (setf se p-se-rect)
@@ -554,10 +505,11 @@
 (defun compute-field-height (octagon-diameter)
   (floor (* octagon-diameter 1.74)))
 
-(defun nato-dimension-init (octagon-diameter)
-  (let* ((x-shift (* 0.75 octagon-diameter)) ;; refers to north vertex of central octagon
-	 (y-shift (* 0.37 octagon-diameter)) ;; -''-
-	 (octagon-radius (/ octagon-diameter 2))
+(defun nato-dimension-init (octagon-diameter-arg)
+  (format t "~&nato-dimension-init ~a~%" octagon-diameter-arg)
+  (let* ((x-shift (* 0.75 octagon-diameter-arg)) ;; refers to north vertex of central octagon
+	 (y-shift (* 0.37 octagon-diameter-arg)) ;; -''-
+	 (octagon-radius (/ octagon-diameter-arg 2))
 	 (sin45 (* (sin (* pi 1/4)) octagon-radius))
 	 (sin45b (- octagon-radius sin45))
 	 (diamond-extrusion (- (sqrt (* octagon-radius octagon-radius 2))
@@ -574,11 +526,11 @@
     (defparameter s nil) (defparameter sw nil)
     (defparameter w nil) (defparameter nw nil)
 
-    (defparameter field-width (floor (* octagon-diameter 1.5)))
-    (defparameter field-height (floor (* octagon-diameter 1.74)))
+    (defparameter field-width (floor (* octagon-diameter-arg 1.5)))
+    (defparameter field-height (floor (* octagon-diameter-arg 1.74)))
 
     (defparameter p-centre-octagon (sdl:point :x x-shift :y (+ y-shift octagon-radius)))
-    (defparameter octagon-diameter octagon-diameter)
+    (defparameter octagon-diameter octagon-diameter-arg)
     (defparameter octagon-radius (/ octagon-diameter 2))
     
     ;; Origin is top vertex of octagon
