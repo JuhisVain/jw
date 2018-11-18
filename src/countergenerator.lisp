@@ -139,11 +139,10 @@
 	  (:quit-event () t)
 
 	  (:idle ()
-		 (sdl:draw-rectangle-* 0 0 field-width field-height
-				       :surface main-win :color sdl:*red*)
+		 
 
 		 (setf field-symbol
-		       (generate 200 200 octagon-diameter1 'friendly 'land '(infantry mountain)
+		       (generate 200 200 octagon-diameter1 'friendly 'air '(infantry mountain)
 				 'team 'half-track))
 		       ;;(cns-fun octagon-diameter 'friendly 'land '(infantry mountain)))
 		       ;;(nato-gen octagon-diameter 'friendly 'land '(infantry mountain)))
@@ -151,7 +150,12 @@
 		 (sdl:draw-surface field-symbol :surface main-win)
 		 (sdl:free field-symbol)
 		 
-		 (sdl:update-display)))))))
+		 (sdl:update-display)
+
+		 (sdl:draw-rectangle-* 0 0 field-width field-height
+				       :surface main-win :color sdl:*red*)
+		 
+		 ))))))
 
 
 ;;(defparameter squad)
@@ -471,16 +475,18 @@
 ;; it behaves more like a full frame icon as bottom must touch frame bottom
 ;; hostile non air/space requires some tricks
 (defparameter mountain '(let ((icon-size (* 0.3 octagon-diameter))
-			      (icon-bottom-y
-			       (cond ((equal affiliation 'hostile)
-				      (eval 666)) ;; TODO calculate y of base vertexes
-				     (t (aref s 1)))))
+;;			      (icon-bottom-y
+;;			       (cond ((equal affiliation 'hostile)
+;;				      (eval 666)) ;; TODO calculate y of base vertexes
+;;				     (t (aref s 1))))
+			      )
 			 (sdl:draw-filled-polygon
 			  (list
-			   (sdl:point :x (floor field-width 2) ;; peak
-				      :y (- icon-bottom-y icon-size))
-			   (shift-coord s (floor icon-size 2) 0)
-			   (shift-coord s (- (floor icon-size 2)) 0))
+			   ;;(sdl:point :x (floor field-width 2) ;; peak
+			;;	      :y (- icon-bottom-y icon-size))
+			   (shift-coord s 0 (- icon-size)) ;; peak
+			   (shift-coord s (floor icon-size 2) 0) ;; right low corner
+			   (shift-coord s (- (floor icon-size 2)) 0)) ;; left
 			  :surface field-surface :color line-color)))
 
 
