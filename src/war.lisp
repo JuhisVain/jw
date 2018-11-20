@@ -24,8 +24,8 @@
 					 ;; oct-diam 'counter-gen:friendly 'counter-gen:land
 					 ;; '(counter-gen:infantry counter-gen:mountain))
 					 (counter-gen:generate
-					  80 80 oct-diam 'counter-gen:hostile 'counter-gen:land
-					  '(counter-gen:air-defense counter-gen:mountain)
+					  80 80 oct-diam 'counter-gen:unknown 'counter-gen:land
+					  '(counter-gen:anti-tank counter-gen:mountain)
 					  'team 'half-track)
 					 :x-at 24 :y-at 7)))
 	 (place-unit *testunit* 10 8))))

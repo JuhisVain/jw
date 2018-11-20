@@ -68,7 +68,7 @@
 (defun generate (counter-width counter-height oct-diameter aff dim icon-list ech mob)
   (if (not (and (boundp 'octagon-diameter) ;; Do not initialize if diameter already initialized
 		(equalp octagon-diameter oct-diameter)))
-	(nato-dimension-init oct-diameter))
+      (nato-dimension-init oct-diameter))
 
   (let ((nato-symbol (sdl:create-surface counter-width counter-height
 					 :color-key color-key)))
@@ -76,9 +76,11 @@
 
     (sdl:draw-surface-at (cns-fun octagon-diameter aff dim icon-list)
 			 (sdl:point :x (floor (- counter-width (* 1.5 oct-diameter)) 2)
-				    :y (floor octagon-diameter 6)) ;; Room for echelon
+				    :y (- (floor octagon-diameter 3)
+					  (aref n 1)))
 			 :surface nato-symbol)
     (sdl:free field-surface)
+    (format t "width: ~a hegiht ~a~%" (sdl:width nato-symbol) (sdl:height nato-symbol))
     nato-symbol
     ))
   
@@ -142,17 +144,18 @@
 		 
 
 		 (setf field-symbol
-		       (generate 200 200 octagon-diameter1 'friendly 'air '(infantry mountain)
+		       (generate 200 200 octagon-diameter1 'friendly 'land '(infantry mountain)
 				 'team 'half-track))
-		       ;;(cns-fun octagon-diameter 'friendly 'land '(infantry mountain)))
-		       ;;(nato-gen octagon-diameter 'friendly 'land '(infantry mountain)))
+
+ 
 		 
 		 (sdl:draw-surface field-symbol :surface main-win)
+		 
 		 (sdl:free field-symbol)
 		 
 		 (sdl:update-display)
 
-		 (sdl:draw-rectangle-* 0 0 field-width field-height
+		 (sdl:draw-rectangle-* 0 0  200 200
 				       :surface main-win :color sdl:*red*)
 		 
 		 ))))))
