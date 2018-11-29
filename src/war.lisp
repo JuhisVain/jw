@@ -12,8 +12,8 @@
 (defun set-test-unit (oct-diam)
   (format t "~%Setting up testunit~&")
   (counter-gen:nato-dimension-init oct-diam)
-  (cond (t ;;if t -> set to create new armies at (10,8) everytime (test) runs
-	 ;;(null *testunit*) ;; no more units created
+  (cond (;;t ;;if t -> set to create new armies at (10,8) everytime (test) runs
+	 (null *testunit*) ;; no more units created
 	 (setf *testunit*
 	       (make-army :x 0 :y 0
 			  :id 666
@@ -24,8 +24,8 @@
 					 ;; oct-diam 'counter-gen:friendly 'counter-gen:land
 					 ;; '(counter-gen:infantry counter-gen:mountain))
 					 (counter-gen:generate
-					  80 80 oct-diam 'counter-gen:unknown 'counter-gen:land
-					  '(counter-gen:anti-tank counter-gen:mountain)
+					  80 80 oct-diam 'counter-gen:friendly 'counter-gen:land
+					  '(counter-gen:infantry counter-gen:mountain)
 					  'team 'half-track)
 					 :x-at 24 :y-at 7)))
 	 (place-unit *testunit* 10 8))))
@@ -111,7 +111,7 @@
 				 )
 	    
 	    (:mouse-button-down-event
-	     (:button button :x x :y y)
+	     (:button button :state state :x x :y y)
 	     (cond ((equal 'world (mouse-over-what x y))
 		    (cond ((equal button sdl:sdl-button-right)
 			   (sdl:clear-display sdl:*black*)
@@ -140,7 +140,8 @@
 		   ((equal 'panel (mouse-over-what x y))
 		    (setf selected-unit (select-from-panel y (tile-at
 							      (car selected-tile)
-							      (cdr selected-tile)))))))
+							      (cdr selected-tile))))
+		    )))
 
 	    (:idle ()
 
