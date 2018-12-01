@@ -85,6 +85,7 @@
     (sdl:initialise-default-font)
 
     (load-tiles)
+    (setup-panels) ;; Setup the chrome
 
     (counter-gen:nato-color-init)
     (set-test-unit 34) ;; testing army graphics
@@ -148,7 +149,8 @@
 		   (draw-world x-shift y-shift
 			       selector-graphics selector-tile
 			       selected-tile selected-unit)
-		   (draw-panel selected-tile selected-unit)
+		   ;;(draw-panel selected-tile selected-unit)
+		   (draw-panels)
 		   (sdl:update-display)
 		   )))))
 

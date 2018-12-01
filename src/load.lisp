@@ -2,5 +2,5 @@
 (load "countergenerator.lisp")
 (load "data.lisp")
 (load "wtool.lisp")
-(load "panel.lisp")
 (load "war.lisp")
+(load "panel.lisp")
