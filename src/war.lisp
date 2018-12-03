@@ -139,9 +139,10 @@
 			  ((equal button sdl:sdl-button-wheel-down)
 			   (set-tile-size 'small))))
 		   ((equal 'panel (mouse-over-what x y))
-		    (setf selected-unit (select-from-panel y (tile-at
-							      (car selected-tile)
-							      (cdr selected-tile))))
+		    (click-panel button state x y)
+		    ;;(setf selected-unit (select-from-panel y (tile-at
+			;;				      (car selected-tile)
+			;;				      (cdr selected-tile))))
 		    )))
 
 	    (:idle ()

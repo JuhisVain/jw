@@ -23,21 +23,22 @@
   (action nil))
 
 (defun setup-panels ()
+  (setf *panel-setup* nil)
   ;; TODO: pushnew seems to work here for now butbutbut...
   ;; also will need to do testing with sdl-image:load-image
   (pushnew (make-panel :x (- (sdl:width window) 200) :y 0
 		       :width 200 :height (sdl:height window)
 		       :elements (list
 				  (make-panel-button
-				   :position '(:relative 0 0)
+				   :position (cons 4 4)
 				   :width 48 :height 48
 				   :icon (sdl-image:load-image "graphics/PANEL_BUTTON_TEST.png")
-				   :action #'(lambda () (format t "First button")))
+				   :action #'(lambda () (format t "First button~%")))
 				  (make-panel-button
-				   :position '(:relative 48 0)
+				   :position (cons 56 4)
 				   :width 48 :height 48
 				   :icon (sdl-image:load-image "graphics/PANEL_BUTTON_TEST.png")
-				   :action #'(lambda () (format t "Second button")))))
+				   :action #'(lambda () (format t "Second button~%")))))
 	   *panel-setup*))
 
 (defun draw-panels ()
@@ -55,13 +56,12 @@
 		 :surface window :color sdl:*red*)
 
 		(mapcar #'(lambda (element)
-			    (cond ((eql :relative (car (panel-button-position element)))
 				   (sdl:draw-surface-at-* (panel-button-icon element)
 							  (+ (panel-x panel)
-							     (cadr (panel-button-position element)))
+							     (car (panel-button-position element)))
 							  (+ (panel-y panel)
-							     (caddr (panel-button-position element)))
-							  :surface window))))
+							     (cdr (panel-button-position element)))
+							  :surface window))
 			(panel-elements panel)))
      *panel-setup*))
 
@@ -106,8 +106,20 @@
 			     :surface window :color sdl:*white*)
     ))
 
-(defun click-panel (mouse-button mouse-button-state mouse-x mouse-y)
-  )
+(defun click-panel (mouse-button mouse-button-state mouse-x mouse-y
+		    &optional (panel (car *panel-setup*)))
+  (let ((relative-x (- mouse-x (panel-x panel)))
+	(relative-y (- mouse-y (panel-y panel))))
+    (dolist (element (panel-elements panel))
+      (cond ((panel-button-p element)
+	     (and ; Depending on the alignment of panel these could be optimized to some other order
+	      (> relative-x (car (panel-button-position element)))
+	      (<= relative-x (+ (car (panel-button-position element))
+				(panel-button-width element)))
+	      (> relative-y (cdr (panel-button-position element)))
+	      (<= relative-y (+ (cdr (panel-button-position element))
+				(panel-button-height element)))
+		(funcall (panel-button-action element))))))))
 
 (defun select-from-panel (mouse-y selected-tile)
   (nth (floor mouse-y *panel-list-height*) (reverse (tile-units selected-tile))))
