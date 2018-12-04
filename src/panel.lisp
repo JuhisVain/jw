@@ -94,9 +94,9 @@
   ;;   -> will end up in panel slot smallest to greatest
   (let ((sorted-elements
 	 (sort elements #'(lambda (one two)
-			    (and (> (getf one :y) (getf two :y)) ;; oh la la
-				 (> (getf one :x) (getf two :x))
-				 t)))))
+			    (or (> (getf one :y) (getf two :y)) ;; oh la la
+			        (> (getf one :x) (getf two :x))
+				nil)))))
     `(let ((panel (make-panel :x ,x :y ,y
 			      :width ,width :height ,height
 			      :elements nil)))
