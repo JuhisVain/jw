@@ -122,7 +122,12 @@
 					:x 56 :y 4
 					:width 48 :height 48
 					:icon (sdl-image:load-image "graphics/PANEL_BUTTON_TEST.png")
-					:action #'(lambda () (format t "Second button~%"))) )
+					:action #'(lambda () (format t "Second button~%")))
+			 (make-instance 'panel-button
+					:x 108 :y 4
+					:width 48 :height 48
+					:icon (sdl-image:load-image "graphics/PANEL_BUTTON_TEST.png")
+					:action #'(lambda () (set-test-unit 34))))
   ;;				  (make-panel-list
 ;;				   :position (cons 4 56)
 ;;				   :width 192

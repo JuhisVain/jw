@@ -41,6 +41,11 @@
   (setf *world* (init-world height width))
   nil)
 
+;; This is mostly for testing. do same for 'suburb-a'
+;; The right and lower side tiles will draw themselves over this one.
+;; TODO: either do a second pass on tiles or split city graphics kinda like the sea/coasts
+(defun create-city (x y)
+  (nconc (tile-type (aref (world-map *world*) x y)) (cons 'city-a nil)))
 
 (defun cursor-coordinates-on-map (screen-x screen-y x-shift y-shift)
   ;; tile-x & tile-y are the (almost) actual
@@ -322,7 +327,8 @@
 
 (defun draw-tile (x y x-shift y-shift)
   ;; Draw tile's basic type
-  (draw-at x y x-shift y-shift (eval (tile-type (aref (world-map *world*) x y))))
+  (dolist (type (tile-type (aref (world-map *world*) x y)))
+    (draw-at x y x-shift y-shift (eval type)))
 
   ;; Draw tile's variant list
   (dolist (variant (tile-variant (aref (world-map *world*) x y)))
@@ -407,6 +413,8 @@
     (tile-graphics-setup sea-large-border-north-east)
 
     (tile-graphics-setup swamp-large)
+    (tile-graphics-setup city-a-large -10 -10)
+    (tile-graphics-setup suburb-a-large)
 
     (tile-graphics-setup stream-large-north-west -2 -2)
     (tile-graphics-setup stream-large-south-west -2 50)
@@ -444,6 +452,8 @@
 	 (defparameter grass grass-large)
 
 	 (defparameter swamp swamp-large)
+	 (defparameter city-a city-a-large)
+	 (defparameter suburb-a suburb-a-large)
 
 	 (defparameter coast-s sea-large-border-south)
 	 (defparameter coast-se sea-large-border-south-east)
@@ -506,7 +516,10 @@
     (do ((x 0)
 	 (y 0))
 	((>= x (array-dimension (world-map world) 0)))
-      (setf (aref (world-map world) x y) (make-tile :type (if (< (random 4) 1) 'sea 'grass)))
+      (setf (aref (world-map world) x y)
+	    (make-tile :type (if (< (random 4) 1)
+				 (cons 'sea nil) ; '(sea) results in all tile types pointing to EQ type
+				 (cons 'grass nil))))
       (incf y)
       (if (>= y (array-dimension (world-map world) 1))
 	  (progn (incf x)
@@ -519,18 +532,15 @@
 
       (format t "~&~a,~a" x y)
 
-      (if (not (eq (tile-type (tile-at x y world)) 'sea)) ; don't do for sea tiles
+      (if (not (member 'sea (tile-type (tile-at x y world)))) ; don't do for sea tiles
 	  (dolist (direction (list 'N 'NE 'SE 'S 'SW 'NW))
 	    (format t "doing list~%")
 	    (let ((neighbour-tile (neighbour-tile-coords x y direction world)))
 	      (format t "~&neigbour: ~a,~a" (car neighbour-tile) (cdr neighbour-tile))
 	      (if neighbour-tile
-		  (if (equal (tile-type (aref (world-map world) (car neighbour-tile) (cdr neighbour-tile)))
-			     'sea)
+		  (if (member 'sea (tile-type (aref (world-map world) (car neighbour-tile) (cdr neighbour-tile))))
 		      (push (intern (concatenate 'string "COAST-" (symbol-name direction)))
 			    (tile-variant (aref (world-map world) x y))))))))
-	  
-      
 
       (incf y)
       (if (>= y (array-dimension (world-map world) 1))
