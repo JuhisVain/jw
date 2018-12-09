@@ -12,8 +12,8 @@
 (defun set-test-unit (oct-diam)
   (format t "~%Setting up testunit~&")
   (counter-gen:nato-dimension-init oct-diam)
-  (cond (;;t ;;if t -> set to create new armies at (10,8) everytime (test) runs
-	 (null *testunit*) ;; no more units created
+  (cond (t ;;if t -> set to create new armies at (10,8) everytime (test) runs
+	 ;;(null *testunit*) ;; no more units created
 	 (setf *testunit*
 	       (make-army :x 0 :y 0
 			  :id 666
@@ -45,7 +45,8 @@
 ;; The right and lower side tiles will draw themselves over this one.
 ;; TODO: either do a second pass on tiles or split city graphics kinda like the sea/coasts
 (defun create-city (x y)
-  (nconc (tile-type (aref (world-map *world*) x y)) (cons 'city-a nil)))
+  (pushnew :city (tile-location (aref (world-map *world*) x y)))
+  (pushnew 'city-a (tile-variant (aref (world-map *world*) x y))))
 
 (defun cursor-coordinates-on-map (screen-x screen-y x-shift y-shift)
   ;; tile-x & tile-y are the (almost) actual
@@ -276,22 +277,29 @@
 		 (+ (- y-start-void) (floor (sdl:height window) (cdr tile-size)))
 		 (1- (array-dimension (world-map *world*) 1))))) ;; The last row
 
-    (do ((x x-start)
-	 (y y-start))
-	(nil)
+    (macrolet ((draw-tiles-by-slot (accessor &optional (sub-accessor nil))
+		 (let ((x (gensym))
+		       (y (gensym))
+		       (slot (gensym)))
+		   `(do ((,x x-start)
+			 (,y y-start))
+			(nil)
 
-      (cond ((> y y-end)
-	     (setf y y-start)
-	     (incf x)))
-      (if (> x x-end)
-	  (return))
+		      (cond ((> ,y y-end)
+			     (setf ,y y-start)
+			     (incf ,x)))
+		      (if (> ,x x-end)
+			  (return))
 
-      (setf draw-count (+ draw-count 1))
+		      (dolist (,slot (,accessor (aref (world-map *world*) ,x ,y)))
+			(draw-at ,x ,y x-shift y-shift
+				 (eval ,(if sub-accessor `(,sub-accessor ,slot) `,slot))))
 
-      (draw-tile x y x-shift y-shift)
+		      (incf ,y)))))
 
-      (incf y)
-      ))
+      (draw-tiles-by-slot tile-type)
+      (draw-tiles-by-slot tile-variant)
+      (draw-tiles-by-slot tile-units army-counter)))
   
   (sdl:draw-surface-at-*
    (graphics-surface (eval selector))
@@ -301,8 +309,8 @@
 					  (army-y selected-unit))
 				    (army-movement selected-unit)
 				    x-shift y-shift
-				    selector-tile))
-  )
+				    selector-tile)))
+
 
 (defun draw-at (x y x-shift y-shift graphics)
   (let* ((tile-width (car tile-size))
@@ -330,7 +338,9 @@
 				y-shift
 				(floor (cdr tile-size) 2)))))
 
-(defun draw-tile (x y x-shift y-shift)
+
+;;The macrolet version in draw-world is harder, better, faster, stronger
+(defun OBSOLETEdraw-tile (x y x-shift y-shift)
   ;; Draw tile's basic type
   (dolist (type (tile-type (aref (world-map *world*) x y)))
     (draw-at x y x-shift y-shift (eval type)))
