@@ -12,8 +12,8 @@
 (defun set-test-unit (oct-diam)
   (format t "~%Setting up testunit~&")
   (counter-gen:nato-dimension-init oct-diam)
-  (cond (t ;;if t -> set to create new armies at (10,8) everytime (test) runs
-	 ;;(null *testunit*) ;; no more units created
+  (cond (;;t ;;if t -> set to create new armies at (10,8) everytime (test) runs
+	 (null *testunit*) ;; no more units created
 	 (setf *testunit*
 	       (make-army :x 0 :y 0
 			  :id 666
@@ -44,9 +44,9 @@
 ;; This is mostly for testing. do same for 'suburb-a'
 ;; The right and lower side tiles will draw themselves over this one.
 ;; TODO: either do a second pass on tiles or split city graphics kinda like the sea/coasts
-(defun create-city (x y)
-  (pushnew :city (tile-location (aref (world-map *world*) x y)))
-  (pushnew 'city-a (tile-variant (aref (world-map *world*) x y))))
+(defun create-city (x y &optional (world *world*))
+  (pushnew :city (tile-location (aref (world-map world) x y)))
+  (pushnew 'city-a (tile-variant (aref (world-map world) x y))))
 
 (defun cursor-coordinates-on-map (screen-x screen-y x-shift y-shift)
   ;; tile-x & tile-y are the (almost) actual
@@ -420,17 +420,28 @@
 
     (tile-graphics-setup sea-large)
     (tile-graphics-setup grass-large)
-    (tile-graphics-setup sea-large-border-south)
-    (tile-graphics-setup sea-large-border-south-west)
-    (tile-graphics-setup sea-large-border-south-east)
-    (tile-graphics-setup sea-large-border-north)
-    (tile-graphics-setup sea-large-border-north-west)
-    (tile-graphics-setup sea-large-border-north-east)
+
+    ;; The magic numbers in tile-graphics-setup have been checked using image editors
+    ;; Could be done automatically by creating a dummy hex graphics for larger than hex graphics
+    ;; to chop pixels outside hex into variant graphics pics...
+    (tile-graphics-setup sea-large-border-south 25 95)
+    (tile-graphics-setup sea-large-border-south-west 0 50)
+    (tile-graphics-setup sea-large-border-south-east 98 50)
+    (tile-graphics-setup sea-large-border-north 25 0)
+    (tile-graphics-setup sea-large-border-north-west 0 0)
+    (tile-graphics-setup sea-large-border-north-east 99 0)
 
     (tile-graphics-setup swamp-large)
-    (tile-graphics-setup city-a-large -10 -10)
+    (tile-graphics-setup city-a-large)
     (tile-graphics-setup suburb-a-large)
 
+    (tile-graphics-setup city-a-large-border-south 25 99)
+    (tile-graphics-setup city-a-large-border-south-east 96 49)
+    (tile-graphics-setup city-a-large-border-south-west 0 47)
+    (tile-graphics-setup city-a-large-border-north 30 0)
+    (tile-graphics-setup city-a-large-border-north-east 96 0)
+    (tile-graphics-setup city-a-large-border-north-west 0 0)
+    
     (tile-graphics-setup stream-large-north-west -2 -2)
     (tile-graphics-setup stream-large-south-west -2 50)
     (tile-graphics-setup stream-large-north 24 -8)
@@ -476,6 +487,13 @@
 	 (defparameter coast-n sea-large-border-north)
 	 (defparameter coast-ne sea-large-border-north-east)
 	 (defparameter coast-nw sea-large-border-north-west)
+
+	 (defparameter city-outskirts-s city-a-large-border-south)
+	 (defparameter city-outskirts-se city-a-large-border-south-east)
+	 (defparameter city-outskirts-sw city-a-large-border-south-west)
+	 (defparameter city-outskirts-n city-a-large-border-north)
+	 (defparameter city-outskirts-ne city-a-large-border-north-east)
+	 (defparameter city-outskirts-nw city-a-large-border-north-west)
 
 	 (defparameter stream-nw stream-large-north-west)
 	 (defparameter stream-sw stream-large-south-west)
@@ -535,12 +553,18 @@
 	    (make-tile :type (if (< (random 4) 1)
 				 (cons 'sea nil) ; '(sea) results in all tile types pointing to EQ type
 				 (cons 'grass nil))))
+      (and (member 'grass (tile-type (aref (world-map world) x y)))
+	   (< (random 10) 1)
+	   (prog1 1 (format t "~&Gonna build me a city at ~a, ~a~%" x y))
+	   (create-city x y world))
+	  
       (incf y)
       (if (>= y (array-dimension (world-map world) 1))
 	  (progn (incf x)
 		 (setf y 0))))
 
     ;; Add in sea coasts to land tiles:
+    ;; update: also city outskirts
     (do ((x 0)
 	 (y 0))
 	((>= x (array-dimension (world-map world) 0)))
@@ -549,13 +573,20 @@
 
       (if (not (member 'sea (tile-type (tile-at x y world)))) ; don't do for sea tiles
 	  (dolist (direction (list 'N 'NE 'SE 'S 'SW 'NW))
-	    (format t "doing list~%")
+	    ;;(format t "doing list~%")
 	    (let ((neighbour-tile (neighbour-tile-coords x y direction world)))
-	      (format t "~&neigbour: ~a,~a" (car neighbour-tile) (cdr neighbour-tile))
+	      ;;(format t "~&neigbour: ~a,~a" (car neighbour-tile) (cdr neighbour-tile))
 	      (if neighbour-tile
-		  (if (member 'sea (tile-type (aref (world-map world) (car neighbour-tile) (cdr neighbour-tile))))
-		      (push (intern (concatenate 'string "COAST-" (symbol-name direction)))
-			    (tile-variant (aref (world-map world) x y))))))))
+		  ;; what's all this then?
+		  (progn
+		    (if (member 'sea (tile-type (aref (world-map world) (car neighbour-tile) (cdr neighbour-tile))))
+			(push (intern (concatenate 'string "COAST-" (symbol-name direction)))
+			      (tile-variant (aref (world-map world) x y))))
+		    (if (member :city (tile-location (aref (world-map world) (car neighbour-tile) (cdr neighbour-tile))))
+			(push (intern (concatenate 'string "CITY-OUTSKIRTS-" (symbol-name direction)))
+			      (tile-variant (aref (world-map world) x y)))))))))
+
+      (setf (tile-variant (aref (world-map world) x y)) (nreverse (tile-variant (aref (world-map world) x y))))
 
       (incf y)
       (if (>= y (array-dimension (world-map world) 1))
