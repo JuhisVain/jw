@@ -222,10 +222,13 @@
   
   (let ((sea 100) ; temporary shadows for move costs
 	(grass 2)
+	(city-a 10)
 
 	(frontier (make-heap))
 	(came-from (make-hash-table :test 'equal)))
-    (declare (special sea) (special grass))
+    
+    (declare (special sea) (special grass) (special city-a))
+    
     (heap-insert frontier start move-range)
     (setf (gethash start came-from) `(,move-range nil))
 
@@ -245,9 +248,11 @@
 	    (cond ((null neighbour) nil)
 		  ((null (gethash neighbour came-from))
 		   (let ((move-cost (- (car current)
-				       (eval (tile-type (aref (world-map *world*)
-							      (car neighbour)
-							      (cdr neighbour)))))))
+				       (eval
+					(car (last
+					      (tile-type (aref (world-map *world*)
+							       (car neighbour)
+							       (cdr neighbour)))))))))
 		     (cond ((>= move-cost 0)
 			    (heap-insert frontier neighbour move-cost)
 			    (setf (gethash neighbour came-from)
