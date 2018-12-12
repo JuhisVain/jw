@@ -8,6 +8,7 @@
 
 (defvar *testunit* nil)
 (defvar *current-move-area* nil)
+(defvar *war-color-key* (sdl:color :r 255 :g 0 :b 255))
 
 (defun set-test-unit (oct-diam)
   (format t "~%Setting up testunit~&")
@@ -312,7 +313,7 @@
 				    selector-tile)))
 
 
-(defun draw-at (x y x-shift y-shift graphics)
+(defun draw-at (x y x-shift y-shift graphics &optional (destination sdl:*default-surface*))
   (let* ((tile-width (car tile-size))
 	 (tile-height (cdr tile-size))
 	 (gx-location (* x tile-width))
@@ -322,7 +323,8 @@
 			    x-shift (graphics-x-at graphics))
 			 (+ (if (evenp x) gy-location
 				(+ gy-location (/ (cdr tile-size) 2)))
-			    y-shift (graphics-y-at graphics)))))
+			    y-shift (graphics-y-at graphics))
+			 :surface destination)))
 
 (defun draw-string-at (x y x-shift y-shift string)
   (let* ((tile-width (car tile-size))
@@ -408,7 +410,7 @@
 					".png"))
 			  :x-at ,x-offset :y-at ,y-offset))
        (setf (sdl:color-key-enabled-p (graphics-surface ,tile-symbol)) t)
-       (setf (sdl:color-key (graphics-surface ,tile-symbol)) (sdl:color :r 255 :g 0 :b 255)))))
+       (setf (sdl:color-key (graphics-surface ,tile-symbol)) *war-color-key*))))
 
 (defun load-tiles ()
 

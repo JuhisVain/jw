@@ -9,21 +9,25 @@
 ;; ((tile-width - hor-line-length) / 2) + hor-line-length
 ;; and on y-axis at tile-height
 ;; possibly recommended to keep args as even numbers
-(defun chop-test (&optional (hor-line-length 76) (tile-width 128) (tile-height 104))
+(defun chop-test (raw-tile-location x-offset y-offset
+		  &optional (hor-line-length 76) (tile-width 128) (tile-height 104))
   (sdl:with-init ()
     (sdl:initialise-default-font)
     (let* ((left-border-tri-x (floor (- tile-width hor-line-length) 2))
 	   (right-border-tri-x (+ left-border-tri-x hor-line-length -1)) ;; More like right-border minus tri-x
 	   (middle-height-lower (floor tile-height 2))
 	   (middle-height-upper (- middle-height-lower 1))
-	   
-	   
 
 	   (temp-win (sdl:window 300 300 :title-caption "test"))
 	   (template (sdl:create-surface
 		      tile-width tile-height
 		      :color-key sdl:*white*))
-	   (final-color-key (sdl:color :r 255 :g 0 :b 255)))
+	   (final-color-key (sdl:color :r 255 :g 0 :b 255))
+
+	   (raw-tile-image (make-graphics :surface (sdl-image:load-image raw-tile-location)
+					  :x-at x-offset :y-at y-offset))
+	   )
+      
       ;; Fill surface with game's transparency key:
       (sdl:fill-surface final-color-key :surface template)
 
@@ -46,11 +50,19 @@
 				     (sdl:point :x 0
 						:y middle-height-upper))
 			       :surface template :color sdl:*white*)
+
+      ;; Let's imagine the unchopped tile's location is (1,1)
+
+      ;; TODO:
+      ;; 1: create the chopped outskirt images in advance filled with pink
+      ;; 2: mapcar neighbour-tile-coords directions <- fun needs slight refactor
+      ;;    ->draw-at shifted raw-tile-image -> draw-at template on top
+      ;; + figure out where to create tile's dynamic vars
       
       
       (sdl:with-events ()
 	(:quit-event () t)
 	(:idle ()
 	       (sdl:update-surface template)
-	       (sdl:save-image template "template.bmp")
+	       ;;(sdl:save-image template "template.bmp")
 	       (sdl:push-quit-event))))))
