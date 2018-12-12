@@ -586,7 +586,10 @@
 			(push (intern (concatenate 'string "CITY-OUTSKIRTS-" (symbol-name direction)))
 			      (tile-variant (aref (world-map world) x y)))))))))
 
+      ;; TODO: Whatever this was written to do it doesn't do.
+      ;; the tile-variant graphics will need to be ordered according to some smart priority 
       (setf (tile-variant (aref (world-map world) x y)) (nreverse (tile-variant (aref (world-map world) x y))))
+      
 
       (incf y)
       (if (>= y (array-dimension (world-map world) 1))
