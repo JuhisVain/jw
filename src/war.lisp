@@ -416,7 +416,6 @@
 
   (let ((color-key (sdl:color :r 255 :g 0 :b 255)))
     
-    "Initializes tile graphics"
     ;; 128,104 is tile size -> 102 is distance from right point to lower left point:
     (defparameter tile-large-size '(102 . 104))
 
