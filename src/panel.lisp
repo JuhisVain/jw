@@ -117,12 +117,12 @@
 					:x 4 :y 4
 					:width 48 :height 48
 					:icon (sdl-image:load-image "graphics/PANEL_BUTTON_TEST.png")
-					:action #'(lambda () (format t "First button~%")))
+					:action #'(lambda () (chop-tile "graphics/SEA_LARGE_BIG.png" -4 -9)))
 			 (make-instance 'panel-button
 					:x 56 :y 4
 					:width 48 :height 48
 					:icon (sdl-image:load-image "graphics/PANEL_BUTTON_TEST.png")
-					:action #'(lambda () (format t "Second button~%")))
+					:action #'(lambda () (chop-tile "graphics/CITY_A_LARGE_BIG.png" -6 -5)))
 			 (make-instance 'panel-button
 					:x 108 :y 4
 					:width 48 :height 48
