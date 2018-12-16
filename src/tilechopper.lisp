@@ -121,7 +121,9 @@
 			    (setf (sdl:color-key-enabled-p final-image) t)
 			    (setf (sdl:color-key final-image) *war-color-key*)
 
-			    (make-graphics :surface final-image :x-at left-bound :y-at upper-bound)))))
+			    (make-graphics :surface final-image
+					   :x-at (- tile-width final-width left-bound)
+					   :y-at (- tile-height final-height upper-bound))))))
 
 		;; mapcar's list:
 		(list (cons 0 0)       ;center
