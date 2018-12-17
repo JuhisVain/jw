@@ -10,6 +10,13 @@
 (defvar *current-move-area* nil)
 (defvar *war-color-key* (sdl:color :r 255 :g 0 :b 255))
 
+
+;; 128,104 is tile size -> 102 is distance from right point to lower left point:
+(defparameter tile-large-size-full (cons 128 104))
+(defparameter tile-large-size (cons 102 104))
+
+(defparameter tile-size tile-large-size)
+
 (defun set-test-unit (oct-diam)
   (format t "~%Setting up testunit~&")
   (counter-gen:nato-dimension-init oct-diam)
@@ -352,6 +359,35 @@
 
 
 (defmacro tile-graphics-setup (tile-symbol &optional (x-offset 0) (y-offset 0))
+  (let ((symbol-name (gensym))
+	(direction (gensym))
+	(graphics (gensym))
+	(new-symbol (gensym))
+	(size-of-tile (cond ((search "LARGE" (symbol-name tile-symbol)) 'large)
+			    ((search "SMALL" (symbol-name tile-symbol)) 'small))))
+    `(let ((,symbol-name (symbol-name ',tile-symbol)))
+       (mapcar #'(lambda (,direction ,graphics)
+		   (if ,graphics
+		       (let ((,new-symbol (intern
+					    (if ,direction 
+						(concatenate 'string ,symbol-name ,direction)
+						,symbol-name))))
+			 (eval
+			  `(defparameter ,,new-symbol ,,graphics)))))
+	       '(nil ;; NIL = center
+		 "-BORDER-NORTH" "-BORDER-NORTH-EAST" "-BORDER-SOUTH-EAST"
+		 "-BORDER-SOUTH" "-BORDER-SOUTH-WEST" "-BORDER-NORTH-WEST")
+	       (chop-tile
+		(concatenate 'string "graphics/" (substitute #\_ #\- ,symbol-name) ".png")
+		,x-offset ,y-offset
+		,@(cond ((eq size-of-tile 'large)
+			 (list (- (* 2 (car tile-large-size))
+				  (car tile-large-size-full))
+			       (car tile-large-size-full)
+			       (cdr tile-large-size-full))
+			 )))))))
+
+(defmacro OBSOLETEtile-graphics-setup (tile-symbol &optional (x-offset 0) (y-offset 0))
   (let* ((symbol-string (symbol-name tile-symbol))
 	 (to-conc nil))
     (cond ((search "SOUTH-WEST" symbol-string)
@@ -372,7 +408,7 @@
 	   (make-graphics :surface
 			  (sdl-image:load-image
 			   (concatenate 'string "graphics/"
-					(subseq (substitute #\_ #\- ,symbol-string) 0
+					(subseq (substitute #\_ #\- ,symbol-string)
 						(or (search "SOUTH" ,symbol-string)
 						    (search "NORTH" ,symbol-string)))
 					,to-conc
@@ -383,59 +419,57 @@
 
 (defun load-tiles ()
 
-  (let ((color-key (sdl:color :r 255 :g 0 :b 255)))
-    
-    ;; 128,104 is tile size -> 102 is distance from right point to lower left point:
-    (defparameter tile-large-size '(102 . 104))
+  ;;  (let ((color-key (sdl:color :r 255 :g 0 :b 255)))
+  
 
-    (tile-graphics-setup sea-large)
-    (tile-graphics-setup grass-large)
+  (tile-graphics-setup sea-large -4 -9)
+  (tile-graphics-setup grass-large)
 
-    ;; The magic numbers in tile-graphics-setup have been checked using image editors
-    ;; Could be done automatically by creating a dummy hex graphics for larger than hex graphics
-    ;; to chop pixels outside hex into variant graphics pics...
-    (tile-graphics-setup sea-large-border-south 25 95)
-    (tile-graphics-setup sea-large-border-south-west 0 50)
-    (tile-graphics-setup sea-large-border-south-east 98 50)
-    (tile-graphics-setup sea-large-border-north 25 0)
-    (tile-graphics-setup sea-large-border-north-west 0 0)
-    (tile-graphics-setup sea-large-border-north-east 99 0)
+  ;; The magic numbers in tile-graphics-setup have been checked using image editors
+  ;; Could be done automatically by creating a dummy hex graphics for larger than hex graphics
+  ;; to chop pixels outside hex into variant graphics pics...
+  ;;    (tile-graphics-setup sea-large-border-south 25 95)
+  ;;    (tile-graphics-setup sea-large-border-south-west 0 50)
+  ;;    (tile-graphics-setup sea-large-border-south-east 98 50)
+  ;;    (tile-graphics-setup sea-large-border-north 25 0)
+  ;;    (tile-graphics-setup sea-large-border-north-west 0 0)
+  ;;    (tile-graphics-setup sea-large-border-north-east 99 0)
 
-    (tile-graphics-setup swamp-large)
-    (tile-graphics-setup city-a-large)
-    (tile-graphics-setup suburb-a-large)
+  (tile-graphics-setup swamp-large)
+  (tile-graphics-setup city-a-large -6 -5)
+  (tile-graphics-setup suburb-a-large)
 
-    (tile-graphics-setup city-a-large-border-south 25 99)
-    (tile-graphics-setup city-a-large-border-south-east 96 49)
-    (tile-graphics-setup city-a-large-border-south-west 0 47)
-    (tile-graphics-setup city-a-large-border-north 30 0)
-    (tile-graphics-setup city-a-large-border-north-east 96 0)
-    (tile-graphics-setup city-a-large-border-north-west 0 0)
-    
-    (tile-graphics-setup stream-large-north-west -2 -2)
-    (tile-graphics-setup stream-large-south-west -2 50)
-    (tile-graphics-setup stream-large-north 24 -8)
+  (tile-graphics-setup selector-large 11 0)
 
-    (tile-graphics-setup counterbase 24 7)
+  ;;    (tile-graphics-setup city-a-large-border-south 25 99)
+  ;;    (tile-graphics-setup city-a-large-border-south-east 96 49)
+  ;;    (tile-graphics-setup city-a-large-border-south-west 0 47)
+  ;;    (tile-graphics-setup city-a-large-border-north 30 0)
+  ;;    (tile-graphics-setup city-a-large-border-north-east 96 0)
+  ;;    (tile-graphics-setup city-a-large-border-north-west 0 0)
+
+  ;; rivers broken:
+  ;;    (tile-graphics-setup stream-large-north-west -2 -2)
+  ;;    (tile-graphics-setup stream-large-south-west -2 50)
+  ;;    (tile-graphics-setup stream-large-north 24 -8)
+
+  ;; this is not tile graphics???    (tile-graphics-setup counterbase 24 7)
 
 
-    ;;TODO small tiles not working
-    ;;(62,52) -> 49
-    (defparameter tile-small-size '(49 . 52))
-    (defparameter sea-small (sdl-image:load-image "graphics/SEA_SMALL.png"))
-    (setf (sdl:alpha-enabled-p sea-small) t)
-    (defparameter grass-small (sdl-image:load-image "graphics/GRASS_SMALL.png"))
-    (setf (sdl:alpha-enabled-p grass-small) t)
+  ;;TODO small tiles not working
+  ;;(62,52) -> 49
+  (defparameter tile-small-size '(49 . 52))
+  (defparameter sea-small (sdl-image:load-image "graphics/SEA_SMALL.png"))
+  (setf (sdl:alpha-enabled-p sea-small) t)
+  (defparameter grass-small (sdl-image:load-image "graphics/GRASS_SMALL.png"))
+  (setf (sdl:alpha-enabled-p grass-small) t)
+  
+  (defparameter selector-small (sdl-image:load-image "graphics/SELECT_SMALL.png"))
+  (setf (sdl:alpha-enabled-p selector-small) t)
 
-    
-    (tile-graphics-setup selector-large)
-    
-    (defparameter selector-small (sdl-image:load-image "graphics/SELECT_SMALL.png"))
-    (setf (sdl:alpha-enabled-p selector-small) t)
-
-    (defparameter current-tile-size 'large)
-    (set-tile-size current-tile-size)
-    ))
+  (defparameter current-tile-size 'large)
+  (set-tile-size current-tile-size)
+  );;)
 
 (defun set-tile-size (var)
   "Switches between tile sizes"
@@ -465,9 +499,10 @@
 	 (defparameter city-outskirts-ne city-a-large-border-north-east)
 	 (defparameter city-outskirts-nw city-a-large-border-north-west)
 
-	 (defparameter stream-nw stream-large-north-west)
-	 (defparameter stream-sw stream-large-south-west)
-	 (defparameter stream-n stream-large-north)
+	 ;; river borked
+	 ;;(defparameter stream-nw stream-large-north-west)
+	 ;;(defparameter stream-sw stream-large-south-west)
+	 ;;(defparameter stream-n stream-large-north)
 	 )
 	((equal var 'small)
 	 (defparameter selector selector-small)

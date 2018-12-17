@@ -12,7 +12,7 @@
 (defun chop-tile (raw-tile-location x-offset y-offset
 		  &optional (hor-line-length 76) (tile-width 128) (tile-height 104))
   "Returns a list containing tile and it's outskirt graphics"
-  
+
     (let* ((left-border-tri-x (floor (- tile-width hor-line-length) 2))
 	   (right-border-tri-x (+ left-border-tri-x hor-line-length -1)) ;; More like right-border minus tri-x
 	   (middle-height-lower (floor tile-height 2))
@@ -121,9 +121,12 @@
 			    (setf (sdl:color-key-enabled-p final-image) t)
 			    (setf (sdl:color-key final-image) *war-color-key*)
 
+			    ;;(format t "~&~a , x-at: ~a , y-at: ~a~%"
+			;;	    coord (- tile-width final-width left-bound) (- tile-height final-height upper-bound))
+
 			    (make-graphics :surface final-image
-					   :x-at (- tile-width final-width left-bound)
-					   :y-at (- tile-height final-height upper-bound))))))
+					   :x-at left-bound
+					   :y-at upper-bound)))))
 
 		;; mapcar's list:
 		(list (cons 0 0)       ;center

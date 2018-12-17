@@ -4,3 +4,4 @@
 (load "wtool.lisp")
 (load "war.lisp")
 (load "panel.lisp")
+(load "tilechopper.lisp")

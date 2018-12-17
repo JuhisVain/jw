@@ -117,7 +117,7 @@
 					:x 4 :y 4
 					:width 48 :height 48
 					:icon (sdl-image:load-image "graphics/PANEL_BUTTON_TEST.png")
-					:action #'(lambda () (chop-tile "graphics/SEA_LARGE_BIG.png" -4 -9)))
+					:action #'(lambda () (format t "~&~a~%" (chop-tile "graphics/SEA_LARGE.png" 0 0))))
 			 (make-instance 'panel-button
 					:x 56 :y 4
 					:width 48 :height 48
