@@ -214,9 +214,6 @@
   ;;   value is (movement-left-after-this-move (cons x0 y0))
   
 ;;????? SHOULD BE FIXED NOW with declare specials
-  ;;;;; engine must first be initialized by running test-init and test
-  ;; then ->
-  ;; ???Function must be compiled before tile-type shadowing will work
   
 ;;   check with this:
 ;;    (maphash #'(lambda (key value)
@@ -340,22 +337,6 @@
 				y-shift
 				(floor (cdr tile-size) 2)))))
 
-
-;;The macrolet version in draw-world is harder, better, faster, stronger
-(defun OBSOLETEdraw-tile (x y x-shift y-shift)
-  ;; Draw tile's basic type
-  (dolist (type (tile-type (aref (world-map *world*) x y)))
-    (draw-at x y x-shift y-shift (eval type)))
-
-  ;; Draw tile's variant list
-  (dolist (variant (tile-variant (aref (world-map *world*) x y)))
-    (draw-at x y x-shift y-shift (eval variant)))
-
-  (dolist (unit (tile-units (aref (world-map *world*) x y)))
-    (draw-at x y x-shift y-shift counterbase)
-    (draw-at x y x-shift y-shift (army-counter unit)))
-  )
-
 (defun draw-coords (x y x-shift y-shift)
   ;;Add this to end of draw-tile to write map coords as text on tiles
   (let ((left-top-x (+ (* x (car tile-size))
@@ -368,18 +349,6 @@
 			     left-top-x
 			     left-top-y
 			     :color sdl:*white*)))
-
-;;Should have x and y coordinate floating free to be used: TODO REWRITE
-(defmacro dotiles ((tile map &optional result-form) &body body)
-  `(do* ((mapxxx ,map)
-	 (x-dimxxx (array-dimension ,map 0))
-	 (y-dimxxx (array-dimension ,map 1))
-	 (lengthxxx (* x-dimxxx y-dimxxx))
-	 (ixxx 0 (1+ ixxx))
-	 (,tile nil))
-	((equal ixxx lengthxxx) ,result-form)
-     (setf ,tile (aref mapxxx (floor (/ ixxx y-dimxxx)) (mod ixxx y-dimxxx)))
-     ,@body))
 
 
 (defmacro tile-graphics-setup (tile-symbol &optional (x-offset 0) (y-offset 0))
