@@ -10,7 +10,6 @@
 (defvar *current-move-area* nil)
 (defvar *war-color-key* (sdl:color :r 255 :g 0 :b 255))
 
-
 ;; 128,104 is tile size -> 102 is distance from right point to lower left point:
 (defparameter tile-large-size-full (cons 128 104))
 (defparameter tile-large-size (cons 102 104))
@@ -41,7 +40,9 @@
 (defstruct graphics
   (surface nil)
   (x-at 0)  ; modifiers for drawing
-  (y-at 0))
+  (y-at 0)
+  (priority 0)  ; Higher priorities should be moved towards tile lists' ends
+  )
 
 (defvar *world* nil)
 
@@ -357,63 +358,38 @@
 			     left-top-y
 			     :color sdl:*white*)))
 
-(defmacro tile-graphics-setup (tile-symbol &optional (x-offset 0) (y-offset 0))
+(defmacro tile-graphics-setup (tile-symbol priority &optional (x-offset 0) (y-offset 0))
   (let ((symbol-name (gensym))
 	(direction (gensym))
 	(graphics (gensym))
 	(new-symbol (gensym))
+	(graphics-list (gensym))
 	(size-of-tile (cond ((search "LARGE" (symbol-name tile-symbol)) 'large)
 			    ((search "SMALL" (symbol-name tile-symbol)) 'small))))
-    `(let ((,symbol-name (symbol-name ',tile-symbol)))
-       (mapcar #'(lambda (,direction ,graphics)
-		   (if ,graphics
-		       (let ((,new-symbol (intern
-					    (if ,direction 
-						(concatenate 'string ,symbol-name ,direction)
-						,symbol-name))))
-			 (eval
-			  `(defparameter ,,new-symbol ,,graphics)))))
-	       '(nil ;; NIL = center
-		 "-BORDER-NORTH" "-BORDER-NORTH-EAST" "-BORDER-SOUTH-EAST"
-		 "-BORDER-SOUTH" "-BORDER-SOUTH-WEST" "-BORDER-NORTH-WEST")
-	       (chop-tile
-		(concatenate 'string "graphics/" (substitute #\_ #\- ,symbol-name) ".png")
-		,x-offset ,y-offset
-		,@(cond ((eq size-of-tile 'large)
-			 (list (- (* 2 (car tile-large-size))
-				  (car tile-large-size-full))
-			       (car tile-large-size-full)
-			       (cdr tile-large-size-full)))))))))
+    `(let* ((,symbol-name (symbol-name ',tile-symbol))
+	    (,graphics-list (mapcar #'(lambda (,direction ,graphics)
+					(if ,graphics
+					    (let ((,new-symbol (intern
+								(if ,direction 
+								    (concatenate 'string ,symbol-name ,direction)
+								    ,symbol-name))))
+					      (eval
+					       `(defparameter ,,new-symbol ,,graphics)))))
+				    '(nil ;; NIL = center
+				      "-BORDER-NORTH" "-BORDER-NORTH-EAST" "-BORDER-SOUTH-EAST"
+				      "-BORDER-SOUTH" "-BORDER-SOUTH-WEST" "-BORDER-NORTH-WEST")
+				    (chop-tile
+				     (concatenate 'string "graphics/" (substitute #\_ #\- ,symbol-name) ".png")
+				     ,x-offset ,y-offset
+				     ,@(cond ((eq size-of-tile 'large)
+					      (list (- (* 2 (car tile-large-size))
+						       (car tile-large-size-full))
+						    (car tile-large-size-full)
+						    (cdr tile-large-size-full))))))))
+       (dolist (,graphics ,graphics-list)
+	 (if ,graphics
+	     (setf (graphics-priority (symbol-value ,graphics)) ,priority))))))
 
-(defmacro OBSOLETEtile-graphics-setup (tile-symbol &optional (x-offset 0) (y-offset 0))
-  (let* ((symbol-string (symbol-name tile-symbol))
-	 (to-conc nil))
-    (cond ((search "SOUTH-WEST" symbol-string)
-	   (setf to-conc "SW"))
-	  ((search "SOUTH-EAST" symbol-string)
-	   (setf to-conc "SE"))
-	  ((search "SOUTH" symbol-string)
-	   (setf to-conc "S"))
-	  ((search "NORTH-EAST" symbol-string)
-	   (setf to-conc "NE"))
-	  ((search "NORTH-WEST" symbol-string)
-	   (setf to-conc "NW"))
-	  ((search "NORTH" symbol-string)
-	   (setf to-conc "N")))
-
-    `(prog1
-	 (defparameter ,tile-symbol
-	   (make-graphics :surface
-			  (sdl-image:load-image
-			   (concatenate 'string "graphics/"
-					(subseq (substitute #\_ #\- ,symbol-string)
-						(or (search "SOUTH" ,symbol-string)
-						    (search "NORTH" ,symbol-string)))
-					,to-conc
-					".png"))
-			  :x-at ,x-offset :y-at ,y-offset))
-       (setf (sdl:color-key-enabled-p (graphics-surface ,tile-symbol)) t)
-       (setf (sdl:color-key (graphics-surface ,tile-symbol)) *war-color-key*))))
 
 ;; Could be used for things other than rivers as well
 (defmacro tile-river-setup (river-symbol-dir x-offset y-offset)
@@ -446,16 +422,15 @@
     
 
 (defun load-tiles ()
-  (tile-graphics-setup sea-large -4 -9)
-  (tile-graphics-setup grass-large)
+  (tile-graphics-setup sea-large 100 -4 -9)
+  (tile-graphics-setup grass-large 0)
 
-  (tile-graphics-setup swamp-large)
-  (tile-graphics-setup city-a-large -6 -5)
-  (tile-graphics-setup suburb-a-large)
+  (tile-graphics-setup swamp-large 1)
+  (tile-graphics-setup city-a-large 50 -6 -5)
+  (tile-graphics-setup suburb-a-large 50)
 
-  (tile-graphics-setup selector-large 11 0)
+  (tile-graphics-setup selector-large 200 11 0)
 
-  ;; rivers broken:
   (tile-river-setup stream-large-north-west -2 -2)
   (tile-river-setup stream-large-south-west -2 50)
   (tile-river-setup stream-large-north 24 -8)
