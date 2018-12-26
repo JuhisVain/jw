@@ -46,6 +46,27 @@
 
 (defvar *world* nil)
 
+(defmacro do-world-tiles ((var &optional (world *world*)) &body body)
+  (let ((x (gensym))
+	(y (gensym)))
+    `(dotimes (,x (+ 1 (world-width ,world)))
+       (dotimes (,y (+ 1 (world-height ,world)))
+	 (let ((,var (tile-at ,x ,y)))
+	   ,@body)))))
+
+(defun sort-world-graphics (&optional (world *world*))
+  (do-world-tiles (tile world)
+    (setf (tile-type tile)
+	  (sort (tile-type tile)
+		#'(lambda (a b)
+		    (< (graphics-priority (symbol-value a))
+		       (graphics-priority (symbol-value b))))))
+    (setf (tile-variant tile)
+	  (sort (tile-variant tile)
+		#'(lambda (a b)
+		    (< (graphics-priority (symbol-value a))
+		       (graphics-priority (symbol-value b)))))))))
+
 (defun init-test (height width)
   (setf *world* (init-world height width))
   nil)
@@ -100,6 +121,7 @@
     (sdl:initialise-default-font)
 
     (load-tiles)
+    (sort-world-graphics) ;; Put graphics in order to render correctly
     (setup-panels) ;; Setup the chrome
 
     (counter-gen:nato-color-init)
@@ -467,7 +489,6 @@
 	 (defparameter city-outskirts-ne city-a-large-border-north-east)
 	 (defparameter city-outskirts-nw city-a-large-border-north-west)
 
-	 ;; river borked
 	 (defparameter stream-nw stream-large-north-west)
 	 (defparameter stream-sw stream-large-south-west)
 	 (defparameter stream-n stream-large-north)
