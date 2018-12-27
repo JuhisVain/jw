@@ -63,6 +63,7 @@
 (defmethod click ((button panel-button) ) ;; Might wanna use mouse state later
   (funcall (panel-button-action button)))
 
+;; Some more sensible names in here might be good
 (defclass panel-list ()
   ((x
     :accessor panel-element-x
@@ -76,66 +77,102 @@
    (height
     :accessor panel-element-height
     :initarg :height)
+   (element-count
+    :accessor panel-list-element-count
+    :initarg :element-count)
    (element-height
     :accessor panel-list-element-height
     :initarg :element-height)
    (element-width
     :accessor panel-list-element-width
     :initarg :element-width)
+   (element-display-fun ; Evals to graphics: needs to take one argument: index of list's element
+    :accessor panel-list-element-display-fun
+    :initarg :element-display-fun)
    (action
     :accessor panel-list-action
-    :initarg :action)))
+    :initarg :action)
+   (parent
+    :accessor panel-list-parent
+    :initarg :parent)))
 
 (defmethod display ((list panel-list))
-  ())
+  (dotimes (index (panel-list-element-count list))
+    (let ((graphics (apply (panel-list-element-display-fun list)
+			   (list index))))
+      (if (not graphics) (return-from display))
+      (sdl:draw-surface-at-* graphics
+			     (+ (panel-element-x list) (panel-x (panel-list-parent list)))
+			     (+ (panel-element-y list)
+				(panel-y (panel-list-parent list))
+				(* index (panel-list-element-height list)))
+			     :surface window))))
 
 (defmacro create-panel (x y width height &rest elements)
   ;; Sorting the elements from greatest to smallest
   ;;   -> will end up in panel slot smallest to greatest
-  (let ((sorted-elements
+  (let ((panel (gensym))
+	(element (gensym))
+	(sorted-elements
 	 (sort elements #'(lambda (one two)
-			    (or (> (getf one :y) (getf two :y)) ;; oh la la
-			        (> (getf one :x) (getf two :x))
-				nil)))))
-    `(let ((panel (make-panel :x ,x :y ,y
+			    (cond ((> (getf one :y) (getf two :y)) t)
+			          ((equal (getf one :y) (getf two :y))
+				   (> (getf one :x) (getf two :x)))
+				  (t nil))))))
+
+    `(let ((,panel (make-panel :x ,x :y ,y
 			      :width ,width :height ,height
 			      :elements nil)))
-       (dolist (element ',sorted-elements)
-	 (nconc element (list :parent panel))
-	 (push (eval element) (panel-elements panel)))
-    panel))) ;; panel panel panel PANEL PANEL PANEL
+       (dolist (,element ',sorted-elements)
+	 (setf ,element (nconc ,element (list :parent ,panel)))
+	 (setf (panel-elements ,panel)
+	       (push (eval ,element) (panel-elements ,panel))))
+       ,panel))) ;; panel panel panel PANEL PANEL PANEL
 
 (defun setup-panels ()
   (setf *panel-setup* nil)
   ;; TODO: pushnew seems to work here for now butbutbut...
   ;; also will need to do testing with sdl-image:load-image
-  (pushnew (create-panel (- (sdl:width window) 200)
-			 0
-			 200
-			 (sdl:height window)
-			 (make-instance 'panel-button
-					:x 4 :y 4
-					:width 48 :height 48
-					:icon (sdl-image:load-image "graphics/PANEL_BUTTON_TEST.png")
-					:action #'(lambda () (format t "~&~a~%" (chop-tile "graphics/SEA_LARGE.png" 0 0))))
-			 (make-instance 'panel-button
-					:x 56 :y 4
-					:width 48 :height 48
-					:icon (sdl-image:load-image "graphics/PANEL_BUTTON_TEST.png")
-					:action #'(lambda () (chop-tile "graphics/CITY_A_LARGE_BIG.png" -6 -5)))
-			 (make-instance 'panel-button
-					:x 108 :y 4
-					:width 48 :height 48
-					:icon (sdl-image:load-image "graphics/PANEL_BUTTON_TEST.png")
-					:action #'(lambda () (set-test-unit 34))))
-  ;;				  (make-panel-list
-;;				   :position (cons 4 56)
-;;				   :width 192
-;;				   :height 450
-;;				   :display 
-;;				   :element-height 50
-;;				   :action)))
-	   *panel-setup*))
+  (let ((new-panel 
+	 (create-panel (- (sdl:width window) 200)
+		       0
+		       200
+		       (sdl:height window)
+		       (make-instance 'panel-button
+				      :x 4 :y 4
+				      :width 48 :height 48
+				      :icon (sdl-image:load-image "graphics/PANEL_BUTTON_TEST.png")
+				      :action #'(lambda () (format t "~&Moo!~%")))
+		       (make-instance 'panel-button
+				      :x 56 :y 4
+				      :width 48 :height 48
+				      :icon (sdl-image:load-image "graphics/PANEL_BUTTON_TEST.png")
+				      :action #'(lambda () (format t "~&Quack quack!~%")))
+		       (make-instance 'panel-button
+				      :x 108 :y 4
+				      :width 48 :height 48
+				      :icon (sdl-image:load-image "graphics/PANEL_BUTTON_TEST.png")
+				      :action #'(lambda () (set-test-unit 34)))
+  		       (make-instance 'panel-list
+				      :x 4 :y 56
+				      :width 150 :height 300
+				      :element-count 5
+				      :element-height 60
+				      :element-display-fun
+				      #'(lambda (index)
+					; Pretty inefficient ps. and dumb
+					  (block panel-list-lambda
+					    (graphics-surface
+					     (army-counter
+					      (or
+					       (nth index
+						    (tile-units
+						     (or
+						      (tile-at (car selected-tile) (cdr selected-tile))
+						      (return-from panel-list-lambda nil))))
+					       (return-from panel-list-lambda nil))))))))))
+    ;; Trying to push create-panel directly won't work
+    (push new-panel *panel-setup*)))
 
 (defun draw-panels ()
     (mapcar #'(lambda (panel)

@@ -10,6 +10,8 @@
 (defvar *current-move-area* nil)
 (defvar *war-color-key* (sdl:color :r 255 :g 0 :b 255))
 
+(defvar selected-tile nil)
+
 ;; 128,104 is tile size -> 102 is distance from right point to lower left point:
 (defparameter tile-large-size-full (cons 128 104))
 (defparameter tile-large-size (cons 102 104))
@@ -19,8 +21,8 @@
 (defun set-test-unit (oct-diam)
   (format t "~%Setting up testunit~&")
   (counter-gen:nato-dimension-init oct-diam)
-  (cond (;;t ;;if t -> set to create new armies at (10,8) everytime (test) runs
-	 (null *testunit*) ;; no more units created
+  (cond (t ;;if t -> set to create new armies at (10,8) everytime (test) runs
+	 ;;(null *testunit*) ;; no more units created
 	 (setf *testunit*
 	       (make-army :x 0 :y 0
 			  :id 666
@@ -129,7 +131,8 @@
 
     (let ((x-shift 0) (y-shift 0)
 	  (selector-tile '(0 . 0)) (selector-graphics '(0 . 0))
-	  (selected-tile nil) (selected-graphics nil)
+	  ;;(selected-tile nil)
+	  (selected-graphics nil)
 	  (selected-unit nil))
 
 	  (sdl:with-events ()
@@ -594,7 +597,7 @@
 
 (defun tile-at (x y &optional (world *world*))
   "Returns struct tile at (x,y) or nil on failure"
-  (and (>= x 0) (>= y 0)
+  (and x y (>= x 0) (>= y 0)
        (< x (array-dimension (world-map world) 0))
        (< y (array-dimension (world-map world) 1))
        (aref (world-map world) x y)))
