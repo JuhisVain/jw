@@ -65,7 +65,7 @@
 	  (sort (tile-variant tile)
 		#'(lambda (a b)
 		    (< (graphics-priority (symbol-value a))
-		       (graphics-priority (symbol-value b)))))))))
+		       (graphics-priority (symbol-value b))))))))
 
 (defun init-test (height width)
   (setf *world* (init-world height width))
