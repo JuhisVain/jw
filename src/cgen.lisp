@@ -88,16 +88,32 @@
 		       ne-y nw-y
 		       se-x (+ e-x (* 0.05 octagon-rad))
 		       se-y s-y)
+
 		      (vecto:ellipse-arc centre-x s-y
 					 (* 1.05 octagon-rad)
 					 (* 1.37 octagon-dia)
-					 0 0 pi)
-		      ;;TEST remove
+					 0 0 (* 2 pi))
+
 		      (vecto:fill-and-stroke)
-		      (vecto:move-to nw-x nw-y)
-		      (vecto:line-to se-x se-y)
-		      (vecto:stroke)
-		      (vecto:save-png "vectosave")
+
+		      ;; Can't figure out clipping or making open half-ellipses: just draw a bottom
+		      (vecto:set-rgb-fill 1.0 0.0 1.0) ; color-key
+		      (vecto:move-to 0 s-y)
+		      (vecto:line-to field-width s-y )
+		      (vecto:line-to field-width 0)
+		      (vecto:line-to 0 0)
+		      (vecto:close-subpath)
+		      
+		      (vecto:fill-path)
+
+		      (vecto:set-rgb-fill (/ 128 255) (/ 224 255) 1.0) ; blue
+
+		      ;;TEST remove
+		      ;;(vecto:fill-and-stroke)
+		      ;;(vecto:move-to nw-x nw-y)
+		      ;;(vecto:line-to se-x se-y)
+		      ;;(vecto:stroke)
+		      ;;(vecto:save-png "vectosave")
 		      ))))
 	))))
 
