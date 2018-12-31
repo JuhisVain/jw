@@ -4,7 +4,7 @@
 
 (defvar *nato-symbol-lib* (make-hash-table :test 'equal))
 
-(defmacro OBSfind-first (predicate item-list list)
+(defmacro find-first (predicate item-list list)
   (let ((element (gensym)))
     `(dolist (,element ,list)
        (if (or
@@ -43,6 +43,8 @@
 			  (- centre-y sin45)))
 	    (oct-sw (cons (- centre-x sin45)
 			  (- centre-y sin45)))
+	    (oct-w-x (- centre-x octagon-rad)) ; y is centre-y
+	    (oct-e-x (+ centre-x octagon-rad))
 	    
 	    (n-y)(nw-x)(nw-y)(ne-x)(ne-y)(s-y)(sw-x)
 	    (sw-y)(se-x)(se-y)(w-x)(w-y)(e-x)(e-y)
@@ -51,8 +53,8 @@
 	    (line-color '(0.0 0.0 0.0)))
 	
 	(cond ((eq affiliation 'friendly)
-	       (setf fill-color (list (/ 1.0 3) 1.0 (/ 1.0 3)))
-	       ; line color already set up
+	       (vecto:set-rgb-fill (/ 128 255) (/ 224 255) 1.0) ; blue
+	       (vecto:set-rgb-stroke 0 0 0) ; black
 	       (cond ((eq dimension 'land);friendly land: rectangle
 		      (setf
 		       n-y (+ octagon-rad centre-y)
@@ -68,8 +70,35 @@
 		       ne-x e-x
 		       ne-y n-y
 		       se-x e-x
-		       se-y s-y
-		       ))))
+		       se-y s-y)
+		      (vecto:rectangle sw-x sw-y field-width octagon-dia))
+		     ((eq dimension 'air) ; friendly air: half ellipse, open bottom
+		      (setf
+		       n-y field-height
+		       w-x oct-w-x
+		       w-y centre-y
+		       e-x oct-e-x
+		       e-y centre-y
+		       nw-x (car oct-nw)
+		       nw-y (+ octagon-rad centre-y)
+		       s-y (- centre-y octagon-rad)
+		       sw-x (- w-x (* 0.05 octagon-rad))
+		       sw-y s-y
+		       ne-x (car oct-ne)
+		       ne-y nw-y
+		       se-x (+ e-x (* 0.05 octagon-rad))
+		       se-y s-y)
+		      (vecto:ellipse-arc centre-x s-y
+					 (* 1.05 octagon-rad)
+					 (* 1.37 octagon-dia)
+					 0 0 pi)
+		      ;;TEST remove
+		      (vecto:fill-and-stroke)
+		      (vecto:move-to nw-x nw-y)
+		      (vecto:line-to se-x se-y)
+		      (vecto:stroke)
+		      (vecto:save-png "vectosave")
+		      ))))
 	))))
 
 
