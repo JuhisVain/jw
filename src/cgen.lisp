@@ -45,6 +45,12 @@
 			  (- centre-y sin45)))
 	    (oct-w-x (- centre-x octagon-rad)) ; y is centre-y
 	    (oct-e-x (+ centre-x octagon-rad))
+
+	    ;; This is the x-distance between octagon's (circle's) NW
+	    ;; and 1.1 times larger (on x axis) ellipse's x-coord
+	    ;; when y = oct's N
+	    (ellipse-intcard-x
+	     (floor (sqrt (/ (expt (* octagon-rad 0.1) 2) 2))))
 	    
 	    (n-y)(nw-x)(nw-y)(ne-x)(ne-y)(s-y)(sw-x)
 	    (sw-y)(se-x)(se-y)(w-x)(w-y)(e-x)(e-y)
@@ -80,19 +86,19 @@
 		       w-y centre-y
 		       e-x oct-e-x
 		       e-y centre-y
-		       nw-x (car oct-nw)
+		       nw-x (- (car oct-nw) ellipse-intcard-x)
 		       nw-y (+ octagon-rad centre-y)
 		       s-y (- centre-y octagon-rad)
-		       sw-x (- w-x (* 0.05 octagon-rad))
+		       sw-x (- w-x (* 0.1 octagon-rad))
 		       sw-y s-y
-		       ne-x (car oct-ne)
+		       ne-x (+ (car oct-ne) ellipse-intcard-x)
 		       ne-y nw-y
-		       se-x (+ e-x (* 0.05 octagon-rad))
+		       se-x (+ e-x (* 0.1 octagon-rad))
 		       se-y s-y)
 
 		      ;; Full ellipse, to be cut later in this cond
 		      (vecto:ellipse-arc centre-x s-y
-					 (* 1.05 octagon-rad)
+					 (* 1.1 octagon-rad)
 					 (* 1.37 octagon-dia)
 					 0 0 (* 2 pi))
 		      (vecto:fill-and-stroke)
@@ -102,7 +108,7 @@
 			  (progn
 			    (vecto:set-rgb-fill 0 0 0) ; black
 			    (vecto:ellipse-arc centre-x s-y
-					       (* 1.05 octagon-rad)
+					       (* 1.1 octagon-rad)
 					       (* 1.37 octagon-dia)
 					       0
 					       (* 65/180 pi)
@@ -117,18 +123,17 @@
 		      (vecto:line-to field-width 0)
 		      (vecto:line-to 0 0)
 		      (vecto:close-subpath)
-		      
 		      (vecto:fill-path)
-
+		      
 		      (vecto:set-rgb-fill (/ 128 255) (/ 224 255) 1.0) ; blue
 		      )
 		     ((or (eq dimension 'surface) ; friendly (sea) surface: circle
 			  (eq dimension 'equipment)) ; friendly equip, same as surface
 		      (setf
 		       n-y (+ octagon-rad centre-y)
-		       w-x (- centre-x octagon-rad)
+		       w-x oct-w-x
 		       w-y centre-y
-		       e-x (+ centre-x octagon-rad)
+		       e-x oct-e-x
 		       e-y centre-y
 		       nw-x (car oct-nw)
 		       nw-y (cdr oct-nw)
@@ -142,13 +147,65 @@
 
 		      (vecto:centered-circle-path centre-x centre-y octagon-rad)
 		      (vecto:fill-and-stroke)
-
-		      (vecto:move-to nw-x nw-y)
-		      (vecto:line-to se-x se-y)
-		      (vecto:stroke)
-		      (vecto:save-png "vectosave")
 		      )
-		     )))
+		     ((eq dimension 'subsurface)
+		      (setf
+		       n-y (+ centre-y octagon-rad)
+		       w-x oct-w-x
+		       w-y centre-y
+		       e-x oct-e-x
+		       e-y centre-y
+		       nw-x (- w-x (* 0.1 octagon-rad))
+		       nw-y n-y
+		       s-y (- centre-y octagon-rad)
+		       sw-x (- (car oct-sw) ellipse-intcard-x)
+		       sw-y (- centre-y octagon-rad)
+		       ne-x (+ e-x (* 0.1 octagon-rad))
+		       ne-y n-y
+		       se-x (+ (car oct-se) ellipse-intcard-x)
+		       se-y (- centre-y octagon-rad))
+
+		      (vecto:ellipse-arc centre-x n-y
+					 (* 1.1 octagon-rad)
+					 (* 1.37 octagon-dia)
+					 0 0 (* 2 pi))
+		      (vecto:fill-and-stroke)
+
+		      (vecto:set-rgb-fill 1.0 0.0 1.0) ; color-key
+		      (vecto:move-to 0 n-y)
+		      (vecto:line-to 0 field-height)
+		      (vecto:line-to field-width field-height)
+		      (vecto:line-to field-width n-y)
+		      (vecto:close-subpath)
+		      (vecto:fill-path)
+		      
+		      (vecto:set-rgb-fill (/ 128 255) (/ 224 255) 1.0) ; blue
+		      
+		      ))
+
+	       
+	       ;; test
+	       (vecto:move-to nw-x nw-y)
+	       (vecto:line-to se-x se-y)
+	       (vecto:stroke)
+
+	       (vecto:move-to ne-x ne-y)
+	       (vecto:line-to sw-x sw-y)
+	       (vecto:stroke)
+
+	       ;;let's draw the octagon:
+	       (vecto:move-to centre-x (+ centre-y octagon-rad))
+	       (vecto:line-to (car oct-ne) (cdr oct-nw))
+	       (vecto:line-to (+ octagon-rad centre-x) centre-y)
+	       (vecto:line-to (car oct-se) (cdr oct-se))
+	       (vecto:line-to centre-x (- centre-y octagon-rad))
+	       (vecto:line-to (car oct-sw) (cdr oct-sw))
+	       (vecto:line-to (- centre-x octagon-rad) centre-y)
+	       (vecto:line-to (car oct-nw) (cdr oct-nw))
+	       (vecto:close-subpath)
+	       (vecto:stroke)
+
+	       (vecto:save-png "vectosave")))
 	))))
 
 
