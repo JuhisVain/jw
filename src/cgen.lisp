@@ -72,7 +72,8 @@
 		       se-x e-x
 		       se-y s-y)
 		      (vecto:rectangle sw-x sw-y field-width octagon-dia))
-		     ((eq dimension 'air) ; friendly air: half ellipse, open bottom
+		     ((or (eq dimension 'air) ; friendly air: half ellipse, open bottom
+			  (eq dimension 'space)) ; friendly space: as air, but black top bar
 		      (setf
 		       n-y field-height
 		       w-x oct-w-x
@@ -96,6 +97,21 @@
 
 		      (vecto:fill-and-stroke)
 
+		      (if (eq dimension 'space)
+			  (progn
+			    (vecto:set-rgb-fill 0 0 0) ; black
+			    
+			    (vecto:ellipse-arc centre-x s-y
+					       (* 1.05 octagon-rad)
+					       (* 1.37 octagon-dia)
+					       0
+					       (* 65/180 pi)
+					       (* 115/180 pi))
+			    
+			    (vecto:fill-and-stroke)
+			    
+			    (vecto:set-rgb-fill (/ 128 255) (/ 224 255) 1.0))) ; blue
+
 		      ;; Can't figure out clipping or making open half-ellipses: just draw a bottom
 		      (vecto:set-rgb-fill 1.0 0.0 1.0) ; color-key
 		      (vecto:move-to 0 s-y)
@@ -114,7 +130,10 @@
 		      ;;(vecto:line-to se-x se-y)
 		      ;;(vecto:stroke)
 		      ;;(vecto:save-png "vectosave")
-		      ))))
+		      )
+		     
+		      
+		      )))
 	))))
 
 
