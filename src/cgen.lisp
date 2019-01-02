@@ -90,26 +90,24 @@
 		       se-x (+ e-x (* 0.05 octagon-rad))
 		       se-y s-y)
 
+		      ;; Full ellipse, to be cut later in this cond
 		      (vecto:ellipse-arc centre-x s-y
 					 (* 1.05 octagon-rad)
 					 (* 1.37 octagon-dia)
 					 0 0 (* 2 pi))
-
 		      (vecto:fill-and-stroke)
 
+		      ;; Do space specific black bar:
 		      (if (eq dimension 'space)
 			  (progn
 			    (vecto:set-rgb-fill 0 0 0) ; black
-			    
 			    (vecto:ellipse-arc centre-x s-y
 					       (* 1.05 octagon-rad)
 					       (* 1.37 octagon-dia)
 					       0
 					       (* 65/180 pi)
 					       (* 115/180 pi))
-			    
 			    (vecto:fill-and-stroke)
-			    
 			    (vecto:set-rgb-fill (/ 128 255) (/ 224 255) 1.0))) ; blue
 
 		      ;; Can't figure out clipping or making open half-ellipses: just draw a bottom
@@ -123,17 +121,34 @@
 		      (vecto:fill-path)
 
 		      (vecto:set-rgb-fill (/ 128 255) (/ 224 255) 1.0) ; blue
-
-		      ;;TEST remove
-		      ;;(vecto:fill-and-stroke)
-		      ;;(vecto:move-to nw-x nw-y)
-		      ;;(vecto:line-to se-x se-y)
-		      ;;(vecto:stroke)
-		      ;;(vecto:save-png "vectosave")
 		      )
-		     
-		      
-		      )))
+		     ((or (eq dimension 'surface) ; friendly (sea) surface: circle
+			  (eq dimension 'equipment)) ; friendly equip, same as surface
+		      (setf
+		       n-y (+ octagon-rad centre-y)
+		       w-x (- centre-x octagon-rad)
+		       w-y centre-y
+		       e-x (+ centre-x octagon-rad)
+		       e-y centre-y
+		       nw-x (car oct-nw)
+		       nw-y (cdr oct-nw)
+		       s-y (- centre-y octagon-rad)
+		       sw-x (car oct-sw)
+		       sw-y (cdr oct-sw)
+		       ne-x (car oct-ne)
+		       ne-y (cdr oct-ne)
+		       se-x (car oct-se)
+		       se-y (cdr oct-se))
+
+		      (vecto:centered-circle-path centre-x centre-y octagon-rad)
+		      (vecto:fill-and-stroke)
+
+		      (vecto:move-to nw-x nw-y)
+		      (vecto:line-to se-x se-y)
+		      (vecto:stroke)
+		      (vecto:save-png "vectosave")
+		      )
+		     )))
 	))))
 
 
