@@ -16,7 +16,7 @@
   (setf description (sort description #'string< :key #'symbol-name))
   (or (gethash (cons (cons width height) description) *nato-symbol-lib*)
       (generate-natosymbol-from width height description)))
-  
+
 (defun generate-natosymbol-from (width height description)
   (let* ((octagon-dia 100)
 	 (octagon-rad (floor octagon-dia 2))
@@ -61,7 +61,9 @@
 	(cond ((eq affiliation 'friendly)
 	       (vecto:set-rgb-fill (/ 128 255) (/ 224 255) 1.0) ; blue
 	       (vecto:set-rgb-stroke 0 0 0) ; black
-	       (cond ((eq dimension 'land);friendly land: rectangle
+	       (cond ((or (eq dimension 'land);friendly land: rectangle
+			  (eq dimension 'installation)
+			  (eq dimension 'activity))
 		      (setf
 		       n-y (+ octagon-rad centre-y)
 		       w-x 0
@@ -77,7 +79,30 @@
 		       ne-y n-y
 		       se-x e-x
 		       se-y s-y)
-		      (vecto:rectangle sw-x sw-y field-width octagon-dia))
+
+		      ;; Handle installation:
+		      (cond ((eq dimension 'installation)
+			     (vecto:set-rgb-fill 0 0 0) ; black
+			     (vecto:rectangle (- centre-x (/ octagon-rad 2))
+					      n-y octagon-rad (/ octagon-dia 15))
+			     (vecto:fill-and-stroke)
+			     (vecto:set-rgb-fill (/ 128 255) (/ 224 255) 1.0))) ; blue
+
+		      ;; Handle standard rectangle
+		      (vecto:rectangle sw-x sw-y field-width octagon-dia)
+		      (vecto:fill-and-stroke)
+
+		      ;; Handle activity
+		      (cond ((eq dimension 'activity)
+			     (let ((corner (/ field-width 10)))
+			       (vecto:set-rgb-fill 0 0 0) ; black
+			       (vecto:rectangle nw-x (- nw-y corner) corner corner)
+			       (vecto:rectangle (- ne-x corner) (- ne-y corner) corner corner)
+			       (vecto:rectangle sw-x sw-y corner corner)
+			       (vecto:rectangle (- se-x corner) se-y corner corner)
+			       (vecto:fill-and-stroke)
+			       (vecto:set-rgb-fill (/ 128 255) (/ 224 255) 1.0))) ; blue
+			    ))
 		     ((or (eq dimension 'air) ; friendly air: half ellipse, open bottom
 			  (eq dimension 'space)) ; friendly space: as air, but black top bar
 		      (setf
@@ -181,32 +206,33 @@
 		      
 		      (vecto:set-rgb-fill (/ 128 255) (/ 224 255) 1.0) ; blue
 		      
-		      ))
+		      )
+		     )))
 
-	       
-	       ;; test
-	       (vecto:move-to nw-x nw-y)
-	       (vecto:line-to se-x se-y)
-	       (vecto:stroke)
+	
+	;; test
+	(vecto:move-to nw-x nw-y)
+	(vecto:line-to se-x se-y)
+	(vecto:stroke)
 
-	       (vecto:move-to ne-x ne-y)
-	       (vecto:line-to sw-x sw-y)
-	       (vecto:stroke)
+	(vecto:move-to ne-x ne-y)
+	(vecto:line-to sw-x sw-y)
+	(vecto:stroke)
 
-	       ;;let's draw the octagon:
-	       (vecto:move-to centre-x (+ centre-y octagon-rad))
-	       (vecto:line-to (car oct-ne) (cdr oct-nw))
-	       (vecto:line-to (+ octagon-rad centre-x) centre-y)
-	       (vecto:line-to (car oct-se) (cdr oct-se))
-	       (vecto:line-to centre-x (- centre-y octagon-rad))
-	       (vecto:line-to (car oct-sw) (cdr oct-sw))
-	       (vecto:line-to (- centre-x octagon-rad) centre-y)
-	       (vecto:line-to (car oct-nw) (cdr oct-nw))
-	       (vecto:close-subpath)
-	       (vecto:stroke)
+	;;let's draw the octagon:
+	(vecto:move-to centre-x (+ centre-y octagon-rad))
+	(vecto:line-to (car oct-ne) (cdr oct-nw))
+	(vecto:line-to (+ octagon-rad centre-x) centre-y)
+	(vecto:line-to (car oct-se) (cdr oct-se))
+	(vecto:line-to centre-x (- centre-y octagon-rad))
+	(vecto:line-to (car oct-sw) (cdr oct-sw))
+	(vecto:line-to (- centre-x octagon-rad) centre-y)
+	(vecto:line-to (car oct-nw) (cdr oct-nw))
+	(vecto:close-subpath)
+	(vecto:stroke)
 
-	       (vecto:save-png "vectosave")))
-	))))
+	(vecto:save-png "vectosave"))
+      ))))
 
 
 
