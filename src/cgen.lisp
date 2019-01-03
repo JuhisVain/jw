@@ -232,7 +232,7 @@
 	(vecto:stroke)
 
 	(vecto:save-png "vectosave"))
-      ))))
+      )))
 
 
 
