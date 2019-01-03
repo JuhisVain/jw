@@ -256,12 +256,33 @@
 			    (vecto:rectangle (- se-x corner) se-y corner corner)
 			    (vecto:fill-and-stroke)
 			    (vecto:set-rgb-fill (/ 170 255) (/ 255 255) (/ 170 255)))))
-		     
+
+		     ((or (eq dimension 'air) ; square with open bottom
+			  (eq dimension 'space)) ; black full length bar on top
+
+		      (if (eq dimension 'space)
+			  (progn (vecto:set-rgb-fill 0 0 0)
+				 (vecto:rectangle nw-x nw-y
+						  octagon-dia (/ octagon-rad 5))
+				 (vecto:fill-and-stroke)
+				 (vecto:set-rgb-fill (/ 170 255) (/ 255 255) (/ 170 255))))
+		      
+		      (vecto:rectangle sw-x 0 octagon-dia (+ octagon-dia sw-y))
+		      (vecto:fill-and-stroke)
+
+		      (vecto:set-rgb-fill 1.0 0.0 1.0) ; color-key
+		      (vecto:move-to 0 s-y)
+		      (vecto:line-to field-width s-y )
+		      (vecto:line-to field-width 0)
+		      (vecto:line-to 0 0)
+		      (vecto:close-subpath)
+		      (vecto:fill-path)
+		      (vecto:set-rgb-fill (/ 170 255) (/ 255 255) (/ 170 255)) ; back to green
 		     )
 	       
 	       
 	       )
-	      )
+	      ))
 
 	
 	;; test
