@@ -34,6 +34,7 @@
     (vecto:with-canvas (:width field-width :height field-height)
       (vecto:set-rgb-fill 1.0 0.0 1.0) ; color key for sdl
       (vecto:clear-canvas) ; fill all with color key
+      (vecto:set-line-width 1)
       
       (let ((oct-nw (cons (- centre-x sin45)
 			  (+ centre-y sin45)))
@@ -206,8 +207,61 @@
 		      
 		      (vecto:set-rgb-fill (/ 128 255) (/ 224 255) 1.0) ; blue
 		      
-		      )
-		     )))
+		      )))
+	      ((eq affiliation 'neutral) ; this ought to be easy
+	       (vecto:set-rgb-fill (/ 170 255) (/ 255 255) (/ 170 255)) ; 'bamboo green'
+	       (vecto:set-rgb-stroke 0 0 0) ; black
+
+	       (setf ; Anchor points same for all dimensions
+		n-y (+ centre-y octagon-rad)
+		w-x (- centre-x octagon-rad)
+		w-y centre-y
+		e-x (+ centre-x octagon-rad)
+		e-y centre-y
+		nw-x w-x
+		nw-y n-y
+		s-y (- centre-y octagon-rad)
+		sw-x w-x
+		sw-y s-y
+		ne-x e-x
+		ne-y n-y
+		se-x e-x
+		se-y s-y)
+
+	       (cond ((or (eq dimension 'land) ; closed square
+			  (eq dimension 'surface)
+			  (eq dimension 'equipment)
+			  (eq dimension 'installation) ; black bar on top
+			  (eq dimension 'activity)) ; black squares at corners
+
+		      (if (eq dimension 'installation)
+			  (progn (vecto:set-rgb-fill 0 0 0)
+				 (vecto:rectangle
+				  (- centre-x (/ octagon-rad 2))
+				  n-y
+				  octagon-rad ; width
+				  (/ octagon-dia 15)) ; height
+				 (vecto:fill-and-stroke)
+				 (vecto:set-rgb-fill (/ 170 255) (/ 255 255) (/ 170 255))))
+		      
+		      (vecto:rectangle sw-x sw-y octagon-dia octagon-dia)
+		      (vecto:fill-and-stroke)
+
+		      (if (eq dimension 'activity)
+			  (let ((corner (/ field-width 10)))
+			    (vecto:set-rgb-fill 0 0 0)
+			    (vecto:rectangle nw-x (- nw-y corner) corner corner)
+			    (vecto:rectangle (- ne-x corner) (- ne-y corner) corner corner)
+			    (vecto:rectangle sw-x sw-y corner corner)
+			    (vecto:rectangle (- se-x corner) se-y corner corner)
+			    (vecto:fill-and-stroke)
+			    (vecto:set-rgb-fill (/ 170 255) (/ 255 255) (/ 170 255)))))
+		     
+		     )
+	       
+	       
+	       )
+	      )
 
 	
 	;; test
