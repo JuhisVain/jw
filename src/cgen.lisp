@@ -294,7 +294,7 @@
 			      e-x (+ centre-x octagon-rad)
 			      e-y centre-y
 			      nw-x w-x
-			      nw-y (+ centre-y sin45)   ;;;; WRONG
+			      nw-y (+ centre-y (- vert-ofs octagon-rad))
 			      s-y (- centre-y octagon-rad)
 			      sw-x w-x
 			      sw-y s-y
