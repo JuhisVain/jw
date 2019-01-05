@@ -270,6 +270,7 @@
 		      (vecto:rectangle sw-x 0 octagon-dia (+ octagon-dia sw-y))
 		      (vecto:fill-and-stroke)
 
+		      ;; Clear bottom:
 		      (vecto:set-rgb-fill 1.0 0.0 1.0) ; color-key
 		      (vecto:move-to 0 s-y)
 		      (vecto:line-to field-width s-y )
@@ -278,11 +279,53 @@
 		      (vecto:close-subpath)
 		      (vecto:fill-path)
 		      (vecto:set-rgb-fill (/ 170 255) (/ 255 255) (/ 170 255)) ; back to green
-		     )
-	       
-	       
+		      )))
+	      
+	      ((eq affiliation 'hostile)
+	       (vecto:set-rgb-fill (/ 255 255) (/ 128 255) (/ 128 255)) ; 'salmon'
+	       (vecto:set-rgb-stroke 0 0 0) ; black
+
+	       (let ((vert-ofs (* octagon-dia (sqrt 1/2)))) ; vertex offset from centre
+		 (cond ((or (eq dimension 'air)
+			    (eq dimension 'space))
+			(setf n-y (+ centre-y vert-ofs)
+			      w-x (- centre-x octagon-rad)
+			      w-y centre-y
+			      e-x (+ centre-x octagon-rad)
+			      e-y centre-y
+			      nw-x w-x
+			      nw-y (+ centre-y sin45)   ;;;; WRONG
+			      s-y (- centre-y octagon-rad)
+			      sw-x w-x
+			      sw-y s-y
+			      ne-x e-x
+			      ne-y nw-y
+			      se-x e-x
+			      se-y s-y)
+			(vecto:move-to sw-x 0) ; open bottom
+			(vecto:line-to nw-x nw-y)
+			(vecto:line-to centre-x n-y)
+			(vecto:line-to ne-x ne-y)
+			(vecto:line-to se-x 0)
+			(vecto:close-subpath)
+			(vecto:fill-and-stroke)
+
+			;; Clear bottom:
+			(vecto:set-rgb-fill 1.0 0.0 1.0)
+			(vecto:rectangle 0 0 field-width s-y)
+			(vecto:fill-path)
+
+			(if (eq dimension 'space)
+			    (progn
+			      (vecto:set-rgb-fill 0 0 0)
+			      
+			    ))
+			
+			(vecto:set-rgb-fill (/ 255 255) (/ 128 255) (/ 128 255)) ; back to red
+		    
+		    )))
 	       )
-	      ))
+	      )
 
 	
 	;; test
