@@ -318,7 +318,12 @@
 			(if (eq dimension 'space)
 			    (progn
 			      (vecto:set-rgb-fill 0 0 0)
-			      
+			      (vecto:move-to (- centre-x (- vert-ofs octagon-rad))
+					     (+ centre-y octagon-rad))
+			      (vecto:line-to centre-x n-y)
+			      (vecto:line-to (+ centre-x (- vert-ofs octagon-rad))
+					     (+ centre-y octagon-rad))
+			      (vecto:fill-path)
 			    ))
 			
 			(vecto:set-rgb-fill (/ 255 255) (/ 128 255) (/ 128 255)) ; back to red
