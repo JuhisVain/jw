@@ -11,22 +11,10 @@
 	    ,@(mapcar #'(lambda (x) `(,predicate ,element ',x)) item-list))
 	   (return ,element)))))
 
-(defmacro ONLYWORKISWTIHNUMBERSshape-with-origins (origin-list &rest dxdy-list)
-  "Draw shape several times using origin points"
-  (let ((origin (gensym)))
-    `(dolist (,origin ,origin-list)
-       (vecto:move-to (car ,origin) (cadr ,origin))
-       ,@(mapcar #'(lambda (x)
-		     `(vecto:line-to (+ (car ,origin) ,(car x))
-				     (+ (cadr ,origin) ,(cdr x))))
-		 
-		 (maplist #'(lambda (deltas)
-			      (cons (reduce #'+ deltas :key #'car)
-				    (reduce #'+ deltas :key #'cadr)))
-			  (reverse dxdy-list))))))
+;;; NOTE TO SELF: don't try to rewrite shape-with-origins,
+;;; it won't work unless it knows context of variables.
+;;; ps. wolololo I'll rewrite it tomorrow with verts relative to origin instead of previous!
 
-(defmacro shape-with-origins (origin-list &rest dxdy-list)
-  `())
 
 ;; Return element from symbol lib if found, otherwise generate it first.
 (defun description-to-surface (width height description)
@@ -389,27 +377,14 @@
 						      2)))
 
 			      (vecto:set-rgb-fill 0 0 0)
-			      (shape-with-origins ((centre-x n-y)
-						   )
-
-						  ((+ centre-x mini-square-rad)
-						   (- n-y mini-square-rad))
-
-						  (centre-x (+ centre-y octagon-rad))
-
-						  ((- centre-x mini-square-rad)
-						   (- n-y mini-square-rad)))
-						  
 			      
-			      ;;(vecto:set-rgb-fill 0 0 0)
-			      ;;(vecto:move-to centre-x n-y)
-			      ;;(vecto:line-to (+ centre-x mini-square-rad)
-			;;		     (- n-y mini-square-rad))
-			  ;;    (vecto:line-to centre-x (+ centre-y octagon-rad))
-			    ;;  (vecto:line-to (- centre-x mini-square-rad)
-			;;		     (- n-y mini-square-rad))
-
-			      
+			      (vecto:set-rgb-fill 0 0 0)
+			      (vecto:move-to centre-x n-y)
+			      (vecto:line-to (+ centre-x mini-square-rad)
+					     (- n-y mini-square-rad))
+			      (vecto:line-to centre-x (+ centre-y octagon-rad))
+			      (vecto:line-to (- centre-x mini-square-rad)
+					     (- n-y mini-square-rad))
 			      
 			      (vecto:close-subpath)
 			      (vecto:fill-path)
