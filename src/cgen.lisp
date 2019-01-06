@@ -11,6 +11,23 @@
 	    ,@(mapcar #'(lambda (x) `(,predicate ,element ',x)) item-list))
 	   (return ,element)))))
 
+(defmacro ONLYWORKISWTIHNUMBERSshape-with-origins (origin-list &rest dxdy-list)
+  "Draw shape several times using origin points"
+  (let ((origin (gensym)))
+    `(dolist (,origin ,origin-list)
+       (vecto:move-to (car ,origin) (cadr ,origin))
+       ,@(mapcar #'(lambda (x)
+		     `(vecto:line-to (+ (car ,origin) ,(car x))
+				     (+ (cadr ,origin) ,(cdr x))))
+		 
+		 (maplist #'(lambda (deltas)
+			      (cons (reduce #'+ deltas :key #'car)
+				    (reduce #'+ deltas :key #'cadr)))
+			  (reverse dxdy-list))))))
+
+(defmacro shape-with-origins (origin-list &rest dxdy-list)
+  `())
+
 ;; Return element from symbol lib if found, otherwise generate it first.
 (defun description-to-surface (width height description)
   (setf description (sort description #'string< :key #'symbol-name))
@@ -323,12 +340,82 @@
 			      (vecto:line-to centre-x n-y)
 			      (vecto:line-to (+ centre-x (- vert-ofs octagon-rad))
 					     (+ centre-y octagon-rad))
-			      (vecto:fill-path)
-			    ))
+			      (vecto:fill-path)))
 			
 			(vecto:set-rgb-fill (/ 255 255) (/ 128 255) (/ 128 255)) ; back to red
-		    
-		    )))
+			)
+		       ((or (eq dimension 'land) ; square tilted 45 degrees
+			    (eq dimension 'surface)
+			    (eq dimension 'equipment)
+			    (eq dimension 'installation)
+			    (eq dimension 'activity))
+			
+			(setf n-y (+ centre-y vert-ofs)
+			      w-x (- centre-x vert-ofs)
+			      w-y centre-y
+			      e-x (+ centre-x vert-ofs)
+			      e-y centre-y
+			      nw-x (car oct-nw)
+			      nw-y (cdr oct-nw)
+			      s-y (- centre-y vert-ofs)
+			      sw-x (car oct-sw)
+			      sw-y (cdr oct-sw)
+			      ne-x (car oct-ne)
+			      ne-y (cdr oct-ne)
+			      se-x (car oct-se)
+			      se-y (cdr oct-se))
+
+			(if (eq dimension 'installation)
+			    (progn
+			      (vecto:set-rgb-fill 0 0 0)
+			      (vecto:rectangle
+			       (- centre-x (/ octagon-rad 2))
+			       n-y
+			       octagon-rad ; width
+			       (/ octagon-dia 15)) ; height
+			      (vecto:fill-and-stroke)
+			      (vecto:set-rgb-fill (/ 255 255) (/ 128 255) (/ 128 255))))
+
+			;; Tilted square:
+			(vecto:move-to centre-x n-y)
+			(vecto:line-to e-x e-y)
+			(vecto:line-to centre-x s-y)
+			(vecto:line-to w-x w-y)
+			(vecto:close-subpath)
+			(vecto:fill-and-stroke)
+
+			(if (eq dimension 'activity)
+			    (let ((mini-square-rad (/ (- vert-ofs octagon-rad)
+						      2)))
+
+			      (vecto:set-rgb-fill 0 0 0)
+			      (shape-with-origins ((centre-x n-y)
+						   )
+
+						  ((+ centre-x mini-square-rad)
+						   (- n-y mini-square-rad))
+
+						  (centre-x (+ centre-y octagon-rad))
+
+						  ((- centre-x mini-square-rad)
+						   (- n-y mini-square-rad)))
+						  
+			      
+			      ;;(vecto:set-rgb-fill 0 0 0)
+			      ;;(vecto:move-to centre-x n-y)
+			      ;;(vecto:line-to (+ centre-x mini-square-rad)
+			;;		     (- n-y mini-square-rad))
+			  ;;    (vecto:line-to centre-x (+ centre-y octagon-rad))
+			    ;;  (vecto:line-to (- centre-x mini-square-rad)
+			;;		     (- n-y mini-square-rad))
+
+			      
+			      
+			      (vecto:close-subpath)
+			      (vecto:fill-path)
+			      (vecto:set-rgb-fill (/ 255 255) (/ 128 255) (/ 128 255))))
+			)
+		       ))
 	       )
 	      )
 
