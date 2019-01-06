@@ -11,10 +11,21 @@
 	    ,@(mapcar #'(lambda (x) `(,predicate ,element ',x)) item-list))
 	   (return ,element)))))
 
-;;; NOTE TO SELF: don't try to rewrite shape-with-origins,
-;;; it won't work unless it knows context of variables.
-;;; ps. wolololo I'll rewrite it tomorrow with verts relative to origin instead of previous!
 
+
+
+;;(shape-with-origins ((0 0) (1 1))
+;;  		      (1 0) (0 -1) (-2 0) (0 2) (1 0))
+(defmacro shape-with-origins (origin-list &rest coord-list)
+  `(progn
+     ,@(mapcar #'(lambda (origin)
+		   `(progn
+		      (vecto:move-to ,(car origin) ,(cadr origin))
+		      ,@(mapcar #'(lambda (coord)
+				    `(vecto:line-to (+ ,(car origin) ,(car coord))
+						    (+ ,(cadr origin) ,(cadr coord))))
+				coord-list)))
+	       origin-list)))
 
 ;; Return element from symbol lib if found, otherwise generate it first.
 (defun description-to-surface (width height description)
