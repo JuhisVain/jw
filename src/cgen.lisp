@@ -12,11 +12,8 @@
 	   (return ,element)))))
 
 
-
-
-;;(shape-with-origins ((0 0) (1 1))
-;;  		      (1 0) (0 -1) (-2 0) (0 2) (1 0))
-(defmacro shape-with-origins (origin-list &rest coord-list)
+(defmacro origins-shape-rel (origin-list &rest coord-list)
+  "Uses origins to draw several vector paths using coordinates relative to origin."
   `(progn
      ,@(mapcar #'(lambda (origin)
 		   `(progn
@@ -24,6 +21,17 @@
 		      ,@(mapcar #'(lambda (coord)
 				    `(vecto:line-to (+ ,(car origin) ,(car coord))
 						    (+ ,(cadr origin) ,(cadr coord))))
+				coord-list)))
+	       origin-list)))
+
+
+(defmacro origins-shape-abs (origin-list &rest coord-list)
+  `(progn
+     ,@(mapcar #'(lambda (origin)
+		   `(progn
+		      (vecto:move-to ,(car origin) ,(cadr origin))
+		      ,@(mapcar #'(lambda (coord)
+				    `(vecto:line-to ,(car coord) ,(cadr coord)))
 				coord-list)))
 	       origin-list)))
 
@@ -70,10 +78,7 @@
 	     (floor (sqrt (/ (expt (* octagon-rad 0.1) 2) 2))))
 	    
 	    (n-y)(nw-x)(nw-y)(ne-x)(ne-y)(s-y)(sw-x)
-	    (sw-y)(se-x)(se-y)(w-x)(w-y)(e-x)(e-y)
-	    
-	    (fill-color '(1.0 1.0 1.0))
-	    (line-color '(0.0 0.0 0.0)))
+	    (sw-y)(se-x)(se-y)(w-x)(w-y)(e-x)(e-y))
 	
 	(cond ((eq affiliation 'friendly)
 	       (vecto:set-rgb-fill (/ 128 255) (/ 224 255) 1.0) ; blue
@@ -389,22 +394,52 @@
 
 			      (vecto:set-rgb-fill 0 0 0)
 
-			      (shape-with-origins ((centre-x n-y) ; top
-						   (centre-x (- centre-y octagon-rad)) ; bottom
-						   ((+ centre-x octagon-rad mini-square-rad)
-						    (+ centre-y mini-square-rad)) ; right
-						   ((- centre-x octagon-rad mini-square-rad)
-						    (+ centre-y mini-square-rad))) ; left
+			      (origins-shape-rel ((centre-x n-y) ; top
+						  (centre-x (- centre-y octagon-rad)) ; bottom
+						  ((+ centre-x octagon-rad mini-square-rad)
+						   (+ centre-y mini-square-rad)) ; right
+						  ((- centre-x octagon-rad mini-square-rad)
+						   (+ centre-y mini-square-rad))) ; left
 
-						  (mini-square-rad (- mini-square-rad))
-						  (0 (* -2 mini-square-rad))
-						  ((- mini-square-rad) (- mini-square-rad)))
+						 (mini-square-rad (- mini-square-rad))
+						 (0 (* -2 mini-square-rad))
+						 ((- mini-square-rad) (- mini-square-rad)))
 
 			      (vecto:close-subpath)
 			      (vecto:fill-path)
 			      (vecto:set-rgb-fill (/ 255 255) (/ 128 255) (/ 128 255))))
 			)
-		       ))
+		       ((eq dimension 'subsurface)
+			(setf n-y (+ centre-y octagon-rad)
+			      w-x (- centre-x octagon-rad)
+			      w-y centre-y
+			      e-x (+ centre-x octagon-rad)
+			      e-y centre-y
+			      nw-x w-x
+			      nw-y n-y 
+			      s-y (- centre-y vert-ofs)
+			      sw-x w-x
+			      sw-y (- centre-y (- vert-ofs octagon-rad))
+			      ne-x e-x
+			      ne-y nw-y
+			      se-x e-x
+			      se-y sw-y)
+
+			(origins-shape-abs ((centre-x s-y))
+					   (sw-x sw-y) (w-x field-height)
+					   (e-x field-height) (se-x se-y))
+
+			(vecto:close-subpath)
+			(vecto:fill-and-stroke)
+
+			;; Clear top:
+			(vecto:set-rgb-fill 1.0 0.0 1.0)
+			(vecto:rectangle 0 n-y field-width (- field-height n-y))
+			(vecto:fill-path)
+			(vecto:set-rgb-fill (/ 255 255) (/ 128 255) (/ 128 255))
+			))))
+	      ((eq affiliation 'unknown)
+	       
 	       )
 	      )
 
