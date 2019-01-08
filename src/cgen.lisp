@@ -385,18 +385,21 @@
 
 			(if (eq dimension 'activity)
 			    (let ((mini-square-rad (/ (- vert-ofs octagon-rad)
-						      2)))
+						      2))) ; centre to corner
 
 			      (vecto:set-rgb-fill 0 0 0)
-			      
-			      (vecto:set-rgb-fill 0 0 0)
-			      (vecto:move-to centre-x n-y)
-			      (vecto:line-to (+ centre-x mini-square-rad)
-					     (- n-y mini-square-rad))
-			      (vecto:line-to centre-x (+ centre-y octagon-rad))
-			      (vecto:line-to (- centre-x mini-square-rad)
-					     (- n-y mini-square-rad))
-			      
+
+			      (shape-with-origins ((centre-x n-y) ; top
+						   (centre-x (- centre-y octagon-rad)) ; bottom
+						   ((+ centre-x octagon-rad mini-square-rad)
+						    (+ centre-y mini-square-rad)) ; right
+						   ((- centre-x octagon-rad mini-square-rad)
+						    (+ centre-y mini-square-rad))) ; left
+
+						  (mini-square-rad (- mini-square-rad))
+						  (0 (* -2 mini-square-rad))
+						  ((- mini-square-rad) (- mini-square-rad)))
+
 			      (vecto:close-subpath)
 			      (vecto:fill-path)
 			      (vecto:set-rgb-fill (/ 255 255) (/ 128 255) (/ 128 255))))
