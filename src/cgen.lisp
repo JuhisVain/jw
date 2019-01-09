@@ -480,7 +480,6 @@
 		      (if (eq dimension 'space)
 			  (progn
 			    (vecto:set-rgb-fill 0 0 0) ; black
-			    ;;(vecto:move-to ne-x ne-y)
 			    (vecto:arc centre-x (+ centre-y sin45)
 				       sin45 (* pi (/ 30 180)) (* pi (/ 150 180)))
 			    (vecto:fill-path)))
