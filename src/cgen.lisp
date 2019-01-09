@@ -81,7 +81,7 @@
 	    (sw-y)(se-x)(se-y)(w-x)(w-y)(e-x)(e-y))
 	
 	(cond ((eq affiliation 'friendly)
-	       (vecto:set-rgb-fill (/ 128 255) (/ 224 255) 1.0) ; blue
+	       (vecto:set-rgb-fill (/ 128 255) (/ 224 255) (/ 255 255)) ; 'crystal blue'
 	       (vecto:set-rgb-stroke 0 0 0) ; black
 	       (cond ((or (eq dimension 'land);friendly land: rectangle
 			  (eq dimension 'installation)
@@ -439,6 +439,55 @@
 			(vecto:set-rgb-fill (/ 255 255) (/ 128 255) (/ 128 255))
 			))))
 	      ((eq affiliation 'unknown)
+	       (vecto:set-rgb-fill (/ 255 255) (/ 255 255) (/ 128 255)) ; 'light yellow'
+	       (vecto:set-rgb-stroke 0 0 0) ; black
+
+	       (cond ((or (eq dimension 'air) ; three petal flower, open ?straight? bottom
+			  (eq dimension 'space)) ; top petal black tip
+
+		      (setf n-y (+ centre-y (* sin45 2))
+			    w-x (- centre-x (* sin45 2))
+			    w-y centre-y
+			    e-x (+ centre-x (* sin45 2))
+			    e-y centre-y
+			    nw-x (car oct-nw)
+			    nw-y (cdr oct-nw)
+			    s-y (- centre-y sin45) ; let's go with straight bottom
+			    sw-x (car oct-sw)
+			    sw-y (cdr oct-sw)
+			    ne-x (car oct-ne)
+			    ne-y (cdr oct-ne)
+			    se-x (car oct-se)
+			    se-y (cdr oct-se))
+
+		      (vecto:move-to sw-x sw-y)
+		      (vecto:arc (+ centre-x sin45) centre-y
+				 sin45 (/ pi -2) (/ pi 2))
+		      (vecto:arc centre-x (+ centre-y sin45)
+				 sin45 0 pi)
+		      (vecto:arc (- centre-x sin45) centre-y
+				 sin45 (/ pi 2) (+ pi (/ pi 2)))
+
+		      (vecto:fill-and-stroke)
+		      
+		      ;; clear bottom
+		      (vecto:rectangle sw-x 0 (* 2 sin45) centre-y)
+		      (vecto:fill-path)
+		      (vecto:set-rgb-fill 1.0 0.0 1.0)
+		      (vecto:rectangle 0 0 field-width sw-y)
+		      (vecto:fill-path)
+
+		      (if (eq dimension 'space)
+			  (progn
+			    (vecto:set-rgb-fill 0 0 0) ; black
+			    ;;(vecto:move-to ne-x ne-y)
+			    (vecto:arc centre-x (+ centre-y sin45)
+				       sin45 (* pi (/ 30 180)) (* pi (/ 150 180)))
+			    (vecto:fill-path)))
+
+		      (vecto:set-rgb-fill (/ 255 255) (/ 255 255) (/ 128 255)) ; back to yellow
+		      
+		      ))
 	       
 	       )
 	      )
