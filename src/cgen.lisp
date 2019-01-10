@@ -521,7 +521,66 @@
 		      
 		      )
 		     ((or (eq dimension 'land)
-			  )))
+			  (eq dimension 'surface)
+			  (eq dimension 'equipment)
+			  (eq dimension 'installation)
+			  (eq dimension 'activity))
+		      
+		      (setf n-y (+ centre-y (* sin45 2))
+			    w-x (- centre-x (* sin45 2))
+			    w-y centre-y
+			    e-x (+ centre-x (* sin45 2))
+			    e-y centre-y
+			    nw-x (car oct-nw)
+			    nw-y (cdr oct-nw)
+			    s-y (- centre-y (* sin45 2))
+			    sw-x (car oct-sw)
+			    sw-y (cdr oct-sw)
+			    ne-x (car oct-ne)
+			    ne-y (cdr oct-ne)
+			    se-x (car oct-se)
+			    se-y (cdr oct-se))
+
+		      (if (eq dimension 'installation)
+			  (progn
+			    (vecto:set-rgb-fill 0 0 0)
+			    (vecto:rectangle
+			     (- centre-x (/ octagon-rad 2))
+			     n-y
+			     octagon-rad ; width
+			     (/ octagon-dia 15)) ; height
+			    (vecto:fill-path)
+			    (vecto:set-rgb-fill (/ 255 255) (/ 255 255) (/ 128 255))))
+
+		      (vecto:move-to nw-x nw-y)
+		      (vecto:arc (- centre-x sin45) centre-y
+				 sin45 (/ pi 2) (* pi 3/2))
+		      (vecto:arc centre-x (- centre-y sin45)
+				 sin45 pi (* 2 pi))
+		      (vecto:arc (+ centre-x sin45) centre-y
+				 sin45 (- (/ pi 2)) (/ pi 2))
+		      (vecto:arc centre-x (+ centre-y sin45)
+				 sin45 0 pi)
+		      (vecto:clip-path) ; ok!
+		      (vecto:fill-and-stroke)
+
+		      (if (eq dimension 'activity)
+			  (let ((msr (/ (- (* octagon-dia (sqrt 1/2)) octagon-rad) 2)))
+			    (vecto:set-rgb-fill 0 0 0)
+			    (origins-shape-rel (((- centre-x (/ msr 2)) n-y)
+						((- e-x msr) (+ e-y (/ msr 2)))
+						((- centre-x (/ msr 2)) (+ s-y msr))
+						(w-x (+ w-y (/ msr 2))))
+
+					       (msr 0) (msr (- msr)) (0 (- msr))
+					       )
+			    (vecto:fill-path)
+			  
+
+			    (vecto:set-rgb-fill (/ 255 255) (/ 255 255) (/ 128 255))
+			  ))
+
+		      ))
 	       
 	       )
 	      )
