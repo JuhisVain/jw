@@ -485,14 +485,50 @@
 			    (vecto:fill-path)))
 
 		      (vecto:set-rgb-fill (/ 255 255) (/ 255 255) (/ 128 255)) ; back to yellow
+		      )
+		     ((eq dimension 'subsurface) ; three petals, open top
+		      (setf n-y (+ centre-y sin45)
+			    w-x (- centre-x (* sin45 2))
+			    w-y centre-y
+			    e-x (+ centre-x (* sin45 2))
+			    e-y centre-y
+			    nw-x (car oct-nw)
+			    nw-y (cdr oct-nw)
+			    s-y (- centre-y (* sin45 2))
+			    sw-x (car oct-sw)
+			    sw-y (cdr oct-sw)
+			    ne-x (car oct-ne)
+			    ne-y (cdr oct-ne)
+			    se-x (car oct-se)
+			    se-y (cdr oct-se))
+
+		      (vecto:move-to nw-x nw-y)
+		      (vecto:arc (- centre-x sin45) centre-y
+				 sin45 (/ pi 2) (* pi 3/2))
+		      (vecto:arc centre-x (- centre-y sin45)
+				 sin45 pi (* 2 pi))
+		      (vecto:arc (+ centre-x sin45) centre-y
+				 sin45 (- (/ pi 2)) (/ pi 2))
+		      (vecto:fill-and-stroke)
+
+		      ;; clear top:
+		      (vecto:rectangle nw-x centre-y (* 2 sin45) (- field-height centre-y))
+		      (vecto:fill-path)
+		      (vecto:set-rgb-fill 1.0 0.0 1.0)
+		      (vecto:rectangle 0 nw-y field-width (- field-height centre-y))
+		      (vecto:fill-path)
+		      (vecto:set-rgb-fill (/ 255 255) (/ 255 255) (/ 128 255))
 		      
-		      ))
+		      )
+		     ((or (eq dimension 'land)
+			  )))
 	       
 	       )
 	      )
 
 	
 	;; test
+	(vecto:set-rgb-stroke 1 0 0)
 	(vecto:move-to nw-x nw-y)
 	(vecto:line-to se-x se-y)
 	(vecto:stroke)
@@ -500,6 +536,17 @@
 	(vecto:move-to ne-x ne-y)
 	(vecto:line-to sw-x sw-y)
 	(vecto:stroke)
+
+	(vecto:set-rgb-stroke 0 0 1)
+	(vecto:move-to w-x w-y)
+	(vecto:line-to e-x e-y)
+	(vecto:stroke)
+
+	(vecto:move-to centre-x n-y)
+	(vecto:line-to centre-x s-y)
+	(vecto:stroke)
+
+	(vecto:set-rgb-stroke 0 0 0) ; black
 
 	;;let's draw the octagon:
 	(vecto:move-to centre-x (+ centre-y octagon-rad))
@@ -513,8 +560,7 @@
 	(vecto:close-subpath)
 	(vecto:stroke)
 
-	(vecto:save-png "vectosave"))
+	(vecto:save-png "vectosave")
+	)
       )))
-
-
 
