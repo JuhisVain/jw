@@ -41,11 +41,12 @@
   (or (gethash (cons (cons width height) description) *nato-symbol-lib*)
       (generate-natosymbol-from width height description)))
 
-(defun generate-natosymbol-from (width height description)
-  (let* ((octagon-dia 100)
+(defun generate-natosymbol-from (width description)
+  (let* ((field-width width)
+	 (octagon-dia (* 2/3 field-width))
 	 (octagon-rad (floor octagon-dia 2))
-	 (field-width (floor (* 1.5 octagon-dia)))
-	 (field-height (floor (* 1.74 octagon-dia)))
+	 ;;(field-width (floor (* 1.5 octagon-dia)))
+	 (field-height (* field-width 29/25))
 	 (centre-x (floor field-width 2))
 	 (centre-y (floor field-height 2))
 	 (sin45 (* octagon-rad (sin (/ pi 4))))
@@ -576,7 +577,6 @@
 					       )
 			    (vecto:fill-path)
 			  
-
 			    (vecto:set-rgb-fill (/ 255 255) (/ 255 255) (/ 128 255))
 			  ))
 
