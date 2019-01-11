@@ -43,7 +43,6 @@
 
 (defun generate-natosymbol-from (width description)
   (let* ((field-width width)
-	 (slack 5) ; space for wider lines
 	 (octagon-dia (* 2/3 field-width))
 	 (octagon-rad (floor octagon-dia 2))
 	 (field-height (* field-width 29/25)) ;; 174/150
@@ -56,7 +55,7 @@
 	  (find-first eq (air space land surface subsurface
 			      equipment installation activity)
 		      description)))
-    (vecto:with-canvas (:width (+ field-width slack) :height (+ field-height slack))
+    (vecto:with-canvas (:width field-width :height field-height)
       (vecto:with-graphics-state
 	(vecto:set-rgb-fill 1.0 0.0 1.0) ; color key for sdl
 	(vecto:clear-canvas) ; fill all with color key
@@ -163,7 +162,6 @@
 			(vecto:clip-path)
 			(vecto:fill-and-stroke)
 
-
 			;; Do space specific black bar:
 			(if (eq dimension 'space)
 			    (progn
@@ -174,10 +172,8 @@
 						 0
 						 (* 65/180 pi)
 						 (* 115/180 pi))
-			      (vecto:fill-and-stroke)))
-
-			(vecto:set-rgb-fill (/ 128 255) (/ 224 255) 1.0) ; blue
-
+			      (vecto:fill-and-stroke)
+			      (vecto:set-rgb-fill (/ 128 255) (/ 224 255) 1.0))) ; blue
 			)
 		       ((or (eq dimension 'surface) ; friendly (sea) surface: circle
 			    (eq dimension 'equipment)) ; friendly equip, same as surface
@@ -197,41 +193,41 @@
 			 se-x (car oct-se)
 			 se-y (cdr oct-se))
 
-			
-
 			(vecto:centered-circle-path centre-x centre-y octagon-rad)
 			(vecto:fill-and-stroke)
 			)
 		       ((eq dimension 'subsurface)
 			(setf
 			 n-y (+ centre-y octagon-rad)
-			 w-x oct-w-x
+			 w-x (- oct-w-x (* width 0.02))
 			 w-y centre-y
-			 e-x oct-e-x
+			 e-x (+ oct-e-x (* width 0.02))
 			 e-y centre-y
-			 nw-x (- w-x (* 0.1 octagon-rad))
+			 nw-x (- oct-w-x (* 0.1 octagon-rad))
 			 nw-y n-y
 			 s-y (- centre-y octagon-rad)
-			 sw-x (- (car oct-sw) ellipse-intcard-x)
-			 sw-y (- centre-y octagon-rad)
-			 ne-x (+ e-x (* 0.1 octagon-rad))
+			 sw-x ;(- (car oct-sw) ellipse-intcard-x)
+			      nw-x
+			 sw-y ;(- centre-y octagon-rad)
+			      (- centre-y octagon-rad)
+			 ne-x (+ oct-e-x (* 0.1 octagon-rad))
 			 ne-y n-y
-			 se-x (+ (car oct-se) ellipse-intcard-x)
+			 se-x ne-x
 			 se-y (- centre-y octagon-rad))
+
+			
+			;; Clip upper part of field
+			(vecto:rectangle 0 0 field-width n-y)
+			(vecto:clip-path)
+			(vecto:end-path-no-op)
 
 			(vecto:ellipse-arc centre-x n-y
 					   (* 1.1 octagon-rad)
 					   (* 1.37 octagon-dia)
 					   0 0 (* 2 pi))
+			(vecto:clip-path)
 			(vecto:fill-and-stroke)
 
-			(vecto:set-rgb-fill 1.0 0.0 1.0) ; color-key
-			(vecto:move-to 0 n-y)
-			(vecto:line-to 0 field-height)
-			(vecto:line-to field-width field-height)
-			(vecto:line-to field-width n-y)
-			(vecto:close-subpath)
-			(vecto:fill-path)
 			
 			(vecto:set-rgb-fill (/ 128 255) (/ 224 255) 1.0) ; blue
 			
@@ -307,7 +303,11 @@
 			(vecto:close-subpath)
 			(vecto:fill-path)
 			(vecto:set-rgb-fill (/ 170 255) (/ 255 255) (/ 170 255)) ; back to green
-			)))
+			)
+		       ((eq dimension 'subsurface) ; todo
+
+			)
+		       ))
 		
 		((eq affiliation 'hostile)
 		 (vecto:set-rgb-fill (/ 255 255) (/ 128 255) (/ 128 255)) ; 'salmon'
