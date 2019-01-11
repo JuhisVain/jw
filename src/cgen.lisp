@@ -71,13 +71,6 @@
 			    (- centre-y sin45)))
 	      (oct-w-x (- centre-x octagon-rad)) ; y is centre-y
 	      (oct-e-x (+ centre-x octagon-rad))
-
-	      ;; This is the x-distance between octagon's (circle's) NW
-	      ;; and 1.1 times larger (on x axis) ellipse's x-coord
-	      ;; when y = oct's N
-	      (ellipse-intcard-x
-	       (sqrt (/ (expt (* octagon-rad 0.1) 2) 2)))
-	      
 	      
 	      (n-y)(nw-x)(nw-y)(ne-x)(ne-y)(s-y)(sw-x)
 	      (sw-y)(se-x)(se-y)(w-x)(w-y)(e-x)(e-y))
@@ -304,8 +297,17 @@
 			(vecto:fill-path)
 			(vecto:set-rgb-fill (/ 170 255) (/ 255 255) (/ 170 255)) ; back to green
 			)
-		       ((eq dimension 'subsurface) ; todo
+		       ((eq dimension 'subsurface) ; square with open top
 
+			(vecto:rectangle 0 0 field-width nw-y)
+			(vecto:clip-path)
+			(vecto:end-path-no-op)
+
+			(vecto:rectangle sw-x sw-y octagon-dia (- field-height sw-y))
+			(vecto:clip-path)
+			(vecto:fill-and-stroke)
+			
+			
 			)
 		       ))
 		
