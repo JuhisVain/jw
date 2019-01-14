@@ -72,24 +72,25 @@
 			      equipment installation activity)
 		      description)))
     (vecto:with-canvas (:width field-width :height field-height)
-      (vecto:with-graphics-state
-	(colorset fill key) ; color key for sdl
-	(vecto:clear-canvas) ; fill all with color key
-	(vecto:set-line-width 1)
-	
-	(let ((oct-nw (cons (- centre-x sin45)
-			    (+ centre-y sin45)))
-	      (oct-ne (cons (+ centre-x sin45)
-			    (+ centre-y sin45)))
-	      (oct-se (cons (+ centre-x sin45)
-			    (- centre-y sin45)))
-	      (oct-sw (cons (- centre-x sin45)
-			    (- centre-y sin45)))
-	      (oct-w-x (- centre-x octagon-rad)) ; y is centre-y
-	      (oct-e-x (+ centre-x octagon-rad))
-	      
-	      (n-y)(nw-x)(nw-y)(ne-x)(ne-y)(s-y)(sw-x)
-	      (sw-y)(se-x)(se-y)(w-x)(w-y)(e-x)(e-y))
+      (colorset fill key) ; color key for sdl
+      (vecto:clear-canvas) ; fill all with color key
+      (vecto:set-line-width 1)
+      
+      (let ((oct-nw (cons (- centre-x sin45)
+			  (+ centre-y sin45)))
+	    (oct-ne (cons (+ centre-x sin45)
+			  (+ centre-y sin45)))
+	    (oct-se (cons (+ centre-x sin45)
+			  (- centre-y sin45)))
+	    (oct-sw (cons (- centre-x sin45)
+			  (- centre-y sin45)))
+	    (oct-w-x (- centre-x octagon-rad)) ; y is centre-y
+	    (oct-e-x (+ centre-x octagon-rad))
+	    
+	    (n-y)(nw-x)(nw-y)(ne-x)(ne-y)(s-y)(sw-x)
+	    (sw-y)(se-x)(se-y)(w-x)(w-y)(e-x)(e-y))
+
+	  (vecto:with-graphics-state
 	  
 	  (cond ((eq affiliation 'friendly)
 		 (colorset fill blue)
@@ -660,10 +661,10 @@
 
 	  ;;; Full frame icons should be drawn here to make use of frame clipping
 	  
-	  ) ;; all the lets
-	) ;; with graphics state ends
+	  ) ;; with graphics state ends
 
-      ;; Lesser icons to be drawn here to escape clipping
-
+	  ;; Lesser icons to be drawn here to escape clipping
+	  
+	) ;; all the lets 
       )))
 
