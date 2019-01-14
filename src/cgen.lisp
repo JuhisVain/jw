@@ -5,12 +5,28 @@
 (defvar *nato-symbol-lib* (make-hash-table :test 'equal))
 
 (defmacro find-first (predicate item-list list)
+  "Searches list for items in item-list"
   (let ((element (gensym)))
     `(dolist (,element ,list)
        (if (or
 	    ,@(mapcar #'(lambda (x) `(,predicate ,element ',x)) item-list))
 	   (return ,element)))))
 
+(defmacro colorset (what color)
+  (append (cond ((eq what 'fill) '(vecto:set-rgb-fill))
+		((eq what 'stroke) '(vecto:set-rgb-stroke)))
+	  (cond ((or (eq color 'red) (eq color 'salmon))
+		 '((/ 255 255) (/ 128 255) (/ 128 255)))
+		((or (eq color 'blue) (eq color 'crystal))
+		 '((/ 128 255) (/ 224 255) (/ 255 255)))
+		((or (eq color 'green) (eq color 'bamboo))
+		 '((/ 170 255) (/ 255 255) (/ 170 255)))
+		((or (eq color 'yellow))
+		 '((/ 255 255) (/ 255 255) (/ 128 255)))
+		((or (eq color 'black))
+		 '(0 0 0))
+		((or (eq color 'color-key) (eq color 'key))
+		 '(1 0 1)))))
 
 (defmacro origins-shape-rel (origin-list &rest coord-list)
   "Uses origins to draw several vector paths using coordinates relative to origin."
@@ -57,7 +73,7 @@
 		      description)))
     (vecto:with-canvas (:width field-width :height field-height)
       (vecto:with-graphics-state
-	(vecto:set-rgb-fill 1.0 0.0 1.0) ; color key for sdl
+	(colorset fill key) ; color key for sdl
 	(vecto:clear-canvas) ; fill all with color key
 	(vecto:set-line-width 1)
 	
@@ -76,8 +92,8 @@
 	      (sw-y)(se-x)(se-y)(w-x)(w-y)(e-x)(e-y))
 	  
 	  (cond ((eq affiliation 'friendly)
-		 (vecto:set-rgb-fill (/ 128 255) (/ 224 255) (/ 255 255)) ; 'crystal blue'
-		 (vecto:set-rgb-stroke 0 0 0) ; black
+		 (colorset fill blue)
+		 (colorset stroke black)
 		 (cond ((or (eq dimension 'land);friendly land: rectangle
 			    (eq dimension 'installation)
 			    (eq dimension 'activity))
@@ -99,11 +115,11 @@
 
 			;; Handle installation:
 			(cond ((eq dimension 'installation)
-			       (vecto:set-rgb-fill 0 0 0) ; black
+			       (colorset fill black)
 			       (vecto:rectangle (- centre-x (/ octagon-rad 2))
 						n-y octagon-rad (/ octagon-dia 15))
 			       (vecto:fill-and-stroke)
-			       (vecto:set-rgb-fill (/ 128 255) (/ 224 255) 1.0))) ; blue
+			       (colorset fill blue)))
 
 			;; Handle standard rectangle
 			(vecto:rectangle sw-x sw-y field-width octagon-dia)
@@ -112,14 +128,15 @@
 			;; Handle activity
 			(cond ((eq dimension 'activity)
 			       (let ((corner (/ field-width 10)))
-				 (vecto:set-rgb-fill 0 0 0) ; black
-				 (vecto:rectangle nw-x (- nw-y corner) corner corner)
-				 (vecto:rectangle (- ne-x corner) (- ne-y corner) corner corner)
-				 (vecto:rectangle sw-x sw-y corner corner)
-				 (vecto:rectangle (- se-x corner) se-y corner corner)
+				 (colorset fill black)
+				 (origins-shape-rel ((nw-x (- nw-y corner -1)) ; Gotta shift up by 1
+						     ((- ne-x corner) (- ne-y corner -1))
+						     (sw-x sw-y)
+						     ((- se-x corner) se-y))
+						    (corner 0) (corner corner) (0 corner))
 				 (vecto:fill-and-stroke)
-				 (vecto:set-rgb-fill (/ 128 255) (/ 224 255) 1.0))) ; blue
-			      ))
+				 (colorset fill blue)
+				 ))))
 		       ((or (eq dimension 'air) ; friendly air: half ellipse, open bottom
 			    (eq dimension 'space)) ; friendly space: as air, but black top bar
 			(setf
@@ -158,7 +175,7 @@
 			;; Do space specific black bar:
 			(if (eq dimension 'space)
 			    (progn
-			      (vecto:set-rgb-fill 0 0 0) ; black
+			      (colorset fill black)
 			      (vecto:ellipse-arc centre-x s-y
 						 (* 1.1 octagon-rad)
 						 (* 1.37 octagon-dia)
@@ -166,7 +183,7 @@
 						 (* 65/180 pi)
 						 (* 115/180 pi))
 			      (vecto:fill-and-stroke)
-			      (vecto:set-rgb-fill (/ 128 255) (/ 224 255) 1.0))) ; blue
+			      (colorset fill blue)))
 			)
 		       ((or (eq dimension 'surface) ; friendly (sea) surface: circle
 			    (eq dimension 'equipment)) ; friendly equip, same as surface
@@ -221,13 +238,10 @@
 			(vecto:clip-path)
 			(vecto:fill-and-stroke)
 
-			
-			(vecto:set-rgb-fill (/ 128 255) (/ 224 255) 1.0) ; blue
-			
-			)))
+			(colorset fill blue))))
 		((eq affiliation 'neutral) ; this ought to be easy
-		 (vecto:set-rgb-fill (/ 170 255) (/ 255 255) (/ 170 255)) ; 'bamboo green'
-		 (vecto:set-rgb-stroke 0 0 0) ; black
+		 (colorset fill bamboo)
+		 (colorset stroke black)
 
 		 (setf ; Anchor points same for all dimensions
 		  n-y (+ centre-y octagon-rad)
@@ -252,50 +266,50 @@
 			    (eq dimension 'activity)) ; black squares at corners
 
 			(if (eq dimension 'installation)
-			    (progn (vecto:set-rgb-fill 0 0 0)
+			    (progn (colorset fill black)
 				   (vecto:rectangle
 				    (- centre-x (/ octagon-rad 2))
 				    n-y
 				    octagon-rad ; width
 				    (/ octagon-dia 15)) ; height
 				   (vecto:fill-and-stroke)
-				   (vecto:set-rgb-fill (/ 170 255) (/ 255 255) (/ 170 255))))
+				   (colorset fill green)))
 			
 			(vecto:rectangle sw-x sw-y octagon-dia octagon-dia)
 			(vecto:fill-and-stroke)
 
 			(if (eq dimension 'activity)
 			    (let ((corner (/ field-width 10)))
-			      (vecto:set-rgb-fill 0 0 0)
+			      (colorset fill black)
 			      (vecto:rectangle nw-x (- nw-y corner) corner corner)
 			      (vecto:rectangle (- ne-x corner) (- ne-y corner) corner corner)
 			      (vecto:rectangle sw-x sw-y corner corner)
 			      (vecto:rectangle (- se-x corner) se-y corner corner)
 			      (vecto:fill-and-stroke)
-			      (vecto:set-rgb-fill (/ 170 255) (/ 255 255) (/ 170 255)))))
+			      (colorset fill green))))
 
 		       ((or (eq dimension 'air) ; square with open bottom
 			    (eq dimension 'space)) ; black full length bar on top
 
 			(if (eq dimension 'space)
-			    (progn (vecto:set-rgb-fill 0 0 0)
+			    (progn (colorset fill black)
 				   (vecto:rectangle nw-x nw-y
 						    octagon-dia (/ octagon-rad 5))
 				   (vecto:fill-and-stroke)
-				   (vecto:set-rgb-fill (/ 170 255) (/ 255 255) (/ 170 255))))
+				   (colorset fill bamboo)))
 			
 			(vecto:rectangle sw-x 0 octagon-dia (+ octagon-dia sw-y))
 			(vecto:fill-and-stroke)
 
 			;; Clear bottom:
-			(vecto:set-rgb-fill 1.0 0.0 1.0) ; color-key
+			(colorset fill key)
 			(vecto:move-to 0 s-y)
 			(vecto:line-to field-width s-y )
 			(vecto:line-to field-width 0)
 			(vecto:line-to 0 0)
 			(vecto:close-subpath)
 			(vecto:fill-path)
-			(vecto:set-rgb-fill (/ 170 255) (/ 255 255) (/ 170 255)) ; back to green
+			(colorset fill bamboo)
 			)
 		       ((eq dimension 'subsurface) ; square with open top
 
@@ -312,8 +326,8 @@
 		       ))
 		
 		((eq affiliation 'hostile)
-		 (vecto:set-rgb-fill (/ 255 255) (/ 128 255) (/ 128 255)) ; 'salmon'
-		 (vecto:set-rgb-stroke 0 0 0) ; black
+		 (colorset fill salmon)
+		 (colorset stroke black)
 
 		 (let ((vert-ofs (* octagon-dia (sqrt 1/2)))) ; vertex offset from centre
 		   (cond ((or (eq dimension 'air)
@@ -332,30 +346,39 @@
 				ne-y nw-y
 				se-x e-x
 				se-y s-y)
-			  (vecto:move-to sw-x 0) ; open bottom
+
+			  ;; Clip upper part of field
+			  (vecto:rectangle 0 s-y field-width (- field-height s-y))
+			  (vecto:clip-path)
+			  (vecto:end-path-no-op)
+
+			  ;; Draw house:
+			  (vecto:move-to sw-x 0)
 			  (vecto:line-to nw-x nw-y)
 			  (vecto:line-to centre-x n-y)
 			  (vecto:line-to ne-x ne-y)
 			  (vecto:line-to se-x 0)
+			  (vecto:clip-path)
 			  (vecto:close-subpath)
 			  (vecto:fill-and-stroke)
 
-			  ;; Clear bottom:
-			  (vecto:set-rgb-fill 1.0 0.0 1.0)
-			  (vecto:rectangle 0 0 field-width s-y)
-			  (vecto:fill-path)
+			  ;; Set anchors to force diagonals to converge at octagon centre
+			  (setf nw-x (car oct-nw)
+				nw-y (cdr oct-nw)
+				ne-x (car oct-ne)
+				ne-y (cdr oct-ne))
 
 			  (if (eq dimension 'space)
 			      (progn
-				(vecto:set-rgb-fill 0 0 0)
+				(colorset fill black)
 				(vecto:move-to (- centre-x (- vert-ofs octagon-rad))
 					       (+ centre-y octagon-rad))
 				(vecto:line-to centre-x n-y)
 				(vecto:line-to (+ centre-x (- vert-ofs octagon-rad))
 					       (+ centre-y octagon-rad))
-				(vecto:fill-path)))
+				(vecto:fill-path)
+				(colorset fill red)))
 			  
-			  (vecto:set-rgb-fill (/ 255 255) (/ 128 255) (/ 128 255)) ; back to red
 			  )
 			 ((or (eq dimension 'land) ; square tilted 45 degrees
 			      (eq dimension 'surface)
@@ -380,14 +403,14 @@
 
 			  (if (eq dimension 'installation)
 			      (progn
-				(vecto:set-rgb-fill 0 0 0)
+				(colorset fill black)
 				(vecto:rectangle
 				 (- centre-x (/ octagon-rad 2))
 				 n-y
 				 octagon-rad ; width
 				 (/ octagon-dia 15)) ; height
 				(vecto:fill-and-stroke)
-				(vecto:set-rgb-fill (/ 255 255) (/ 128 255) (/ 128 255))))
+				(colorset fill red)))
 
 			  ;; Tilted square:
 			  (vecto:move-to centre-x n-y)
@@ -401,7 +424,7 @@
 			      (let ((mini-square-rad (/ (- vert-ofs octagon-rad)
 							2))) ; centre to corner
 
-				(vecto:set-rgb-fill 0 0 0)
+				(colorset fill black)
 
 				(origins-shape-rel ((centre-x n-y) ; top
 						    (centre-x (- centre-y octagon-rad)) ; bottom
@@ -416,7 +439,7 @@
 
 				(vecto:close-subpath)
 				(vecto:fill-path)
-				(vecto:set-rgb-fill (/ 255 255) (/ 128 255) (/ 128 255))))
+				(colorset fill red)))
 			  )
 			 ((eq dimension 'subsurface)
 			  (setf n-y (+ centre-y octagon-rad)
@@ -442,14 +465,14 @@
 			  (vecto:fill-and-stroke)
 
 			  ;; Clear top:
-			  (vecto:set-rgb-fill 1.0 0.0 1.0)
+			  (colorset fill key)
 			  (vecto:rectangle 0 n-y field-width (- field-height n-y))
 			  (vecto:fill-path)
-			  (vecto:set-rgb-fill (/ 255 255) (/ 128 255) (/ 128 255))
+			  (colorset fill red)
 			  ))))
 		((eq affiliation 'unknown)
-		 (vecto:set-rgb-fill (/ 255 255) (/ 255 255) (/ 128 255)) ; 'light yellow'
-		 (vecto:set-rgb-stroke 0 0 0) ; black
+		 (colorset fill yellow)
+		 (colorset stroke black)
 
 		 (cond ((or (eq dimension 'air) ; three petal flower, open ?straight? bottom
 			    (eq dimension 'space)) ; top petal black tip
@@ -482,18 +505,18 @@
 			;; clear bottom
 			(vecto:rectangle sw-x 0 (* 2 sin45) centre-y)
 			(vecto:fill-path)
-			(vecto:set-rgb-fill 1.0 0.0 1.0)
+			(colorset fill key)
 			(vecto:rectangle 0 0 field-width sw-y)
 			(vecto:fill-path)
 
 			(if (eq dimension 'space)
 			    (progn
-			      (vecto:set-rgb-fill 0 0 0) ; black
+			      (colorset fill black)
 			      (vecto:arc centre-x (+ centre-y sin45)
 					 sin45 (* pi (/ 30 180)) (* pi (/ 150 180)))
 			      (vecto:fill-path)))
 
-			(vecto:set-rgb-fill (/ 255 255) (/ 255 255) (/ 128 255)) ; back to yellow
+			(colorset fill yellow)
 			)
 		       ((eq dimension 'subsurface) ; three petals, open top
 			(setf n-y (+ centre-y sin45)
@@ -523,10 +546,10 @@
 			;; clear top:
 			(vecto:rectangle nw-x centre-y (* 2 sin45) (- field-height centre-y))
 			(vecto:fill-path)
-			(vecto:set-rgb-fill 1.0 0.0 1.0)
+			(colorset fill key)
 			(vecto:rectangle 0 nw-y field-width (- field-height centre-y))
 			(vecto:fill-path)
-			(vecto:set-rgb-fill (/ 255 255) (/ 255 255) (/ 128 255))
+			(colorset fill yellow)
 			
 			)
 		       ((or (eq dimension 'land)
@@ -552,14 +575,14 @@
 
 			(if (eq dimension 'installation)
 			    (progn
-			      (vecto:set-rgb-fill 0 0 0)
+			      (colorset fill black)
 			      (vecto:rectangle
 			       (- centre-x (/ octagon-rad 2))
 			       n-y
 			       octagon-rad ; width
 			       (/ octagon-dia 15)) ; height
 			      (vecto:fill-path)
-			      (vecto:set-rgb-fill (/ 255 255) (/ 255 255) (/ 128 255))))
+			      (colorset fill yellow)))
 
 			(vecto:move-to nw-x nw-y)
 			(vecto:arc (- centre-x sin45) centre-y
@@ -575,7 +598,7 @@
 
 			(if (eq dimension 'activity)
 			    (let ((msr (/ (- (* octagon-dia (sqrt 1/2)) octagon-rad) 2)))
-			      (vecto:set-rgb-fill 0 0 0)
+			      (colorset fill black)
 			      (origins-shape-rel (((- centre-x (/ msr 2)) n-y)
 						  ((- e-x msr) (+ e-y (/ msr 2)))
 						  ((- centre-x (/ msr 2)) (+ s-y msr))
@@ -585,7 +608,7 @@
 						 )
 			      (vecto:fill-path)
 			      
-			      (vecto:set-rgb-fill (/ 255 255) (/ 255 255) (/ 128 255))
+			      (colorset fill yellow)
 			      ))
 
 			))
