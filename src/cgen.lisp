@@ -657,9 +657,31 @@
 	  (vecto:close-subpath)
 	  (vecto:stroke)
 
-	  (vecto:save-png "vectosave")
 
 	  ;;; Full frame icons should be drawn here to make use of frame clipping
+	  ;; Modifier sections on octagon are top and bottom 30% of oct height
+	  ;; that is 20% up / down from centre
+	  (let ((modsec-height (* 0.3 octagon-dia))
+		(upsec-bottom (+ centre-y (* 0.2 octagon-dia))) ; maybe move to master let
+		(downsec-top (- centre-y (* 0.2 octagon-dia))))
+	    (dolist (icon description)
+	      (cond ((eq icon 'air-assault-with-organic-lift) ;; Quack quack, motherfucker!
+		     (vecto:move-to 0 downsec-top)
+		     (vecto:line-to (- centre-x (* 1/3 modsec-height)) downsec-top)
+		     (vecto:line-to centre-x (- downsec-top (* 1/3 modsec-height)))
+		     (vecto:line-to (+ centre-x (* 1/3 modsec-height)) downsec-top)
+		     (vecto:line-to field-width downsec-top)
+		     (vecto:stroke))
+		    ((eq icon 'air-defense)
+
+		     (vecto:ellipse-arc centre-x s-y
+					(/ (- ne-x nw-x) 2)
+					(- se-x (+ s-y modsec-height)) ; TODO not good
+					0 0 pi)
+		     (vecto:stroke)))
+	      ))
+
+	  (vecto:save-png "vectosave")
 	  
 	  ) ;; with graphics state ends
 
