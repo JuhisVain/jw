@@ -123,6 +123,7 @@
 
 			;; Handle standard rectangle
 			(vecto:rectangle sw-x sw-y field-width octagon-dia)
+			(vecto:clip-path)
 			(vecto:fill-and-stroke)
 
 			;; Handle activity
@@ -145,15 +146,12 @@
 			 w-y centre-y
 			 e-x (+ oct-e-x (* width 0.02)); Clipping will handle this business
 			 e-y centre-y
-			 nw-x ;(- (car oct-nw) ellipse-intcard-x)
-			      (- oct-w-x (* 0.1 octagon-rad))
-			 nw-y ;(+ octagon-rad centre-y)
-			      (+ centre-y octagon-rad)
+			 nw-x (- oct-w-x (* 0.1 octagon-rad))
+			 nw-y (+ centre-y octagon-rad)
 			 s-y (- centre-y octagon-rad)
 			 sw-x (- oct-w-x (* 0.1 octagon-rad))
 			 sw-y s-y
-			 ne-x ;(+ (car oct-ne) ellipse-intcard-x)
-			      (+ oct-e-x (* 0.1 octagon-rad))
+			 ne-x (+ oct-e-x (* 0.1 octagon-rad))
 			 ne-y nw-y
 			 se-x (+ oct-e-x (* 0.1 octagon-rad))
 			 se-y s-y)
@@ -173,7 +171,7 @@
 			(vecto:fill-and-stroke)
 
 			;; Do space specific black bar:
-			(if (eq dimension 'space)
+			(if (eq dimension 'space) ; Could just draw black rect on upper field
 			    (progn
 			      (colorset fill black)
 			      (vecto:ellipse-arc centre-x s-y
@@ -204,6 +202,7 @@
 			 se-y (cdr oct-se))
 
 			(vecto:centered-circle-path centre-x centre-y octagon-rad)
+			(vecto:clip-path)
 			(vecto:fill-and-stroke)
 			)
 		       ((eq dimension 'subsurface)
@@ -216,15 +215,12 @@
 			 nw-x (- oct-w-x (* 0.1 octagon-rad))
 			 nw-y n-y
 			 s-y (- centre-y octagon-rad)
-			 sw-x ;(- (car oct-sw) ellipse-intcard-x)
-			      nw-x
-			 sw-y ;(- centre-y octagon-rad)
-			      (- centre-y octagon-rad)
+			 sw-x nw-x
+			 sw-y (- centre-y octagon-rad)
 			 ne-x (+ oct-e-x (* 0.1 octagon-rad))
 			 ne-y n-y
 			 se-x ne-x
 			 se-y (- centre-y octagon-rad))
-
 			
 			;; Clip upper part of field
 			(vecto:rectangle 0 0 field-width n-y)
@@ -239,7 +235,7 @@
 			(vecto:fill-and-stroke)
 
 			(colorset fill blue))))
-		((eq affiliation 'neutral) ; this ought to be easy
+		((eq affiliation 'neutral)
 		 (colorset fill bamboo)
 		 (colorset stroke black)
 
@@ -276,15 +272,19 @@
 				   (colorset fill green)))
 			
 			(vecto:rectangle sw-x sw-y octagon-dia octagon-dia)
+			(vecto:clip-path)
 			(vecto:fill-and-stroke)
 
 			(if (eq dimension 'activity)
 			    (let ((corner (/ field-width 10)))
 			      (colorset fill black)
-			      (vecto:rectangle nw-x (- nw-y corner) corner corner)
-			      (vecto:rectangle (- ne-x corner) (- ne-y corner) corner corner)
-			      (vecto:rectangle sw-x sw-y corner corner)
-			      (vecto:rectangle (- se-x corner) se-y corner corner)
+
+			      (origins-shape-rel ((nw-x (- nw-y corner -1)) ; Gotta shift up by 1
+						     ((- ne-x corner -1) (- ne-y corner -1))
+						     (sw-x sw-y)
+						     ((- se-x corner -1) se-y))
+						    (corner 0) (corner corner) (0 corner))
+			      
 			      (vecto:fill-and-stroke)
 			      (colorset fill green))))
 
@@ -297,19 +297,16 @@
 						    octagon-dia (/ octagon-rad 5))
 				   (vecto:fill-and-stroke)
 				   (colorset fill bamboo)))
-			
+
+			;; Clipper
+			(vecto:rectangle 0 s-y field-width (- field-height s-y))
+			(vecto:clip-path)
+			(vecto:end-path-no-op)
+			;; Graphics
 			(vecto:rectangle sw-x 0 octagon-dia (+ octagon-dia sw-y))
+			(vecto:clip-path)
 			(vecto:fill-and-stroke)
 
-			;; Clear bottom:
-			(colorset fill key)
-			(vecto:move-to 0 s-y)
-			(vecto:line-to field-width s-y )
-			(vecto:line-to field-width 0)
-			(vecto:line-to 0 0)
-			(vecto:close-subpath)
-			(vecto:fill-path)
-			(colorset fill bamboo)
 			)
 		       ((eq dimension 'subsurface) ; square with open top
 
@@ -417,6 +414,7 @@
 			  (vecto:line-to e-x e-y)
 			  (vecto:line-to centre-x s-y)
 			  (vecto:line-to w-x w-y)
+			  (vecto:clip-path)
 			  (vecto:close-subpath)
 			  (vecto:fill-and-stroke)
 
@@ -457,18 +455,25 @@
 				se-x e-x
 				se-y sw-y)
 
-			  (origins-shape-abs ((centre-x s-y))
-					     (sw-x sw-y) (w-x field-height)
-					     (e-x field-height) (se-x se-y))
+			  (vecto:rectangle 0 0 field-width n-y)
+			  (vecto:clip-path)
+			  (vecto:end-path-no-op)
+
+			  (vecto:move-to centre-x s-y)
+			  (vecto:line-to sw-x sw-y)
+			  (vecto:line-to w-x field-height)
+			  (vecto:line-to e-x field-height)
+			  (vecto:line-to se-x se-y)
+			  (vecto:clip-path)
 
 			  (vecto:close-subpath)
 			  (vecto:fill-and-stroke)
 
-			  ;; Clear top:
-			  (colorset fill key)
-			  (vecto:rectangle 0 n-y field-width (- field-height n-y))
-			  (vecto:fill-path)
-			  (colorset fill red)
+			  (setf sw-x (car oct-sw) ;; Diagonals meet at oct centre
+				sw-y (cdr oct-sw)
+				se-x (car oct-se)
+				se-y (cdr oct-se))
+
 			  ))))
 		((eq affiliation 'unknown)
 		 (colorset fill yellow)
@@ -492,22 +497,24 @@
 			      se-x (car oct-se)
 			      se-y (cdr oct-se))
 
-			(vecto:move-to sw-x sw-y)
-			(vecto:arc (+ centre-x sin45) centre-y
-				   sin45 (/ pi -2) (/ pi 2))
-			(vecto:arc centre-x (+ centre-y sin45)
-				   sin45 0 pi)
-			(vecto:arc (- centre-x sin45) centre-y
-				   sin45 (/ pi 2) (+ pi (/ pi 2)))
+			;; Clipper
+			(vecto:rectangle 0 s-y field-width (- field-height s-y))
+			(vecto:clip-path)
+			(vecto:end-path-no-op)
 
+			;; Begin frame
+			(vecto:move-to sw-x sw-y)
+			(vecto:line-to sw-x 0) ;; Take stroke outside of drawn area
+			(vecto:line-to se-x 0)
+			;; Petals
+			(vecto:arc (+ centre-x sin45) centre-y ; east
+				   sin45 (/ pi -2) (/ pi 2))
+			(vecto:arc centre-x (+ centre-y sin45) ; north
+				   sin45 0 pi)
+			(vecto:arc (- centre-x sin45) centre-y ; west
+				   sin45 (/ pi 2) (+ pi (/ pi 2)))
+			(vecto:clip-path)
 			(vecto:fill-and-stroke)
-			
-			;; clear bottom
-			(vecto:rectangle sw-x 0 (* 2 sin45) centre-y)
-			(vecto:fill-path)
-			(colorset fill key)
-			(vecto:rectangle 0 0 field-width sw-y)
-			(vecto:fill-path)
 
 			(if (eq dimension 'space)
 			    (progn
@@ -534,23 +541,22 @@
 			      se-x (car oct-se)
 			      se-y (cdr oct-se))
 
-			(vecto:move-to nw-x nw-y)
+			;; Clipper:
+			(vecto:rectangle 0 0 field-width n-y)
+			(vecto:clip-path)
+			(vecto:end-path-no-op)
+			;; Begin:
+			(vecto:move-to ne-x ne-y)
+			(vecto:line-to ne-x field-height) ; Stroke outside clipper
+			(vecto:line-to nw-x field-height)
 			(vecto:arc (- centre-x sin45) centre-y
 				   sin45 (/ pi 2) (* pi 3/2))
 			(vecto:arc centre-x (- centre-y sin45)
 				   sin45 pi (* 2 pi))
 			(vecto:arc (+ centre-x sin45) centre-y
 				   sin45 (- (/ pi 2)) (/ pi 2))
+			(vecto:clip-path)
 			(vecto:fill-and-stroke)
-
-			;; clear top:
-			(vecto:rectangle nw-x centre-y (* 2 sin45) (- field-height centre-y))
-			(vecto:fill-path)
-			(colorset fill key)
-			(vecto:rectangle 0 nw-y field-width (- field-height centre-y))
-			(vecto:fill-path)
-			(colorset fill yellow)
-			
 			)
 		       ((or (eq dimension 'land)
 			    (eq dimension 'surface)
@@ -651,8 +657,13 @@
 	  (vecto:stroke)
 
 	  (vecto:save-png "vectosave")
-	  )
+
+	  ;;; Full frame icons should be drawn here to make use of frame clipping
+	  
+	  ) ;; all the lets
 	) ;; with graphics state ends
+
+      ;; Lesser icons to be drawn here to escape clipping
 
       )))
 
