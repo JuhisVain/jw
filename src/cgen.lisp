@@ -674,9 +674,9 @@
 		     (vecto:stroke))
 		    ((eq icon 'air-defense)
 
-		     (vecto:ellipse-arc centre-x s-y
+		     (vecto:ellipse-arc centre-x sw-y
 					(/ (- ne-x nw-x) 2)
-					(- se-x (+ s-y modsec-height)) ; TODO not good
+					(- downsec-top sw-y)
 					0 0 pi)
 		     (vecto:stroke)))
 	      ))
