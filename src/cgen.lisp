@@ -215,7 +215,7 @@
 			 e-y centre-y
 			 nw-x (- oct-w-x (* 0.1 octagon-rad))
 			 nw-y n-y
-			 s-y (- centre-y octagon-rad)
+			 s-y 0
 			 sw-x nw-x
 			 sw-y (- centre-y octagon-rad)
 			 ne-x (+ oct-e-x (* 0.1 octagon-rad))
