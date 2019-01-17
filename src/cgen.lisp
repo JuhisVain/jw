@@ -675,7 +675,7 @@
 		    ((eq icon 'air-defense)
 
 		     (vecto:ellipse-arc centre-x sw-y
-					(/ (- ne-x nw-x) 2)
+					(/ (- se-x sw-x) 2)
 					(- downsec-top sw-y)
 					0 0 pi)
 		     (vecto:stroke)))
