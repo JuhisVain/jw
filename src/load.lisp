@@ -1,7 +1,7 @@
 (load "packages.lisp")
-(load "countergenerator.lisp")
 (load "data.lisp")
 (load "wtool.lisp")
 (load "war.lisp")
 (load "panel.lisp")
 (load "tilechopper.lisp")
+(load "cgen.lisp")

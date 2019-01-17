@@ -20,7 +20,6 @@
 
 (defun set-test-unit (oct-diam)
   (format t "~%Setting up testunit~&")
-  (counter-gen:nato-dimension-init oct-diam)
   (cond (t ;;if t -> set to create new armies at (10,8) everytime (test) runs
 	 ;;(null *testunit*) ;; no more units created
 	 (setf *testunit*
@@ -29,13 +28,14 @@
 			  :movement 25
 			  :counter
 			  (make-graphics :surface
-					 ;;(counter-gen:cns-fun
-					 ;; oct-diam 'counter-gen:friendly 'counter-gen:land
-					 ;; '(counter-gen:infantry counter-gen:mountain))
-					 (counter-gen:generate
-					  80 80 oct-diam 'counter-gen:friendly 'counter-gen:land
-					  '(counter-gen:infantry counter-gen:mountain)
-					  'team 'half-track)
+
+					 ;;(counter-gen:generate
+					 ;; 80 80 oct-diam 'counter-gen:friendly 'counter-gen:land
+					 ;; '(counter-gen:infantry counter-gen:mountain)
+					 ;; 'team 'half-track)
+
+					 (description-to-surface 80 '(hostile space air-defense))
+					 
 					 :x-at 24 :y-at 7)))
 	 (place-unit *testunit* 10 8))))
 
@@ -126,7 +126,6 @@
     (sort-world-graphics) ;; Put graphics in order to render correctly
     (setup-panels) ;; Setup the chrome
 
-    (counter-gen:nato-color-init)
     (set-test-unit 34) ;; testing army graphics
 
     (let ((x-shift 0) (y-shift 0)

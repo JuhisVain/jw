@@ -1,6 +1,7 @@
 (in-package :war)
 
 (ql:quickload :vecto)
+(ql:quickload :lispbuilder-sdl-vecto)
 
 (defvar *nato-symbol-lib* (make-hash-table :test 'equal))
 
@@ -41,27 +42,20 @@
 	       origin-list)))
 
 
-(defmacro origins-shape-abs (origin-list &rest coord-list)
-  `(progn
-     ,@(mapcar #'(lambda (origin)
-		   `(progn
-		      (vecto:move-to ,(car origin) ,(cadr origin))
-		      ,@(mapcar #'(lambda (coord)
-				    `(vecto:line-to ,(car coord) ,(cadr coord)))
-				coord-list)))
-	       origin-list)))
-
 ;; Return element from symbol lib if found, otherwise generate it first.
-(defun description-to-surface (width height description)
+(defun description-to-surface (width description)
   (setf description (sort description #'string< :key #'symbol-name))
-  (or (gethash (cons (cons width height) description) *nato-symbol-lib*)
-      (generate-natosymbol-from width description)))
+  (format t "~&~a~%" description)
+  (or (gethash (cons width description) *nato-symbol-lib*)
+      (setf (gethash (cons width description) *nato-symbol-lib*)
+	    (generate-natosymbol-from width description))
+      ))
 
 (defun generate-natosymbol-from (width description)
   (let* ((field-width width)
 	 (octagon-dia (* 2/3 field-width))
 	 (octagon-rad (floor octagon-dia 2))
-	 (field-height (* field-width 29/25)) ;; 174/150
+	 (field-height (floor (* field-width 29/25))) ;; 174/150
 	 (centre-x (floor field-width 2))
 	 (centre-y (floor field-height 2))
 	 (sin45 (* octagon-rad (sin (/ pi 4))))
@@ -747,12 +741,19 @@
 		     ))
 	      ))
 
-	  (vecto:save-png "vectosave")
+	  ;;(vecto:save-png "vectosave")
 	  
 	  ) ;; with graphics state ends
 
 	  ;; Lesser icons to be drawn here to escape clipping
 	  
-	) ;; all the lets 
+	  ) ;; all the lets
+
+      (let ((ret-surf (sdl:surface-from-vecto :pixel-alpha nil)))
+	(setf (sdl:color-key-enabled-p ret-surf) t)
+	(setf (sdl:color-key ret-surf) *war-color-key*)
+	ret-surf
+	)
+      
       )))
 
