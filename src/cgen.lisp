@@ -661,10 +661,15 @@
 	  ;;; Full frame icons should be drawn here to make use of frame clipping
 	  ;; Modifier sections on octagon are top and bottom 30% of oct height
 	  ;; that is 20% up / down from centre
-	  (let ((modsec-height (* 0.3 octagon-dia))
-		(upsec-bottom (+ centre-y (* 0.2 octagon-dia))) ; maybe move to master let
-		(downsec-top (- centre-y (* 0.2 octagon-dia))))
-	    (dolist (icon description)
+	  (let* ((modsec-height (* 0.3 octagon-dia))
+		 (upsec-bottom (+ centre-y (* 0.2 octagon-dia))) ; maybe move to master let
+		 (upsec-middle (+ upsec-bottom (/ modsec-height 2)))
+		 (downsec-top (- centre-y (* 0.2 octagon-dia))))
+	    ;;(dolist (icon description)
+	    (do* ((rest-list description (cdr rest-list))
+		  (icon (car rest-list) (car rest-list)))
+		 ((null rest-list))
+	      (format t "~&Dolisting: ~a~%" icon)
 	      (cond ((eq icon 'air-assault-with-organic-lift) ;; Quack quack, motherfucker!
 		     (vecto:move-to 0 downsec-top)
 		     (vecto:line-to (- centre-x (* 1/3 modsec-height)) downsec-top)
@@ -678,7 +683,39 @@
 					(/ (- se-x sw-x) 2)
 					(- downsec-top sw-y)
 					0 0 pi)
-		     (vecto:stroke)))
+		     (vecto:stroke))
+		    ((or (eq icon 'air-and-naval-gunfire-liaison-company)
+			 (eq icon 'anglico))
+		     (setf description
+			   ;; The anglico icon is composed of these:
+			   (nconc description '(reconnaissance field-artillery
+						rotary-wing-aviation naval)))
+		     )
+		    ((eq icon 'amphibious)
+		     (let* ((tip-width (/ octagon-rad 6))
+			    (wave-width (* tip-width 2)))
+
+		       (vecto:arc (+ centre-x (* wave-width 4)) centre-y tip-width 0 pi)
+		       (vecto:arcn (+ centre-x (* wave-width 3))  centre-y tip-width 0 pi)
+		       (vecto:arc (+ centre-x (* wave-width 2)) centre-y tip-width 0 pi)
+		       (vecto:arcn (+ centre-x wave-width) centre-y tip-width 0 pi)
+		       (vecto:arc centre-x centre-y tip-width 0 pi)
+		       (vecto:arcn (- centre-x wave-width) centre-y tip-width 0 pi)
+		       (vecto:arc (- centre-x (* wave-width 2)) centre-y tip-width 0 pi)
+		       (vecto:arcn (- centre-x (* wave-width 3)) centre-y tip-width 0 pi)
+		       (vecto:arc (- centre-x (* wave-width 4)) centre-y tip-width 0 pi)
+		       
+		       (vecto:stroke))
+		     )
+		    ((eq icon 'analysis)
+		     (vecto:move-to centre-x upsec-middle)
+		     (vecto:line-to centre-x downsec-top)
+		     (vecto:line-to (car oct-se) downsec-top)
+		     (vecto:line-to centre-x (- centre-y (* octagon-rad 5/6)))
+		     (vecto:line-to (car oct-sw) downsec-top)
+		     (vecto:line-to centre-x downsec-top)
+		     (vecto:stroke)
+		     ))
 	      ))
 
 	  (vecto:save-png "vectosave")
