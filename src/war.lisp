@@ -18,10 +18,10 @@
 
 (defparameter tile-size tile-large-size)
 
-(defun set-test-unit (oct-diam)
+(defun set-test-unit ()
   (format t "~%Setting up testunit~&")
-  (cond (t ;;if t -> set to create new armies at (10,8) everytime (test) runs
-	 ;;(null *testunit*) ;; no more units created
+  (cond (;; t ;;if t -> set to create new armies at (10,8) everytime (test) runs
+	 (null *testunit*) ;; no more units created
 	 (setf *testunit*
 	       (make-army :x 0 :y 0
 			  :id 666
@@ -126,7 +126,7 @@
     (sort-world-graphics) ;; Put graphics in order to render correctly
     (setup-panels) ;; Setup the chrome
 
-    (set-test-unit 34) ;; testing army graphics
+    (set-test-unit) ;; testing army graphics
 
     (let ((x-shift 0) (y-shift 0)
 	  (selector-tile '(0 . 0)) (selector-graphics '(0 . 0))
@@ -292,7 +292,7 @@
 
 (defun draw-world (x-shift y-shift selector-graphics selector-tile selected-tile selected-unit)
 
-  (let* ((draw-count 0)
+  (let* (;;(draw-count 0)
 	 (x-start-void (floor x-shift (car tile-size)))
 	 (x-start (if (>= (+ x-shift (car tile-size)) 0) 0
 		      (- (abs x-start-void) 2)))
@@ -323,17 +323,18 @@
 
 		      (dolist (,slot (,accessor (aref (world-map *world*) ,x ,y)))
 			(draw-at ,x ,y x-shift y-shift
-				 (eval ,(if sub-accessor `(,sub-accessor ,slot) `,slot))))
-
+				 ,(if sub-accessor
+				      `(,sub-accessor ,slot)
+				      `(symbol-value ,slot))))
 		      (incf ,y)))))
 
       (draw-tiles-by-slot tile-type)
       (draw-tiles-by-slot tile-variant)
       (draw-tiles-by-slot tile-units army-counter)))
-  
-  (sdl:draw-surface-at-*
-   (graphics-surface (eval selector))
-   (car selector-graphics) (cdr selector-graphics))
+
+  (draw-at (car selector-tile) (cdr selector-tile)
+	   x-shift y-shift selector)
+
   (draw-coords (car selector-tile) (cdr selector-tile) x-shift y-shift)
   (if selected-unit (draw-move-area (cons (army-x selected-unit)
 					  (army-y selected-unit))
