@@ -20,23 +20,41 @@
 
 (defun set-test-unit ()
   (format t "~%Setting up testunit~&")
-  (cond (;; t ;;if t -> set to create new armies at (10,8) everytime (test) runs
-	 (null *testunit*) ;; no more units created
+  (cond (t ;;if t -> set to create new armies at (10,8) everytime (test) runs
+	 ;;(null *testunit*) ;; no more units created
 	 (setf *testunit*
-	       (make-army :x 0 :y 0
-			  :id 666
-			  :movement 25
-			  :counter
-			  (make-graphics :surface
-
-					 ;;(counter-gen:generate
-					 ;; 80 80 oct-diam 'counter-gen:friendly 'counter-gen:land
-					 ;; '(counter-gen:infantry counter-gen:mountain)
-					 ;; 'team 'half-track)
-
-					 (description-to-surface 80 '(hostile space air-defense))
-					 
-					 :x-at 24 :y-at 7)))
+	       (make-army
+		:x 0 :y 0
+		:id 666
+		:movement 25
+		:counter
+		(make-graphics
+		 :surface
+		 (description-to-surface
+		  80
+		  ;;'(hostile space air-defense)
+		  (let ((seed (random 4)))
+		    (list (prog1 (cond ((eq seed 0) 'friendly)
+				       ((eq seed 1) 'neutral)
+				       ((eq seed 2) 'unknown)
+				       ((eq seed 3) 'hostile))
+			    (setf seed (random 8)))
+			  (prog1 (cond ((eq seed 0) 'air)
+				       ((eq seed 1) 'space)
+				       ((eq seed 2) 'land)
+				       ((eq seed 3) 'surface)
+				       ((eq seed 4) 'subsurface)
+				       ((eq seed 5) 'equipment)
+				       ((eq seed 6) 'installation)
+				       ((eq seed 7) 'activity))
+			    (setf seed (random 6)))
+			  (prog1 (cond ((eq seed 0) 'air-assault-with-organic-lift)
+				       ((eq seed 1) 'air-defense)
+				       ((eq seed 2) 'amphibious)
+				       ((eq seed 3) 'analysis)
+				       ((eq seed 4) 'antitank)
+				       ((eq seed 5) 'broadcast-transmitter-antenna))))))
+		 :x-at 24 :y-at 7)))
 	 (place-unit *testunit* 10 8))))
 
 (defstruct graphics
@@ -126,7 +144,7 @@
     (sort-world-graphics) ;; Put graphics in order to render correctly
     (setup-panels) ;; Setup the chrome
 
-    (set-test-unit) ;; testing army graphics
+    ;;(set-test-unit) ;; testing army graphics
 
     (let ((x-shift 0) (y-shift 0)
 	  (selector-tile '(0 . 0)) (selector-graphics '(0 . 0))
