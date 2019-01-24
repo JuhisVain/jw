@@ -619,37 +619,37 @@
 
 	  
 	  ;; test
-	  (vecto:set-rgb-stroke 1 0 0)
-	  (vecto:move-to nw-x nw-y)
-	  (vecto:line-to se-x se-y)
-	  (vecto:stroke)
+;;	  (vecto:set-rgb-stroke 1 0 0)
+;;	  (vecto:move-to nw-x nw-y)
+;;	  (vecto:line-to se-x se-y)
+;;	  (vecto:stroke)
 
-	  (vecto:move-to ne-x ne-y)
-	  (vecto:line-to sw-x sw-y)
-	  (vecto:stroke)
+;;	  (vecto:move-to ne-x ne-y)
+;;	  (vecto:line-to sw-x sw-y)
+;;	  (vecto:stroke)
 
-	  (vecto:set-rgb-stroke 0 0 1)
-	  (vecto:move-to w-x w-y)
-	  (vecto:line-to e-x e-y)
-	  (vecto:stroke)
+;;	  (vecto:set-rgb-stroke 0 0 1)
+;;	  (vecto:move-to w-x w-y)
+;;	  (vecto:line-to e-x e-y)
+;;	  (vecto:stroke)
 
-	  (vecto:move-to centre-x n-y)
-	  (vecto:line-to centre-x s-y)
-	  (vecto:stroke)
+;;	  (vecto:move-to centre-x n-y)
+;;	  (vecto:line-to centre-x s-y)
+;;	  (vecto:stroke)
 
-	  (vecto:set-rgb-stroke 0 0 0) ; black
+;;	  (vecto:set-rgb-stroke 0 0 0) ; black
 
 	  ;;let's draw the octagon:
-	  (vecto:move-to centre-x (+ centre-y octagon-rad))
-	  (vecto:line-to (car oct-ne) (cdr oct-nw))
-	  (vecto:line-to (+ octagon-rad centre-x) centre-y)
-	  (vecto:line-to (car oct-se) (cdr oct-se))
-	  (vecto:line-to centre-x (- centre-y octagon-rad))
-	  (vecto:line-to (car oct-sw) (cdr oct-sw))
-	  (vecto:line-to (- centre-x octagon-rad) centre-y)
-	  (vecto:line-to (car oct-nw) (cdr oct-nw))
-	  (vecto:close-subpath)
-	  (vecto:stroke)
+;;	  (vecto:move-to centre-x (+ centre-y octagon-rad))
+;;	  (vecto:line-to (car oct-ne) (cdr oct-nw))
+;;	  (vecto:line-to (+ octagon-rad centre-x) centre-y)
+;;	  (vecto:line-to (car oct-se) (cdr oct-se))
+;;	  (vecto:line-to centre-x (- centre-y octagon-rad))
+;;	  (vecto:line-to (car oct-sw) (cdr oct-sw))
+;;	  (vecto:line-to (- centre-x octagon-rad) centre-y)
+;;	  (vecto:line-to (car oct-nw) (cdr oct-nw))
+;;	  (vecto:close-subpath)
+;;	  (vecto:stroke)
 
 
 	  ;;; Full frame icons should be drawn here to make use of frame clipping
