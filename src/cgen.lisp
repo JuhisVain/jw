@@ -52,12 +52,14 @@
       ))
 
 (defun generate-natosymbol-from (width description)
-  (let* ((field-width width)
-	 (octagon-dia (* 2/3 field-width))
+  (let* ((slack 2)
+	 (doubleslack (* slack 2))
+	 (field-width width)
+	 (octagon-dia (* 2/3 width))
 	 (octagon-rad (floor octagon-dia 2))
-	 (field-height (floor (* field-width 29/25))) ;; 174/150
-	 (centre-x (floor field-width 2))
-	 (centre-y (floor field-height 2))
+	 (field-height (floor (* width 29/25))) ;; 174/150
+	 (centre-x (+ (floor field-width 2) slack))
+	 (centre-y (+ (floor field-height 2) slack))
 	 (sin45 (* octagon-rad (sin (/ pi 4))))
 	 (affiliation
 	  (find-first eq (friendly hostile neutral unknown) description))
@@ -65,7 +67,8 @@
 	  (find-first eq (air space land surface subsurface
 			      equipment installation activity)
 		      description)))
-    (vecto:with-canvas (:width field-width :height field-height)
+    (vecto:with-canvas (:width (+ field-width doubleslack)
+			:height (+ field-height doubleslack))
       (colorset fill key) ; color key for sdl
       (vecto:clear-canvas) ; fill all with color key
       (vecto:set-line-width 1)
@@ -94,7 +97,7 @@
 			    (eq dimension 'activity))
 			(setf
 			 n-y (+ octagon-rad centre-y)
-			 w-x 0
+			 w-x slack
 			 w-y centre-y
 			 e-x field-width
 			 e-y centre-y
@@ -126,9 +129,9 @@
 			       (let ((corner (/ field-width 10)))
 				 (colorset fill black)
 				 (origins-shape-rel ((nw-x (- nw-y corner -1)) ; Gotta shift up by 1
-						     ((- ne-x corner) (- ne-y corner -1))
+						     ((- ne-x corner (- 1)) (- ne-y corner -1))
 						     (sw-x sw-y)
-						     ((- se-x corner) se-y))
+						     ((- se-x corner (- 1)) se-y))
 						    (corner 0) (corner corner) (0 corner))
 				 (vecto:fill-and-stroke)
 				 (colorset fill blue)
@@ -152,7 +155,8 @@
 			 se-y s-y)
 
 			;; Clip upper part of field
-			(vecto:rectangle 0 s-y field-width (- field-height s-y))
+			(vecto:rectangle 0 s-y (+ field-width doubleslack)
+					 (+ field-height doubleslack (- s-y)))
 			(vecto:clip-path)
 			(vecto:end-path-no-op)
 			  
