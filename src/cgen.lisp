@@ -42,8 +42,8 @@
 	       origin-list)))
 
 
-;; Return element from symbol lib if found, otherwise generate it first.
 (defun description-to-surface (width description)
+  "Return element from natosymbol archive if found, otherwise generate, store and return."
   (setf description (sort description #'string< :key #'symbol-name))
   (format t "~&~a~%" description)
   (or (gethash (cons width description) *nato-symbol-lib*)
@@ -52,6 +52,16 @@
       ))
 
 (defun generate-natosymbol-from (width description)
+  "Generates a symbol based on the Nato joint unit symbology specification."
+
+  ;;; Used to reset *nato-symbol-lib* for debugging
+  (macrolet ((clear-symbol-lib-on-compilation ()
+	       (and (boundp '*nato-symbol-lib*)
+		    (setf *nato-symbol-lib* (clrhash *nato-symbol-lib*))
+		    (format t "~&Nato symbol archive reset~%"))))
+    (clear-symbol-lib-on-compilation))
+
+
   (let* ((slack 2)
 	 (doubleslack (* slack 2))
 	 (field-width width)
@@ -668,7 +678,6 @@
 	    (do* ((rest-list description (cdr rest-list))
 		  (icon (car rest-list) (car rest-list)))
 		 ((null rest-list))
-	      (format t "~&Dolisting: ~a~%" icon)
 	      (cond ((eq icon 'air-assault-with-organic-lift) ;; Quack quack, motherfucker!
 		     (vecto:move-to 0 downsec-top)
 		     (vecto:line-to (- centre-x (* 1/3 modsec-height)) downsec-top)
