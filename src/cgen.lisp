@@ -57,8 +57,13 @@
   ;;; Used to reset *nato-symbol-lib* for debugging
   (macrolet ((clear-symbol-lib-on-compilation ()
 	       (and (boundp '*nato-symbol-lib*)
-		    (setf *nato-symbol-lib* (clrhash *nato-symbol-lib*))
-		    (format t "~&Nato symbol archive reset~%"))))
+		    (progn
+		      ;;WILL result in bad pointers while armies exist:
+		      (maphash #'(lambda (key val)
+				   (sdl:free val))
+			       *nato-symbol-lib*)
+		      (setf *nato-symbol-lib* (clrhash *nato-symbol-lib*))
+		      (format t "~&Nato symbol archive reset~%")))))
     (clear-symbol-lib-on-compilation))
 
 
