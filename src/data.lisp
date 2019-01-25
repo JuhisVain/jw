@@ -7,9 +7,9 @@
   (map nil)       ;a 2d array
   (factions nil)) ;list of faction structs
 
-(defstruct faction
-  (units nil)
-  (techs nil))
+;;(defstruct faction
+;;  (units nil)
+;;  (techs nil))
 
 (defstruct tile
   (type 'sea)
