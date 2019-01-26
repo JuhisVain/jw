@@ -41,32 +41,87 @@
 				coord-list)))
 	       origin-list)))
 
+(defun init-cgen (&optional (push-to-archive nil))
+  (and (boundp '*nato-symbol-lib*)
+       (progn (maphash #'(lambda (key val)
+			   (if (eq key 'default-counter-base)
+			       (sdl:free (graphics-surface val))
+			       (sdl:free val)))
+		       *nato-symbol-lib*)
+	      (setf *nato-symbol-lib* (clrhash *nato-symbol-lib*))))
+
+  (if (null push-to-archive)
+      (setf (gethash 'default-counter-base *nato-symbol-lib*)
+	    (make-graphics
+	     :surface (sdl-image:load-image "graphics/COUNTERBASE.png"
+					    :color-key *war-color-key*)
+	     :x-at 24 :y-at 12))
+  ))
+
+
+;; Debugging:
+(defun dump-natosymbols ()
+  (defparameter testlist nil)
+  (let ((xxx 0))
+    (maphash #'(lambda (key val)
+		 (push key testlist)
+
+		 (format t "~&name: ~a~%KEY:   ~a~%VAL:   ~a~%~%" xxx key val)
+		 
+                 (sdl:save-image
+		  (if (graphics-p val) (graphics-surface val) val)
+		  (write-to-string xxx))
+                 (setf xxx (+ 1 xxx)))
+             *nato-symbol-lib*)))
+
+(defun description-to-counter (faction width description
+			       &optional (current-pov *current-pov-faction*))
+  (let* ((aff-desc
+	  (sort (cons (faction-relationship-with current-pov faction)
+		      description)
+		#'string< :key #'symbol-name))
+	 (full-desc
+	  (list faction width aff-desc)))
+    
+    (or (gethash full-desc *nato-symbol-lib*)
+	(progn
+
+	  (format t "~&~%DTC: aff: ~a ~%ful: ~a~%~%" aff-desc full-desc)
+	  
+	  (setf (gethash full-desc *nato-symbol-lib*)
+
+		(let* ((counter-base
+			;; blabla if not faction specific counterbase use default:..
+			(gethash 'default-counter-base *nato-symbol-lib*))
+		       (base
+			(sdl:copy-surface :surface (graphics-surface counter-base))
+			;;(sdl:create-surface (sdl:width (graphics-surface counter-base))
+			;;		    (sdl:height (graphics-surface counter-base))
+			;;		    :color-key *war-color-key*)
+			 ))
+
+		  (format t "~&base ::::  ~a~%" base)
+		  (sdl:draw-surface-at-* ;; THSES BLITS RETURNF SOURCE NOT RESULT fgjfgjfgj
+		   (description-to-surface width aff-desc)
+		   10 10
+		   :surface base
+		   )
+		  base))))
+
+    (format t "~&Returning after creation: ~a~%" full-desc)
+    (gethash full-desc *nato-symbol-lib*)))
+
 
 (defun description-to-surface (width description)
-  "Return element from natosymbol archive if found, otherwise generate, store and return."
-  (setf description (sort description #'string< :key #'symbol-name))
+  "Return sdl:surface from natosymbol archive if found, otherwise generate, store and return."
+  ;;(setf description (sort description #'string< :key #'symbol-name))
   (format t "~&~a~%" description)
   (or (gethash (cons width description) *nato-symbol-lib*)
       (setf (gethash (cons width description) *nato-symbol-lib*)
-	    (generate-natosymbol-from width description))
-      ))
+	    (generate-natosymbol-from width description))))
 
 (defun generate-natosymbol-from (width description)
   "Generates a symbol based on the Nato joint unit symbology specification."
-
-  ;;; Used to reset *nato-symbol-lib* for debugging
-  (macrolet ((clear-symbol-lib-on-compilation ()
-	       (and (boundp '*nato-symbol-lib*)
-		    (progn
-		      ;;WILL result in bad pointers while armies exist:
-		      (maphash #'(lambda (key val)
-				   (sdl:free val))
-			       *nato-symbol-lib*)
-		      (setf *nato-symbol-lib* (clrhash *nato-symbol-lib*))
-		      (format t "~&Nato symbol archive reset~%")))))
-    (clear-symbol-lib-on-compilation))
-
-
   (let* ((slack 2)
 	 (doubleslack (* slack 2))
 	 (field-width width)

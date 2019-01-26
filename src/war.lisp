@@ -6,6 +6,8 @@
 (ql:quickload :lispbuilder-sdl-ttf)
 (ql:quickload :lispbuilder-sdl-gfx)
 
+(defvar *current-pov-faction* (make-instance 'faction))
+
 (defvar *testunit* nil)
 (defvar *current-move-area* nil)
 (defvar *war-color-key* (sdl:color :r 255 :g 0 :b 255))
@@ -30,16 +32,12 @@
 		:counter
 		(make-graphics
 		 :surface
-		 (description-to-surface
-		  80
+		 (description-to-counter
+		  *current-pov-faction*
+		  40
 		  ;;'(hostile space air-defense)
-		  (let ((seed (random 4)))
-		    (list (prog1 (cond ((eq seed 0) 'friendly)
-				       ((eq seed 1) 'neutral)
-				       ((eq seed 2) 'unknown)
-				       ((eq seed 3) 'hostile))
-			    (setf seed (random 8)))
-			  (prog1 (cond ((eq seed 0) 'air)
+		  (let ((seed (random 8)))
+		    (list (prog1 (cond ((eq seed 0) 'air)
 				       ((eq seed 1) 'space)
 				       ((eq seed 2) 'land)
 				       ((eq seed 3) 'surface)
@@ -141,6 +139,7 @@
     (sdl:initialise-default-font)
 
     (load-tiles)
+    (init-cgen)
     (sort-world-graphics) ;; Put graphics in order to render correctly
     (setup-panels) ;; Setup the chrome
 
