@@ -19,11 +19,17 @@
 (defparameter tile-large-size-full-x 128)
 (defparameter tile-large-size-full-y 104)
 
+(defparameter tile-large-size-full-hor-x 76) ; Length of the horizontal top & bottom lines
+;; above also computed by :
+;;(- (* 2 (car tile-large-size))
+;;   tile-large-size-full-x)
+
 (defparameter tile-large-size (cons 102 104))
 
 ;;(defparameter tile-size tile-large-size)
 (defparameter tile-size-x (car tile-large-size))
 (defparameter tile-size-y (cdr tile-large-size))
+(defparameter tile-size-hor-x tile-large-size-full-hor-x) ; these should be set in the init func
 
 (defun set-test-unit ()
   (format t "~%Setting up testunit~&")
@@ -105,12 +111,34 @@
   "What tile is the user pointing at?"
   ;; tile-x & tile-y are the (almost) actual
   ;;  coordinates of the hex the cursor is hovering over
-  (format t "~&@ ~a ~a ~%" screen-x screen-y)
-  (let* ((tile-x (floor (/ (- screen-x x-shift) tile-size-x)))
-	 (tile-y (floor (/ (if (evenp tile-x)
-			       (- screen-y y-shift)
-			       (- (- screen-y y-shift) (/ tile-size-y 2)))
-			   tile-size-y))))
+  
+  (let* ((half-height (/ tile-size-y 2))
+	 (absolute-x (- screen-x x-shift))
+	 (in-tile-x (rem absolute-x tile-size-x))
+	 (tile-x (floor (/ absolute-x tile-size-x)))
+	 (absolute-y (if (evenp tile-x)
+			 (- screen-y y-shift)
+			 (- (- screen-y y-shift) (/ tile-size-y 2))))
+	 (in-tile-y (rem absolute-y tile-size-y))
+
+	 (left-of-nw (- (* (- tile-size-x tile-size-hor-x)
+			   (- in-tile-y half-height))
+			(* in-tile-x
+			   (- half-height))))
+	 (left-of-sw (- (* (- (- tile-size-x tile-size-hor-x))
+			   (- in-tile-y tile-size-y))
+			(* (- in-tile-x (- tile-size-x tile-size-hor-x))
+			   (- half-height tile-size-y))))
+	 
+	 (tile-y (floor (/ absolute-y tile-size-y))))
+
+    (cond ((<= left-of-nw 0)
+	   (if (evenp tile-x) (decf tile-y))
+	   (decf tile-x))
+	  ((<= left-of-sw 0)
+	   (if (oddp tile-x) (incf tile-y))
+	   (decf tile-x)))
+    
     (cons tile-x tile-y)))
 
 (defun cursor-coordinates-on-screen (screen-x screen-y x-shift y-shift tile-x)
@@ -431,10 +459,10 @@
 				     (concatenate 'string "graphics/" (substitute #\_ #\- ,symbol-name) ".png")
 				     ,x-offset ,y-offset
 				     ,@(cond ((eq size-of-tile 'large)
-					      (list (- (* 2 (car tile-large-size))
-						       tile-large-size-full-x)
+					      (list tile-large-size-full-hor-x
 						    tile-large-size-full-x
-						    tile-large-size-full-y)))))))
+						    tile-large-size-full-y))
+					     )))))
        (dolist (,graphics ,graphics-list)
 	 (if ,graphics
 	     (setf (graphics-priority (symbol-value ,graphics)) ,priority))))))
