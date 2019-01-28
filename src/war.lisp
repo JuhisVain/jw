@@ -15,10 +15,15 @@
 (defvar selected-tile nil)
 
 ;; 128,104 is tile size -> 102 is distance from right point to lower left point:
-(defparameter tile-large-size-full (cons 128 104))
+;;(defparameter tile-large-size-full (cons 128 104))
+(defparameter tile-large-size-full-x 128)
+(defparameter tile-large-size-full-y 104)
+
 (defparameter tile-large-size (cons 102 104))
 
-(defparameter tile-size tile-large-size)
+;;(defparameter tile-size tile-large-size)
+(defparameter tile-size-x (car tile-large-size))
+(defparameter tile-size-y (cdr tile-large-size))
 
 (defun set-test-unit ()
   (format t "~%Setting up testunit~&")
@@ -97,13 +102,15 @@
   (pushnew 'city-a (tile-variant (aref (world-map world) x y))))
 
 (defun cursor-coordinates-on-map (screen-x screen-y x-shift y-shift)
+  "What tile is the user pointing at?"
   ;; tile-x & tile-y are the (almost) actual
   ;;  coordinates of the hex the cursor is hovering over
-  (let* ((tile-x (floor (/ (- screen-x x-shift) (car tile-size))))
+  (format t "~&@ ~a ~a ~%" screen-x screen-y)
+  (let* ((tile-x (floor (/ (- screen-x x-shift) tile-size-x)))
 	 (tile-y (floor (/ (if (evenp tile-x)
 			       (- screen-y y-shift)
-			       (- (- screen-y y-shift) (/ (cdr tile-size) 2)))
-			   (cdr tile-size)))))
+			       (- (- screen-y y-shift) (/ tile-size-y 2)))
+			   tile-size-y))))
     (cons tile-x tile-y)))
 
 (defun cursor-coordinates-on-screen (screen-x screen-y x-shift y-shift tile-x)
@@ -111,22 +118,22 @@
   (let* (
 	 ;;There are a bunch of hexes on screen. Which one are we pointing at?
 	 ;;used for multiplying pixel coordinates
-	 (adj-tile-x (floor (/ (- screen-x (rem x-shift (car tile-size))) (car tile-size))))
+	 (adj-tile-x (floor (/ (- screen-x (rem x-shift tile-size-x)) (car tile-size))))
 	 (adj-tile-y (floor (/ (if (evenp tile-x)
-				   (- screen-y (rem y-shift (cdr tile-size)))
-				   (- (- screen-y (rem y-shift (cdr tile-size)))
-				      (/ (cdr tile-size) 2)))
-			       (cdr tile-size))))
+				   (- screen-y (rem y-shift tile-size-y))
+				   (- (- screen-y (rem y-shift tile-size-y))
+				      (/ tile-size-y 2)))
+			       tile-size-y)))
 	 ;;The x coordinate for graphics:
-	 (adj-screen-x (+ (* adj-tile-x (car tile-size))
-			  (rem x-shift (car tile-size))))
-	 ;;y coordinate graphics need to be moved downwards by (cdr tile-size) / 2 if x is odd
+	 (adj-screen-x (+ (* adj-tile-x tile-size-x)
+			  (rem x-shift tile-size-x)))
+	 ;;y coordinate graphics need to be moved downwards by tile-size-y / 2 if x is odd
 	 (adj-screen-y (if (evenp tile-x)
-			   (+ (* adj-tile-y (cdr tile-size))
-			      (rem y-shift (cdr tile-size)))
-			   (+ (* adj-tile-y (cdr tile-size))
-			      (rem y-shift (cdr tile-size))
-			      (floor (/ (cdr tile-size) 2)))))
+			   (+ (* adj-tile-y tile-size-y)
+			      (rem y-shift tile-size-y))
+			   (+ (* adj-tile-y tile-size-y)
+			      (rem y-shift tile-size-y)
+			      (floor (/ tile-size-y 2)))))
 	 )
     (cons adj-screen-x adj-screen-y)))
 
@@ -220,8 +227,8 @@
   (if (null (car tile-coords)) (return-from tc-gc nil))
   (let* ((x (car tile-coords))
 	 (y (cdr tile-coords))
-	 (tile-width (car tile-size))
-	 (tile-height (cdr tile-size))
+	 (tile-width tile-size-x)
+	 (tile-height tile-size-y)
 	 (gx-location (* x tile-width))
 	 (gy-location (* y tile-height)))
     (cons (+ gx-location
@@ -240,10 +247,10 @@
 		     (next-g (tc-gc next
 				    x-shift y-shift)))
 		 (cond ((car next)
-			(sdl:draw-line-* (+ (car current-g) (floor (car tile-size) 2))
-					 (+ (cdr current-g) (floor (cdr tile-size) 2))
-					 (+ (car next-g) (floor (car tile-size) 2))
-					 (+ (cdr next-g) (floor (cdr tile-size) 2))
+			(sdl:draw-line-* (+ (car current-g) (floor tile-size-x 2))
+					 (+ (cdr current-g) (floor tile-size-y 2))
+					 (+ (car next-g) (floor tile-size-x 2))
+					 (+ (cdr next-g) (floor tile-size-y 2))
 					 :color sdl:*white*)
 			(draw-path next))))))
 
@@ -310,18 +317,18 @@
 (defun draw-world (x-shift y-shift selector-graphics selector-tile selected-tile selected-unit)
 
   (let* (;;(draw-count 0)
-	 (x-start-void (floor x-shift (car tile-size)))
-	 (x-start (if (>= (+ x-shift (car tile-size)) 0) 0
+	 (x-start-void (floor x-shift tile-size-x))
+	 (x-start (if (>= (+ x-shift tile-size-x) 0) 0
 		      (- (abs x-start-void) 2)))
 	 (x-end (min
-		 (+ (- x-start-void) (floor (sdl:width window) (car tile-size)))
+		 (+ (- x-start-void) (floor (sdl:width window) tile-size-x))
 		 (1- (array-dimension (world-map *world*) 0)))) ;; The last column
-	 (y-start-void (floor y-shift (cdr tile-size)))
-	 (y-start (min (if (>= (+ y-shift (cdr tile-size)) 0) 0
+	 (y-start-void (floor y-shift tile-size-y))
+	 (y-start (min (if (>= (+ y-shift tile-size-y) 0) 0
 			   (- (abs y-start-void) 2))
 		       (1- (array-dimension (world-map *world*) 1))))
 	 (y-end (min
-		 (+ (- y-start-void) (floor (sdl:height window) (cdr tile-size)))
+		 (+ (- y-start-void) (floor (sdl:height window) tile-size-y))
 		 (1- (array-dimension (world-map *world*) 1))))) ;; The last row
 
     (macrolet ((draw-tiles-by-slot (accessor &optional (sub-accessor nil))
@@ -361,38 +368,38 @@
 
 
 (defun draw-at (x y x-shift y-shift graphics &optional (destination sdl:*default-surface*))
-  (let* ((tile-width (car tile-size))
-	 (tile-height (cdr tile-size))
+  (let* ((tile-width tile-size-x)
+	 (tile-height tile-size-y)
 	 (gx-location (* x tile-width))
 	 (gy-location (* y tile-height)))
   (sdl:draw-surface-at-* (graphics-surface graphics)
 			 (+ gx-location
 			    x-shift (graphics-x-at graphics))
 			 (+ (if (evenp x) gy-location
-				(+ gy-location (/ (cdr tile-size) 2)))
+				(+ gy-location (/ tile-size-y 2)))
 			    y-shift (graphics-y-at graphics))
 			 :surface destination)))
 
 (defun draw-string-at (x y x-shift y-shift string)
-  (let* ((tile-width (car tile-size))
-	 (tile-height (cdr tile-size))
+  (let* ((tile-width tile-size-x)
+	 (tile-height tile-size-y)
 	 (gx-location (* x tile-width))
 	 (gy-location (* y tile-height)))
     (sdl:draw-string-solid-* string
 			     (+ gx-location
 				x-shift
-				(floor (car tile-size) 2))
+				(floor tile-size-x 2))
 			     (+ (if (evenp x) gy-location
-				    (+ gy-location (/ (cdr tile-size) 2)))
+				    (+ gy-location (/ tile-size-y 2)))
 				y-shift
-				(floor (cdr tile-size) 2)))))
+				(floor tile-size-y 2)))))
 
 (defun draw-coords (x y x-shift y-shift)
   ;;Add this to end of draw-tile to write map coords as text on tiles
-  (let ((left-top-x (+ (* x (car tile-size))
+  (let ((left-top-x (+ (* x tile-size-x)
 		       x-shift))
-	(left-top-y (+ (if (evenp x) (* y (cdr tile-size))
-			   (+ (* y (cdr tile-size)) (/ (cdr tile-size) 2)))
+	(left-top-y (+ (if (evenp x) (* y tile-size-y)
+			   (+ (* y tile-size-y) (/ (cdr tile-size) 2)))
 		       y-shift)))
     (sdl:draw-string-solid-* (concatenate 'string
 					  (write-to-string x) "," (write-to-string y))
@@ -425,9 +432,9 @@
 				     ,x-offset ,y-offset
 				     ,@(cond ((eq size-of-tile 'large)
 					      (list (- (* 2 (car tile-large-size))
-						       (car tile-large-size-full))
-						    (car tile-large-size-full)
-						    (cdr tile-large-size-full))))))))
+						       tile-large-size-full-x)
+						    tile-large-size-full-x
+						    tile-large-size-full-y)))))))
        (dolist (,graphics ,graphics-list)
 	 (if ,graphics
 	     (setf (graphics-priority (symbol-value ,graphics)) ,priority))))))
