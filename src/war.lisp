@@ -108,34 +108,37 @@
   (pushnew 'city-a (tile-variant (aref (world-map world) x y))))
 
 (defun cursor-coordinates-on-map (screen-x screen-y x-shift y-shift)
-  "What tile is the user pointing at?"
-  ;; tile-x & tile-y are the (almost) actual
-  ;;  coordinates of the hex the cursor is hovering over
-  
-  (let* ((half-height (/ tile-size-y 2))
-	 (absolute-x (- screen-x x-shift))
-	 (in-tile-x (rem absolute-x tile-size-x))
-	 (tile-x (floor (/ absolute-x tile-size-x)))
-	 (absolute-y (if (evenp tile-x)
+  "What tile is the user hovering mouse over?"
+  (let* ((half-height (/ tile-size-y 2)) ; The y coordinate of imaginary left border lines
+	 (absolute-x (- screen-x x-shift)) ; Cursor's absolute x coordinate from (0,?) in pixels
+	 (in-tile-x (rem absolute-x tile-size-x)) ; Cursor's x coordinate within real cut tile in pix
+	 (tile-x (floor (/ absolute-x tile-size-x))) ; Preliminary tile's x coordinate
+	 (absolute-y (if (evenp tile-x) ; Cursor's absolute y coordinate from (tile-x,0) in pixels
 			 (- screen-y y-shift)
 			 (- (- screen-y y-shift) (/ tile-size-y 2))))
-	 (in-tile-y (rem absolute-y tile-size-y))
+	 (in-tile-y (rem absolute-y tile-size-y)) ; Cursor's y within tile in pixels
 
+	 ;;;   (v1.x - v0.x)*(v2.y - v0.y) - (v2.x - v0.x)*(v1.y - v0.y)
+	 ;;      => Will return positive if v2 to the left of line (v0-v1)
+	 ;; v0 = NW ; v1 = W :
 	 (left-of-nw (- (* (- tile-size-x tile-size-hor-x)
 			   (- in-tile-y half-height))
 			(* in-tile-x
 			   (- half-height))))
+	 ;; v0 = W ; v1 = SW :
 	 (left-of-sw (- (* (- (- tile-size-x tile-size-hor-x))
 			   (- in-tile-y tile-size-y))
 			(* (- in-tile-x (- tile-size-x tile-size-hor-x))
 			   (- half-height tile-size-y))))
 	 
-	 (tile-y (floor (/ absolute-y tile-size-y))))
+	 (tile-y (floor (/ absolute-y tile-size-y)))) ; Preliminary y coordinate
 
-    (cond ((<= left-of-nw 0)
-	   (if (evenp tile-x) (decf tile-y))
+    (format t "~&NW: ~a~%SW: ~a~%~%" left-of-nw left-of-sw)
+
+    (cond ((<= left-of-nw 0) ; cursor actually over tile at NW
+	   (if (evenp tile-x) (decf tile-y)) ; problems of hex stacking
 	   (decf tile-x))
-	  ((<= left-of-sw 0)
+	  ((<= left-of-sw 0) ; cursor actually over tile at SW
 	   (if (oddp tile-x) (incf tile-y))
 	   (decf tile-x)))
     
