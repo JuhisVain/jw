@@ -133,8 +133,6 @@
 	 
 	 (tile-y (floor (/ absolute-y tile-size-y)))) ; Preliminary y coordinate
 
-    (format t "~&NW: ~a~%SW: ~a~%~%" left-of-nw left-of-sw)
-
     (cond ((<= left-of-nw 0) ; cursor actually over tile at NW
 	   (if (evenp tile-x) (decf tile-y)) ; problems of hex stacking
 	   (decf tile-x))
