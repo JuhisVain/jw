@@ -23,10 +23,13 @@
 ;; above also computed by :
 ;;(- (* 2 (car tile-large-size))
 ;;   tile-large-size-full-x)
-
 (defparameter tile-large-size (cons 102 104))
 
-;;(defparameter tile-size tile-large-size)
+(defparameter tile-small-size-full-x 62)
+(defparameter tile-small-size-full-y 52)
+(defparameter tile-small-size-full-hor-x 36)
+(defparameter tile-small-size (cons 49 52))
+
 (defparameter tile-size-x (car tile-large-size))
 (defparameter tile-size-y (cdr tile-large-size))
 (defparameter tile-size-hor-x tile-large-size-full-hor-x) ; these should be set in the init func
@@ -513,7 +516,12 @@
   (tile-river-setup stream-large-south-west -2 50)
   (tile-river-setup stream-large-north 24 -8)
 
-  ;; this is not tile graphics???    (tile-graphics-setup counterbase 24 7)
+  
+
+  (tile-graphics-setup sea-small 0)
+  (tile-graphics-setup grass-small 0)
+  (tile-graphics-setup selector-small 200 5 0)
+
   (set-tile-size 'large)
   )
 
@@ -522,6 +530,11 @@
   (sdl:clear-display sdl:*black*)
 
   (cond ((equal var 'large)
+
+	 (defparameter tile-size-x (car tile-large-size))
+	 (defparameter tile-size-y (cdr tile-large-size))
+	 (defparameter tile-size-hor-x tile-large-size-full-hor-x)
+	 
 	 (defparameter selector selector-large)
 	 (defparameter tile-size tile-large-size)
 	 (defparameter sea sea-large)
@@ -550,6 +563,11 @@
 	 (defparameter stream-n stream-large-north)
 	 )
 	((equal var 'small)
+
+	 (defparameter tile-size-x (car tile-small-size))
+	 (defparameter tile-size-y (cdr tile-small-size))
+	 (defparameter tile-size-hor-x tile-small-size-full-hor-x)
+	 
 	 (defparameter selector selector-small)
 	 (defparameter tile-size tile-small-size)
 	 (defparameter sea sea-small)
