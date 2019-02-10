@@ -575,7 +575,19 @@
 	 (defparameter selector selector-small)
 	 (defparameter tile-size tile-small-size)
 	 (defparameter sea sea-small)
-	 (defparameter grass grass-small))))
+	 (defparameter grass grass-small)
+
+	 ;; TODO: this should be done in the setup-tile-graphics macro
+	 ;; -creates empty sdlsurface for nonexistent graphics
+	 (defvar placeholder (make-graphics :surface (sdl:create-surface 0 0)))
+
+	 (defparameter coast-s placeholder)
+	 (defparameter coast-se placeholder)
+	 (defparameter coast-sw placeholder)
+	 (defparameter coast-n placeholder)
+	 (defparameter coast-ne placeholder)
+	 (defparameter coast-nw placeholder)
+	 )))
 
 (defun add-river (tile-x tile-y size direction &optional (recursion t))
   (let ((tile-neighbour (neighbour-tile tile-x tile-y direction)))
