@@ -466,6 +466,10 @@
 					      (list tile-large-size-full-hor-x
 						    tile-large-size-full-x
 						    tile-large-size-full-y))
+					     ((eq size-of-tile 'small)
+					      (list tile-small-size-full-hor-x
+						    tile-small-size-full-x
+						    tile-small-size-full-y))
 					     )))))
        (dolist (,graphics ,graphics-list)
 	 (if ,graphics
