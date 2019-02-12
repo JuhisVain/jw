@@ -12,7 +12,7 @@
 ;;  (techs nil))
 
 (defstruct tile
-  (type 'sea)
+  (type (list 'sea))
   (variant nil)  ;to be used as variant graphics for coast lines etc.
   (location nil) ;city/resource/airfield etc.
   (river-borders nil)

@@ -100,7 +100,7 @@
 		       (graphics-priority (symbol-value b))))))))
 
 (defun init-test (height width)
-  (setf *world* (init-world height width))
+  (setf *world* (init-world height width :algo :testing))
   nil)
 
 ;; This is mostly for testing. do same for 'suburb-a'
@@ -619,68 +619,8 @@
 			     ((eq direction 'SW) 'NE))
 		       nil))))))
 
-
 (defun create-rivers ()
   )
-
-(defun init-world (width height)
-  (let ((world (make-world)))
-    (setf (world-width world) (- width 1))
-    (setf (world-height world) (- height 1))
-    (setf (world-map world) (make-array `(,width ,height)))
-
-    ;; Make totally random map:
-    (do ((x 0)
-	 (y 0))
-	((>= x (array-dimension (world-map world) 0)))
-      (setf (aref (world-map world) x y)
-	    (make-tile :type (if (< (random 4) 1)
-				 (cons 'sea nil) ; '(sea) results in all tile types pointing to EQ type
-				 (cons 'grass nil))))
-      (and (member 'grass (tile-type (aref (world-map world) x y)))
-	   (< (random 10) 1)
-	   (prog1 1 (format t "~&Gonna build me a city at ~a, ~a~%" x y))
-	   (create-city x y world))
-	  
-      (incf y)
-      (if (>= y (array-dimension (world-map world) 1))
-	  (progn (incf x)
-		 (setf y 0))))
-
-    ;; Add in sea coasts to land tiles:
-    ;; update: also city outskirts
-    (do ((x 0)
-	 (y 0))
-	((>= x (array-dimension (world-map world) 0)))
-
-      (format t "~&~a,~a" x y)
-
-      (if (not (member 'sea (tile-type (tile-at x y world)))) ; don't do for sea tiles
-	  (dolist (direction (list 'N 'NE 'SE 'S 'SW 'NW))
-	    ;;(format t "doing list~%")
-	    (let ((neighbour-tile (neighbour-tile-coords x y direction world)))
-	      ;;(format t "~&neigbour: ~a,~a" (car neighbour-tile) (cdr neighbour-tile))
-	      (if neighbour-tile
-		  ;; what's all this then?
-		  (progn
-		    (if (member 'sea (tile-type (aref (world-map world) (car neighbour-tile) (cdr neighbour-tile))))
-			(push (intern (concatenate 'string "COAST-" (symbol-name direction)))
-			      (tile-variant (aref (world-map world) x y))))
-		    (if (member :city (tile-location (aref (world-map world) (car neighbour-tile) (cdr neighbour-tile))))
-			(push (intern (concatenate 'string "CITY-OUTSKIRTS-" (symbol-name direction)))
-			      (tile-variant (aref (world-map world) x y)))))))))
-
-      ;; TODO: Whatever this was written to do it doesn't do.
-      ;; the tile-variant graphics will need to be ordered according to some smart priority 
-      (setf (tile-variant (aref (world-map world) x y)) (nreverse (tile-variant (aref (world-map world) x y))))
-      
-
-      (incf y)
-      (if (>= y (array-dimension (world-map world) 1))
-	  (progn (incf x)
-		 (setf y 0))))
-
-    world))
 
 (defun tile-at (x y &optional (world *world*))
   "Returns struct tile at (x,y) or nil on failure"

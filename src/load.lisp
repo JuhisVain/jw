@@ -3,6 +3,7 @@
 (load "faction.lisp")
 (load "wtool.lisp")
 (load "war.lisp")
+(load "worldgen.lisp")
 (load "panel.lisp")
 (load "tilechopper.lisp")
 (load "cgen.lisp")
