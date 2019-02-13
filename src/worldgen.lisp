@@ -1,13 +1,14 @@
 (in-package :war)
 
 (defun init-world (width height &key (algo :random) (faction-count 2) (mirror nil))
-  (cond ((eq algo :perlin)
-	 nil);(make-perlin-world width height faction-count mirror))
-	((eq algo :random)
-	 (make-random-world width height))
-	((eq algo :testing)
-	 (make-testing-world width height faction-count mirror))
-	))
+  (finalize-world
+   (cond ((eq algo :perlin)
+	  nil);(make-perlin-world width height faction-count mirror))
+	 ((eq algo :random)
+	  (make-random-world width height))
+	 ((eq algo :testing)
+	  (make-testing-world width height faction-count mirror))
+	 )))
 
 (defun make-testing-world (width height faction-count mirror)
   (let* ((world (make-world :width (- width 1)
@@ -89,6 +90,39 @@
     came-from))
 
 
+(defun finalize-world (world)
+  ;; Adds outskirt graphics
+  (do ((x 0)
+       (y 0))
+      ((>= x (array-dimension (world-map world) 0)))
+
+    (format t "~&~a,~a" x y)
+
+    (if (not (member 'sea (tile-type (tile-at x y world)))) ; don't do for sea tiles (for now)
+	(dolist (direction (list 'N 'NE 'SE 'S 'SW 'NW))
+	  (let ((neighbour-tile (neighbour-tile-coords x y direction world)))
+	    (if neighbour-tile
+		(progn
+		  (if (member 'sea (tile-type (aref (world-map world) (car neighbour-tile) (cdr neighbour-tile))))
+		      (push (intern (concatenate 'string "COAST-" (symbol-name direction)))
+			    (tile-variant (aref (world-map world) x y))))
+		  (if (member :city (tile-location (aref (world-map world) (car neighbour-tile) (cdr neighbour-tile))))
+		      (push (intern (concatenate 'string "CITY-OUTSKIRTS-" (symbol-name direction)))
+			    (tile-variant (aref (world-map world) x y)))))))))
+
+    ;; TODO: Whatever this was written to do it doesn't do.
+    ;; the tile-variant graphics will need to be ordered according to some smart priority 
+    (setf (tile-variant (aref (world-map world) x y))
+	  (nreverse (tile-variant (aref (world-map world) x y))))
+    
+
+    (incf y)
+    (if (>= y (array-dimension (world-map world) 1))
+	(progn (incf x)
+	       (setf y 0))))
+  world)
+
+
 (defun make-random-world (width height) ;; the original and worst
   (let ((world (make-world)))
     (setf (world-width world) (- width 1))
@@ -108,39 +142,6 @@
 	   (prog1 1 (format t "~&Gonna build me a city at ~a, ~a~%" x y))
 	   (create-city x y world))
 	  
-      (incf y)
-      (if (>= y (array-dimension (world-map world) 1))
-	  (progn (incf x)
-		 (setf y 0))))
-
-    ;; Add in sea coasts to land tiles:
-    ;; update: also city outskirts
-    (do ((x 0)
-	 (y 0))
-	((>= x (array-dimension (world-map world) 0)))
-
-      (format t "~&~a,~a" x y)
-
-      (if (not (member 'sea (tile-type (tile-at x y world)))) ; don't do for sea tiles
-	  (dolist (direction (list 'N 'NE 'SE 'S 'SW 'NW))
-	    ;;(format t "doing list~%")
-	    (let ((neighbour-tile (neighbour-tile-coords x y direction world)))
-	      ;;(format t "~&neigbour: ~a,~a" (car neighbour-tile) (cdr neighbour-tile))
-	      (if neighbour-tile
-		  ;; what's all this then?
-		  (progn
-		    (if (member 'sea (tile-type (aref (world-map world) (car neighbour-tile) (cdr neighbour-tile))))
-			(push (intern (concatenate 'string "COAST-" (symbol-name direction)))
-			      (tile-variant (aref (world-map world) x y))))
-		    (if (member :city (tile-location (aref (world-map world) (car neighbour-tile) (cdr neighbour-tile))))
-			(push (intern (concatenate 'string "CITY-OUTSKIRTS-" (symbol-name direction)))
-			      (tile-variant (aref (world-map world) x y)))))))))
-
-      ;; TODO: Whatever this was written to do it doesn't do.
-      ;; the tile-variant graphics will need to be ordered according to some smart priority 
-      (setf (tile-variant (aref (world-map world) x y)) (nreverse (tile-variant (aref (world-map world) x y))))
-      
-
       (incf y)
       (if (>= y (array-dimension (world-map world) 1))
 	  (progn (incf x)
