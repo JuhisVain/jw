@@ -25,7 +25,9 @@
     ;; Initialize world with sea tiles:
     (dotimes (x width)
       (dotimes (y height)
-	(setf (aref (world-map world) x y) (make-tile))))
+	;;(setf (aref (world-map world) x y) (make-tile))
+	(setf (tile-at x y world) (make-tile))
+	))
     
     ;; Create some random noise to use for breadth-first-fill:
     (dotimes (x tw-width)

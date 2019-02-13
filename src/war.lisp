@@ -629,6 +629,16 @@
        (< y (array-dimension (world-map world) 1))
        (aref (world-map world) x y)))
 
+(defun set-tile-at (x y world new-tile)
+  (and x y (>= x 0) (>= y 0)
+       (< x (array-dimension (world-map world) 0))
+       (< y (array-dimension (world-map world) 1))
+       (setf (aref (world-map world) x y) new-tile)
+       (aref (world-map world) x y)))
+
+(defsetf tile-at (x y &optional (world *world*)) (new-tile)
+  `(set-tile-at ,x ,y ,(if world world *world*) ,new-tile))
+
 (defun neighbour-tile (here-x here-y direction &optional (world *world*))
   (let ((neighbour-coords (neighbour-tile-coords here-x here-y direction world)))
     (aref (world-map world) (car neighbour-coords) (cdr neighbour-coords))))
