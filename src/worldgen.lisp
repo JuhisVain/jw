@@ -112,8 +112,11 @@
   world)
 
 (defun finalize-tile (x y world)
- 
+  "Pulls neighbouring tiles' types as outskirts to tile at (x,y)"
+  (setf (tile-variant (tile-at x y world)) nil) ; reset variant list
   (if (not (member 'sea (tile-type (tile-at x y world)))) ; don't do for sea tiles (for now)
+      (progn
+	
 	(dolist (direction (list 'N 'NE 'SE 'S 'SW 'NW))
 	  (let ((neighbour-tile (neighbour-tile-coords x y direction world)))
 	    (if neighbour-tile
@@ -124,7 +127,16 @@
 		  (if (member :city (tile-location (aref (world-map world) (car neighbour-tile) (cdr neighbour-tile))))
 		      (push (intern (concatenate 'string "CITY-OUTSKIRTS-" (symbol-name direction)))
 			    (tile-variant (aref (world-map world) x y)))))))))
-  )
+      ))
+
+(defun finalize-tile-region (x y world)
+  "Finalizes tile at (x,y) and all it's neighbours"
+  ;;; Should be used on a tile after it has been manually modified
+  ;;    with "(setf (tile-type (tile-at x y)))"
+  (finalize-tile x y world)
+  (dolist (direction (list 'N 'NE 'SE 'S 'SW 'NW))
+    (let ((neighbour-tile (neighbour-tile-coords x y direction world)))
+      (if neighbour-tile (finalize-tile (car neighbour-tile) (cdr neighbour-tile) world)))))
 
 
 (defun make-random-world (width height) ;; the original and worst
