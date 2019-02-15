@@ -98,7 +98,22 @@
 
     (format t "~&~a,~a" x y)
 
-    (if (not (member 'sea (tile-type (tile-at x y world)))) ; don't do for sea tiles (for now)
+    (finalize-tile x y world)
+
+    ;; TODO: Whatever this was written to do it doesn't do.
+    ;; the tile-variant graphics will need to be ordered according to some smart priority 
+    (setf (tile-variant (aref (world-map world) x y))
+	  (nreverse (tile-variant (aref (world-map world) x y))))
+    
+    (incf y)
+    (if (>= y (array-dimension (world-map world) 1))
+	(progn (incf x)
+	       (setf y 0))))
+  world)
+
+(defun finalize-tile (x y world)
+ 
+  (if (not (member 'sea (tile-type (tile-at x y world)))) ; don't do for sea tiles (for now)
 	(dolist (direction (list 'N 'NE 'SE 'S 'SW 'NW))
 	  (let ((neighbour-tile (neighbour-tile-coords x y direction world)))
 	    (if neighbour-tile
@@ -109,18 +124,7 @@
 		  (if (member :city (tile-location (aref (world-map world) (car neighbour-tile) (cdr neighbour-tile))))
 		      (push (intern (concatenate 'string "CITY-OUTSKIRTS-" (symbol-name direction)))
 			    (tile-variant (aref (world-map world) x y)))))))))
-
-    ;; TODO: Whatever this was written to do it doesn't do.
-    ;; the tile-variant graphics will need to be ordered according to some smart priority 
-    (setf (tile-variant (aref (world-map world) x y))
-	  (nreverse (tile-variant (aref (world-map world) x y))))
-    
-
-    (incf y)
-    (if (>= y (array-dimension (world-map world) 1))
-	(progn (incf x)
-	       (setf y 0))))
-  world)
+  )
 
 
 (defun make-random-world (width height) ;; the original and worst
