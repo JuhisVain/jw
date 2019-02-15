@@ -111,7 +111,7 @@
 	       (setf y 0))))
   world)
 
-(defun finalize-tile (x y world)
+(defun finalize-tile (x y &optional (world *world*))
   "Pulls neighbouring tiles' types as outskirts to tile at (x,y)"
   (setf (tile-variant (tile-at x y world)) nil) ; reset variant list
   (if (not (member 'sea (tile-type (tile-at x y world)))) ; don't do for sea tiles (for now)
@@ -126,10 +126,13 @@
 			    (tile-variant (aref (world-map world) x y))))
 		  (if (member :city (tile-location (aref (world-map world) (car neighbour-tile) (cdr neighbour-tile))))
 		      (push (intern (concatenate 'string "CITY-OUTSKIRTS-" (symbol-name direction)))
-			    (tile-variant (aref (world-map world) x y)))))))))
+			    (tile-variant (aref (world-map world) x y))))))))
+	;; TODO: might want to separate logic and graphics...
+	(if (member :city (tile-location (tile-at x y world)))
+	    (push 'city-a (tile-variant (tile-at x y world)))))
       ))
 
-(defun finalize-tile-region (x y world)
+(defun finalize-tile-region (x y &optional (world *world*))
   "Finalizes tile at (x,y) and all it's neighbours"
   ;;; Should be used on a tile after it has been manually modified
   ;;    with "(setf (tile-type (tile-at x y)))"
