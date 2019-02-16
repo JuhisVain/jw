@@ -384,7 +384,7 @@
 				      `(symbol-value ,slot))))
 		      (incf ,y)))))
 
-      (draw-tiles-by-slot tile-type)
+      ;;(draw-tiles-by-slot tile-type) ; trying to move drawing of types into variants
       (draw-tiles-by-slot tile-variant)
       (draw-tiles-by-slot tile-units army-counter)))
 

@@ -127,10 +127,12 @@
 		  (if (member :city (tile-location (aref (world-map world) (car neighbour-tile) (cdr neighbour-tile))))
 		      (push (intern (concatenate 'string "CITY-OUTSKIRTS-" (symbol-name direction)))
 			    (tile-variant (aref (world-map world) x y))))))))
-	;; TODO: might want to separate logic and graphics...
 	(if (member :city (tile-location (tile-at x y world)))
 	    (push 'city-a (tile-variant (tile-at x y world)))))
-      ))
+      )
+  (push (car (tile-type (tile-at x y world)))
+	(tile-variant (tile-at x y world))) ;; well that was shockingly easy
+  )
 
 (defun finalize-tile-region (x y &optional (world *world*))
   "Finalizes tile at (x,y) and all it's neighbours"
