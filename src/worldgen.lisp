@@ -130,9 +130,18 @@
 	(if (member :city (tile-location (tile-at x y world)))
 	    (push 'city-a (tile-variant (tile-at x y world)))))
       )
+  ;; Pushing tile's type as base element of graphics list:
   (push (car (tile-type (tile-at x y world)))
-	(tile-variant (tile-at x y world))) ;; well that was shockingly easy
+	(tile-variant (tile-at x y world)))
   )
+
+(defun sort-tile-graphics (tile)
+  "Sorts a tile's variant field according to set priorities in ascending order"
+  (setf (tile-variant tile)
+	(sort (tile-variant tile)
+	      #'(lambda (a b)
+		  (< (graphics-priority (symbol-value a))
+		     (graphics-priority (symbol-value b)))))))
 
 (defun finalize-tile-region (x y &optional (world *world*))
   "Finalizes tile at (x,y) and all it's neighbours"

@@ -88,16 +88,7 @@
 
 (defun sort-world-graphics (&optional (world *world*))
   (do-world-tiles (tile world)
-    (setf (tile-type tile)
-	  (sort (tile-type tile)
-		#'(lambda (a b)
-		    (< (graphics-priority (symbol-value a))
-		       (graphics-priority (symbol-value b))))))
-    (setf (tile-variant tile)
-	  (sort (tile-variant tile)
-		#'(lambda (a b)
-		    (< (graphics-priority (symbol-value a))
-		       (graphics-priority (symbol-value b))))))))
+    (sort-tile-graphics tile)))
 
 (defun init-test (height width)
   (setf *world* (init-world height width :algo :testing))
@@ -179,7 +170,7 @@
 
     (load-tiles)
     (init-cgen)
-    (sort-world-graphics) ;; Put graphics in order to render correctly
+    (sort-world-graphics) ;; Put graphics in order to render correctly. NOTE: This is a pretty heavy operation
     (setup-panels) ;; Setup the chrome
 
     ;;(set-test-unit) ;; testing army graphics
@@ -384,7 +375,7 @@
 				      `(symbol-value ,slot))))
 		      (incf ,y)))))
 
-      ;;(draw-tiles-by-slot tile-type) ; trying to move drawing of types into variants
+      ;;(draw-tiles-by-slot tile-type) ; types moved to variants list
       (draw-tiles-by-slot tile-variant)
       (draw-tiles-by-slot tile-units army-counter)))
 
