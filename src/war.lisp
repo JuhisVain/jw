@@ -90,8 +90,8 @@
   (do-world-tiles (tile world)
     (sort-tile-graphics tile)))
 
-(defun init-test (height width)
-  (setf *world* (init-world height width :algo :testing))
+(defun init-test (height width &key (islands 1) (mirror nil))
+  (setf *world* (init-world height width :algo 'testing :mirror mirror :islands islands))
   nil)
 
 ;; This is mostly for testing. do same for 'suburb-a'

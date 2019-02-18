@@ -1,16 +1,28 @@
 (in-package :war)
 
-(defun init-world (width height &key (algo :random) (faction-count 2) (mirror nil))
+(defun init-world (width height
+		   &key
+		     (algo 'random) ; Algorithm to use for map generation
+		     (faction-count 2) ; 
+		     (mirror nil) ; Should the world be mirrored?
+					; TODO: maybe use symbolnames for mirrors for choice...
+					; such as 'NW-SE or 'SW-NE.
+					; Diag and horiz mirrors will need 1 tile wide padding(?)
+		     (islands 1)) ; Amount of init points from which to start filling land tiles
   (finalize-world
-   (cond ((eq algo :perlin)
+   (cond ((eq algo 'perlin)
 	  nil);(make-perlin-world width height faction-count mirror))
-	 ((eq algo :random)
+	 ((eq algo 'random)
 	  (make-random-world width height))
-	 ((eq algo :testing)
-	  (make-testing-world width height faction-count mirror))
+	 ((eq algo 'testing)
+	  (make-testing-world width height faction-count mirror islands))
 	 )))
 
-(defun make-testing-world (width height faction-count mirror)
+(defun make-testing-world (width height faction-count
+			   &optional
+			     (mirror nil)
+			     (islands 1)
+			     (island-size 10))
   (let* ((world (make-world :width (- width 1)
 			    :height (- height 1)
 			    :map (make-array (list width height))
@@ -40,53 +52,69 @@
     ;; Select a random coordinate and fire breadth-first-fill at it:
     ;; TODO: select more coordinates for other types of tiles and more land and such
     (let ((fill-these-tiles
-	   (breadth-first-fill (cons (random width) (random height))
-			       (+ 30 (random 20))
-			       template-world)))
+	   (breadth-first-fill ;(cons (random width) (random height))
+	    (mapcar #'cons (list-randoms islands width)
+		    (list-randoms islands height))
+					;(+ 30 (random 20))
+	    island-size
+	    template-world)))
 
       (maphash #'(lambda (key value)
-		   (format t "~&k:~a v:~a~%" key value)
 		   (setf (tile-type (aref (world-map world) (car key) (cdr key)))
 			 (list 'grass)))
 	       fill-these-tiles)
+
+      (if mirror
+	  ;; This mirrors NW / SE
+	  (maphash #'(lambda (key value)
+		       (setf (tile-type (aref (world-map world)
+					      (- (world-width world) (car key))
+					      (- (world-height world) (cdr key))))
+			     (list 'grass)))
+		   fill-these-tiles))
       
       )
     world))
 
-(defun breadth-first-fill (start range world)
+(defun list-randoms (size rand-num)
+  (if (< size 1) nil
+      (cons (random rand-num) (list-randoms (1- size) rand-num))))
+
+(defun breadth-first-fill (start-list range world)
   (let ((frontier (make-heap))
 	(came-from (make-hash-table :test 'equal)))
 
-    (heap-insert frontier start range)
-    (setf (gethash start came-from) (list range nil))
+    (dolist (start start-list)
+      (heap-insert frontier start range)
+      (setf (gethash start came-from) (list range nil))
 
-    (do ((current))
-	((heap-empty frontier))
+      (do ((current))
+	  ((heap-empty frontier))
 
-      (setf current (heap-remove-max frontier))
+	(setf current (heap-remove-max frontier))
 
-      (if (> (car current) 0)
-	  (dolist (neighbour (mapcar #'(lambda (direction)
-					 (neighbour-tile-coords
-					  (cadr current)
-					  (cddr current)
-					  direction world))
-				     '(n ne se s sw nw)))
-	    
-	    (cond ((null neighbour) nil)
-		  ((null (gethash neighbour came-from))
-		   (let ((move-cost (- (car current)
-				       (eval
-					(car (last
-					      (tile-type (aref (world-map world)
-							       (car neighbour)
-							       (cdr neighbour)))))))))
-		     (cond ((>= move-cost 0)
-			    (heap-insert frontier neighbour move-cost)
-			    (setf (gethash neighbour came-from)
-				  (cons move-cost (cdr current))))))))))
-      
-      )
+	(if (> (car current) 0)
+	    (dolist (neighbour (mapcar #'(lambda (direction)
+					   (neighbour-tile-coords
+					    (cadr current)
+					    (cddr current)
+					    direction world))
+				       '(n ne se s sw nw)))
+	      
+	      (cond ((null neighbour) nil)
+		    ((null (gethash neighbour came-from))
+		     (let ((move-cost (- (car current)
+					 (eval
+					  (car (last
+						(tile-type (aref (world-map world)
+								 (car neighbour)
+								 (cdr neighbour)))))))))
+		       (cond ((>= move-cost 0)
+			      (heap-insert frontier neighbour move-cost)
+			      (setf (gethash neighbour came-from)
+				    (cons move-cost (cdr current))))))))))
+	
+	))
     came-from))
 
 
@@ -96,7 +124,7 @@
        (y 0))
       ((>= x (array-dimension (world-map world) 0)))
 
-    (format t "~&~a,~a" x y)
+    ;(format t "~&~a,~a" x y)
 
     (finalize-tile x y world)
 
