@@ -162,7 +162,7 @@
 	(if (member 'city (tile-location (tile-at x y world)))
 	    (push 'city-a (tile-variant (tile-at x y world))))
 	(if (member 'field (tile-location (tile-at x y world)))
-	    (push 'field (tile-variant (tile-at x y world)))))
+	    (push 'field-a (tile-variant (tile-at x y world)))))
       )
   ;; Pushing tile's type as base element of graphics list:
   (push (car (tile-type (tile-at x y world)))

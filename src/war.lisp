@@ -513,7 +513,7 @@
   (tile-graphics-setup city-a-large 50 -6 -5)
   (tile-graphics-setup suburb-a-large 50)
 
-  (tile-graphics-setup field-large 25 -4 -9)
+  (tile-graphics-setup field-a-large 25 -4 -9)
 
   (tile-graphics-setup selector-large 200 11 0)
 
@@ -565,12 +565,12 @@
 	 (defparameter city-outskirts-ne city-a-large-border-north-east)
 	 (defparameter city-outskirts-nw city-a-large-border-north-west)
 
-	 (defparameter field-a-outskirts-s field-large-border-south)
-	 (defparameter field-a-outskirts-se field-large-border-south-east)
-	 ;;(defparameter field-a-outskirts-sw field-large-border-south-west)
-	 (defparameter field-a-outskirts-n field-large-border-north)
-	 (defparameter field-a-outskirts-ne field-large-border-north-east)
-	 (defparameter field-a-outskirts-nw field-large-border-north-west)
+	 (defparameter field-outskirts-s field-large-border-south)
+	 (defparameter field-outskirts-se field-large-border-south-east)
+	 ;;(defparameter field-outskirts-sw field-large-border-south-west)
+	 (defparameter field-outskirts-n field-large-border-north)
+	 (defparameter field-outskirts-ne field-large-border-north-east)
+	 (defparameter field-outskirts-nw field-large-border-north-west)
 
 	 (defparameter stream-nw stream-large-north-west)
 	 (defparameter stream-sw stream-large-south-west)
