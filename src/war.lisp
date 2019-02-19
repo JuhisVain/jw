@@ -482,7 +482,7 @@
 			       ,(car large) ,(cadr large) ,(caddr large)))
      ,(if small
 	 `(tile-graphics-setup ,(intern (concatenate 'string (symbol-name base-name) "-SMALL"))
-			       ,(car large) ,(cadr large) ,(caddr large)))))
+			       ,(car small) ,(cadr small) ,(caddr small)))))
 
 
 ;; Could be used for things other than rivers as well
