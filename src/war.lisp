@@ -98,8 +98,16 @@
 ;; The right and lower side tiles will draw themselves over this one.
 ;; TODO: either do a second pass on tiles or split city graphics kinda like the sea/coasts
 (defun create-city (x y &optional (world *world*))
-  (pushnew :city (tile-location (aref (world-map world) x y)))
+  (pushnew 'city (tile-location (aref (world-map world) x y)))
   (pushnew 'city-a (tile-variant (aref (world-map world) x y))))
+
+(defun create-location-at (location-symbol x y &optional (world *world*))
+  (pushnew location-symbol (tile-location (aref (world-map world) x y)))
+  (pushnew (intern (concatenate 'string (symbol-name location-symbol) "-A"))
+	   (tile-variant (aref (world-map world) x y)))
+  (finalize-tile-region x y world))
+
+
 
 (defun cursor-coordinates-on-map (screen-x screen-y x-shift y-shift)
   "What tile is the user hovering mouse over?"
@@ -505,6 +513,8 @@
   (tile-graphics-setup city-a-large 50 -6 -5)
   (tile-graphics-setup suburb-a-large 50)
 
+  (tile-graphics-setup field-large 25 -4 -9)
+
   (tile-graphics-setup selector-large 200 11 0)
 
   (tile-river-setup stream-large-north-west -2 -2)
@@ -539,6 +549,8 @@
 	 (defparameter city-a city-a-large)
 	 (defparameter suburb-a suburb-a-large)
 
+	 (defparameter field-a field-large)
+
 	 (defparameter coast-s sea-large-border-south)
 	 (defparameter coast-se sea-large-border-south-east)
 	 (defparameter coast-sw sea-large-border-south-west)
@@ -552,6 +564,13 @@
 	 (defparameter city-outskirts-n city-a-large-border-north)
 	 (defparameter city-outskirts-ne city-a-large-border-north-east)
 	 (defparameter city-outskirts-nw city-a-large-border-north-west)
+
+	 (defparameter field-a-outskirts-s field-large-border-south)
+	 (defparameter field-a-outskirts-se field-large-border-south-east)
+	 ;;(defparameter field-a-outskirts-sw field-large-border-south-west)
+	 (defparameter field-a-outskirts-n field-large-border-north)
+	 (defparameter field-a-outskirts-ne field-large-border-north-east)
+	 (defparameter field-a-outskirts-nw field-large-border-north-west)
 
 	 (defparameter stream-nw stream-large-north-west)
 	 (defparameter stream-sw stream-large-south-west)
