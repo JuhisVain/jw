@@ -474,6 +474,16 @@
 	 (if ,graphics
 	     (setf (graphics-priority (symbol-value ,graphics)) ,priority))))))
 
+(defmacro create-tile (base-name &key (large nil) (small nil)) ; <- large & small in form (priority x-ofs y-ofs)
+  `(progn
+     ;;(format t "~&Creating ~a ~a~%" ',large ',small)
+     ,(if large
+	 `(tile-graphics-setup ,(intern (concatenate 'string (symbol-name base-name) "-LARGE"))
+			       ,(car large) ,(cadr large) ,(caddr large)))
+     ,(if small
+	 `(tile-graphics-setup ,(intern (concatenate 'string (symbol-name base-name) "-SMALL"))
+			       ,(car large) ,(cadr large) ,(caddr large)))))
+
 
 ;; Could be used for things other than rivers as well
 (defmacro tile-river-setup (river-symbol-dir x-offset y-offset)
@@ -506,7 +516,9 @@
     
 
 (defun load-tiles ()
-  (tile-graphics-setup sea-large 100 -4 -9)
+  ;;(tile-graphics-setup sea-large 100 -4 -9)
+  (create-tile sea :large (100 -4 -9) :small (0 0 0))
+  
   (tile-graphics-setup grass-large 0)
 
   (tile-graphics-setup swamp-large 1)
@@ -523,7 +535,7 @@
 
   
 
-  (tile-graphics-setup sea-small 0)
+  ;;(tile-graphics-setup sea-small 0)
   (tile-graphics-setup grass-small 0)
   (tile-graphics-setup selector-small 200 5 0)
 
