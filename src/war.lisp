@@ -549,7 +549,7 @@
 	 (defparameter city-a city-a-large)
 	 (defparameter suburb-a suburb-a-large)
 
-	 (defparameter field-a field-large)
+	 (defparameter field-a field-a-large)
 
 	 (defparameter coast-s sea-large-border-south)
 	 (defparameter coast-se sea-large-border-south-east)
@@ -565,12 +565,12 @@
 	 (defparameter city-outskirts-ne city-a-large-border-north-east)
 	 (defparameter city-outskirts-nw city-a-large-border-north-west)
 
-	 (defparameter field-outskirts-s field-large-border-south)
-	 (defparameter field-outskirts-se field-large-border-south-east)
+	 (defparameter field-outskirts-s field-a-large-border-south)
+	 (defparameter field-outskirts-se field-a-large-border-south-east)
 	 ;;(defparameter field-outskirts-sw field-large-border-south-west)
-	 (defparameter field-outskirts-n field-large-border-north)
-	 (defparameter field-outskirts-ne field-large-border-north-east)
-	 (defparameter field-outskirts-nw field-large-border-north-west)
+	 (defparameter field-outskirts-n field-a-large-border-north)
+	 (defparameter field-outskirts-ne field-a-large-border-north-east)
+	 (defparameter field-outskirts-nw field-a-large-border-north-west)
 
 	 (defparameter stream-nw stream-large-north-west)
 	 (defparameter stream-sw stream-large-south-west)
