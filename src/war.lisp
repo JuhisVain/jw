@@ -582,7 +582,7 @@
 	 ;;(defparameter field-outskirts-sw field-large-border-south-west)
 	 (defparameter field-outskirts-n field-a-large-border-north)
 	 (defparameter field-outskirts-ne field-a-large-border-north-east)
-	 (defparameter field-outskirts-nw field-a-large-border-north-west)
+	 ;;(defparameter field-outskirts-nw field-a-large-border-north-west)
 
 	 (defparameter stream-nw stream-large-north-west)
 	 (defparameter stream-sw stream-large-south-west)

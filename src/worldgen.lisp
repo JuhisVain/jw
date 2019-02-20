@@ -156,7 +156,7 @@
 		      (push (intern (concatenate 'string "CITY-OUTSKIRTS-" (symbol-name direction)))
 			    (tile-variant (aref (world-map world) x y))))
 		  (if (member 'field (tile-location (aref (world-map world) (car neighbour-tile) (cdr neighbour-tile))))
-		      (unless (eq direction 'sw)
+		      (unless (or (eq direction 'sw) (eq direction 'nw))
 			(push (intern (concatenate 'string "FIELD-OUTSKIRTS-" (symbol-name direction)))
 			      (tile-variant (aref (world-map world) x y)))))))))
 	(if (member 'city (tile-location (tile-at x y world)))
