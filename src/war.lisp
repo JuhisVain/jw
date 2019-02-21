@@ -103,7 +103,7 @@
 
 (defun create-location-at (location-symbol x y &optional (world *world*))
   (pushnew location-symbol (tile-location (aref (world-map world) x y)))
-  (pushnew (intern (concatenate 'string (symbol-name location-symbol) "-A"))
+  (pushnew (intern (concatenate 'string (symbol-name location-symbol) "-A")) ;; WIP
 	   (tile-variant (aref (world-map world) x y)))
   (finalize-tile-region x y world))
 
@@ -526,6 +526,8 @@
   (tile-graphics-setup suburb-a-large 50)
 
   (tile-graphics-setup field-a-large 25 -4 -9)
+  (tile-graphics-setup field-b-large 25 0 0)
+  (pushnew '(field field-a field-b) *graphics-variants*)
 
   (tile-graphics-setup selector-large 200 11 0)
 
@@ -562,6 +564,7 @@
 	 (defparameter suburb-a suburb-a-large)
 
 	 (defparameter field-a field-a-large)
+	 (defparameter field-b field-b-large)
 
 	 (defparameter coast-s sea-large-border-south)
 	 (defparameter coast-se sea-large-border-south-east)

@@ -1,5 +1,7 @@
 (in-package :war)
 
+(defvar *graphics-variants* nil) ; etc..
+
 (defun init-world (width height
 		   &key
 		     (algo 'random) ; Algorithm to use for map generation
@@ -162,12 +164,21 @@
 	(if (member 'city (tile-location (tile-at x y world)))
 	    (push 'city-a (tile-variant (tile-at x y world))))
 	(if (member 'field (tile-location (tile-at x y world)))
-	    (push 'field-a (tile-variant (tile-at x y world)))))
+	    (push (has-variants 'field (random 10)) (tile-variant (tile-at x y world)))))
       )
   ;; Pushing tile's type as base element of graphics list:
   (push (car (tile-type (tile-at x y world)))
 	(tile-variant (tile-at x y world)))
   )
+
+(defun has-variants (tile-graphics-symbol &optional seed)
+  "If given no seed, returns list containing variant symbols.
+With seed, which the caller must generate in some way, returns (nth (rem seed length)) symbol"
+  (dolist (sym-list *graphics-variants*)
+    (if (eq tile-graphics-symbol (car sym-list))
+	(return-from has-variants
+	  (if seed (nth (rem seed (length (cdr sym-list))) (cdr sym-list))
+	      (cdr sym-list))))))
 
 (defun sort-tile-graphics (tile)
   "Sorts a tile's variant field according to set priorities in ascending order"
