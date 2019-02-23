@@ -1,6 +1,6 @@
 (in-package :war)
 
-(defvar *graphics-variants* nil) ; etc..
+(defvar *graphics-variants* nil) ; ((name1 name1-a name1-b) (name2 name2-a name2-b name2-c)) etc..
 
 (defun init-world (width height
 		   &key
