@@ -11,6 +11,11 @@
 ;;  (units nil)
 ;;  (techs nil))
 
+(defstruct data ; TODO: to be made the master class for all tile things
+  (graphics nil :type graphics) ; TODO: summer / winter / mud / whatever graphics ?
+  (move-cost nil) ; TODO: maybe a list containing movecosts for different move types?
+  )
+
 (defstruct tile
   (type (list 'sea))
   (variant nil)  ;to be used as variant graphics for coast lines etc.
