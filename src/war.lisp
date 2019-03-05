@@ -39,35 +39,36 @@
   (cond (t ;;if t -> set to create new armies at (10,8) everytime (test) runs
 	 ;;(null *testunit*) ;; no more units created
 	 (setf *testunit*
-	       (make-army
-		:x 0 :y 0
-		:id 666
-		:movement 25
-		:counter
-		(make-graphics
-		 :surface
-		 (description-to-counter
-		  *current-pov-faction*
-		  40
-		  ;;'(hostile space air-defense)
-		  (let ((seed (random 8)))
-		    (list (prog1 (cond ((eq seed 0) 'air)
-				       ((eq seed 1) 'space)
-				       ((eq seed 2) 'land)
-				       ((eq seed 3) 'surface)
-				       ((eq seed 4) 'subsurface)
-				       ((eq seed 5) 'equipment)
-				       ((eq seed 6) 'installation)
-				       ((eq seed 7) 'activity))
-			    (setf seed (random 6)))
-			  (prog1 (cond ((eq seed 0) 'air-assault-with-organic-lift)
-				       ((eq seed 1) 'air-defense)
-				       ((eq seed 2) 'amphibious)
-				       ((eq seed 3) 'analysis)
-				       ((eq seed 4) 'antitank)
-				       ((eq seed 5) 'broadcast-transmitter-antenna))))))
-		 :x-at 24 :y-at 7)))
-	 (place-unit *testunit* 10 8))))
+	       (cons (make-army
+		      :x 0 :y 0
+		      :id 666
+		      :movement 25
+		      :counter
+		      (make-graphics
+		       :surface
+		       (description-to-counter
+			*current-pov-faction*
+			40
+			;;'(hostile space air-defense)
+			(let ((seed (random 8)))
+			  (list (prog1 (cond ((eq seed 0) 'air)
+					     ((eq seed 1) 'space)
+					     ((eq seed 2) 'land)
+					     ((eq seed 3) 'surface)
+					     ((eq seed 4) 'subsurface)
+					     ((eq seed 5) 'equipment)
+					     ((eq seed 6) 'installation)
+					     ((eq seed 7) 'activity))
+				  (setf seed (random 6)))
+				(prog1 (cond ((eq seed 0) 'air-assault-with-organic-lift)
+					     ((eq seed 1) 'air-defense)
+					     ((eq seed 2) 'amphibious)
+					     ((eq seed 3) 'analysis)
+					     ((eq seed 4) 'antitank)
+					     ((eq seed 5) 'broadcast-transmitter-antenna))))))
+		       :x-at 24 :y-at 7))
+		     *testunit*))
+	 (place-unit (car *testunit*) 10 8))))
 
 (defstruct graphics
   (surface nil)

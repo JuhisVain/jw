@@ -41,22 +41,24 @@
 				coord-list)))
 	       origin-list)))
 
-(defun init-cgen (&optional (push-to-archive nil))
+(defun reset-cgen ()
   (and (boundp '*nato-symbol-lib*)
        (progn (maphash #'(lambda (key val)
 			   (if (eq key 'default-counter-base)
 			       (sdl:free (graphics-surface val))
 			       (sdl:free val)))
 		       *nato-symbol-lib*)
-	      (setf *nato-symbol-lib* (clrhash *nato-symbol-lib*))))
+	      (setf *nato-symbol-lib* (clrhash *nato-symbol-lib*)))))
 
-  (if (null push-to-archive)
-      (setf (gethash 'default-counter-base *nato-symbol-lib*)
-	    (make-graphics
-	     :surface (sdl-image:load-image "graphics/COUNTERBASE.png"
-					    :color-key *war-color-key*)
-	     :x-at 24 :y-at 12))
-  ))
+(defun init-cgen (&optional (push-to-archive nil))
+  (and (null push-to-archive)
+       (zerop (hash-table-count *nato-symbol-lib*))
+       (setf (gethash 'default-counter-base *nato-symbol-lib*)
+	     (make-graphics
+	      :surface (sdl-image:load-image "graphics/COUNTERBASE.png"
+					     :color-key *war-color-key*)
+	      :x-at 24 :y-at 12))
+       ))
 
 
 ;; Debugging:
