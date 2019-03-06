@@ -98,12 +98,16 @@
 ;; This is mostly for testing. do same for 'suburb-a'
 ;; The right and lower side tiles will draw themselves over this one.
 ;; TODO: either do a second pass on tiles or split city graphics kinda like the sea/coasts
-(defun create-city (x y &optional (world *world*))
+(defun OBSOLETEcreate-city (x y &optional (world *world*))
   (pushnew 'city (tile-location (aref (world-map world) x y)))
   (pushnew 'city-a (tile-variant (aref (world-map world) x y))))
 
 (defun create-location-at (location-symbol x y &optional (world *world*))
-  (pushnew location-symbol (tile-location (aref (world-map world) x y)))
+  ;;(pushnew location-symbol (tile-location (aref (world-map world) x y)))
+  (if (eq location-symbol 'city) (pushnew location-symbol (tile-location (aref (world-map world) x y))))
+  (if (eq location-symbol 'field) (setf (tile-type (tile-at x y world))
+					(reverse (pushnew location-symbol
+							  (tile-type (aref (world-map world) x y))))))
   (pushnew (intern (concatenate 'string (symbol-name location-symbol) "-A")) ;; WIP
 	   (tile-variant (aref (world-map world) x y)))
   (finalize-tile-region x y world))
