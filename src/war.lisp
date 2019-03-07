@@ -218,7 +218,8 @@
 			   (setf x-shift (- x-shift (- x (floor (/ (sdl:width window) 2)))))
 			   (setf y-shift (- y-shift (- y (floor (/ (sdl:height window) 2))))))
 			  
-			  ((equal button sdl:sdl-button-left)
+			  ((and (equal button sdl:sdl-button-left)
+			        (coord-in-bounds selector-tile)) ; Avoid invalid clicks
 			   (setf selected-tile selector-tile)
 			   (setf selected-graphics selector-graphics)
 			   (format t "~&Selected ~a~%" selected-tile)
@@ -396,10 +397,12 @@
       (draw-tiles-by-slot tile-variant)
       (draw-tiles-by-slot tile-units army-counter)))
 
-  (draw-at (car selector-tile) (cdr selector-tile)
-	   x-shift y-shift selector)
-
-  (draw-coords (car selector-tile) (cdr selector-tile) x-shift y-shift)
+  (if (coord-in-bounds selector-tile) ; Avoid drawing selector & coords if mouse pointer outside world
+      (progn
+	(draw-at (car selector-tile) (cdr selector-tile)
+		 x-shift y-shift selector)
+	(draw-coords (car selector-tile) (cdr selector-tile) x-shift y-shift)))
+  
   (if selected-unit (draw-move-area (cons (army-x selected-unit)
 					  (army-y selected-unit))
 				    (army-movement selected-unit)

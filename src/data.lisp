@@ -46,3 +46,7 @@
   (setf (army-x unit) x)
   (setf (army-y unit) y)
   (pushnew unit (tile-units (aref (world-map *world*) x y))))
+
+(defun coord-in-bounds (coord-pair &optional (world *world*))
+  (and (<= 0 (car coord-pair) (world-width world))
+       (<= 0 (cdr coord-pair) (world-height world))))
