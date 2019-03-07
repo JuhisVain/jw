@@ -5,11 +5,22 @@
   (height nil)    ;hexes in a column
   ;;If wrapping required on x-axis, column count must be even 
   (map nil)       ;a 2d array
-  (factions nil)) ;list of faction structs
+  (factions nil)  ;list of faction structs
+  (cities)
+  (locations))    ;production, victory locations, etc..
 
-;;(defstruct faction
-;;  (units nil)
-;;  (techs nil))
+(defstruct city
+  (name)
+  (owner)
+  (x) (y)
+  (production))
+
+(defstruct location
+  (name)
+  (type)
+  (owner)
+  (x) (y)
+  (production))
 
 (defstruct tile
   (type (list 'sea)) ;things within tile that affect unit movement
@@ -19,7 +30,6 @@
   (road-links nil)
   (rail-links nil)
   (units nil))
-
 
 (defstruct army
   (id)
