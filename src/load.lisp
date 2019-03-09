@@ -1,5 +1,6 @@
 (load "packages.lisp")
 (load "data.lisp")
+(load "logicsetup.lisp")
 (load "faction.lisp")
 (load "wtool.lisp")
 (load "war.lisp")

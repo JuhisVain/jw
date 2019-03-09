@@ -223,3 +223,25 @@ With seed, which the caller must generate in some way, returns (nth (rem seed le
 		 (setf y 0))))
 
     world))
+
+(defun create-city (x y &key (world *world*) (owner nil) (name nil) (production nil))
+  (let ((new-city
+	 (make-city :name (or name (random-city-name owner *world*))
+		    :owner owner
+		    :x x :y y
+		    :production (or production *standard-city-production-list*))))
+    (if world
+	(progn
+	  (pushnew 'city (tile-location (tile-at x y world)))
+	  ;; TODO: link from (tile-location city) to (world-cities city)
+	  (pushnew 'city-a (tile-variant (tile-at x y)))
+	  (finalize-tile-region x y world)
+	  (pushnew new-city (world-cities world))))
+    new-city))
+
+(defun random-city-name (&optional (owner nil) (world *world*))
+  (let ((city-name-list (if (null owner) (getf (world-theme world) :city-names)
+			    ;;TODO: else get name from owner faction's name list
+			    )))
+    (nth (random (1+ (car city-name-list))) (cdr city-name-list))))
+

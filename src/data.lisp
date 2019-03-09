@@ -1,5 +1,9 @@
 (in-package #:war)
 
+(defmacro count+list (&body list)
+  ;; Push list's length to beginning of list
+  `'(,(length list) ,@list))
+
 (defstruct world
   (width nil)     ;amount of columns
   (height nil)    ;hexes in a column
@@ -7,7 +11,12 @@
   (map nil)       ;a 2d array
   (factions nil)  ;list of faction structs
   (cities)
-  (locations))    ;production, victory locations, etc..
+  (locations)     ;production, victory locations, etc..
+  (theme (list :city-names ; Random city names
+	       (count+list "Paris" "Lyon" "Montpellier" "Toulouse"
+			   "Marseille" "Nantes" "Nice" "Bordeaux"
+			   "Le Havre" "Brest" "Caen"
+			   "Sainte-Geneviève-des-Bois"))))
 
 (defstruct city
   (name)

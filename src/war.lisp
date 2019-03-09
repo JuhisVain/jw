@@ -522,8 +522,9 @@
 (defun load-tiles ()
   ;;(tile-graphics-setup sea-large 100 -4 -9)
   (create-tile sea :large (100 -4 -9) :small (0 0 0))
+  (create-tile grass :large (0 0 0) :small (0 0 0))
   
-  (tile-graphics-setup grass-large 0)
+  ;(tile-graphics-setup grass-large 0)
 
   (tile-graphics-setup swamp-large 1)
   (tile-graphics-setup city-a-large 50 -6 -5)
@@ -542,7 +543,7 @@
   
 
   ;;(tile-graphics-setup sea-small 0)
-  (tile-graphics-setup grass-small 0)
+  ;(tile-graphics-setup grass-small 0)
   (tile-graphics-setup selector-small 200 5 0)
 
   (set-tile-size 'large)
