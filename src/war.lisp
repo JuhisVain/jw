@@ -96,8 +96,9 @@
   nil)
 
 (defun create-location-at (location-symbol x y &optional (world *world*))
+  ;;This func is obsolete
   ;;(pushnew location-symbol (tile-location (aref (world-map world) x y)))
-  (if (eq location-symbol 'city) (pushnew location-symbol (tile-location (aref (world-map world) x y))))
+  ;;(if (eq location-symbol 'city) (pushnew location-symbol (tile-location (aref (world-map world) x y))))
   (if (eq location-symbol 'field) (setf (tile-type (tile-at x y world))
 					(reverse (pushnew location-symbol
 							  (tile-type (aref (world-map world) x y))))))
@@ -334,9 +335,10 @@
 		   (let ((move-cost (- (car current)
 				       (eval
 					(or
-					 (car (last
-					       (tile-location (tile-at (car neighbour)
-								       (cdr neighbour)))))
+					 (caar ; TODO: should probably check whose locs we pass over
+					  (last
+					   (tile-location (tile-at (car neighbour)
+								   (cdr neighbour)))))
 					 (car (last
 					       (tile-type (aref (world-map *world*)
 								(car neighbour)
