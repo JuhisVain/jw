@@ -534,7 +534,8 @@
 
   (tile-graphics-setup field-a-large 25 -4 -9)
   (tile-graphics-setup field-b-large 25 0 0)
-  (pushnew '(field field-a field-b) *graphics-variants*)
+  (tile-graphics-setup field-c-large 25 0 0)
+  (pushnew '(field field-a field-b field-c) *graphics-variants*)
 
   (tile-graphics-setup selector-large 200 11 0)
 
@@ -572,6 +573,7 @@
 
 	 (defparameter field-a field-a-large)
 	 (defparameter field-b field-b-large)
+	 (defparameter field-c field-c-large)
 
 	 (defparameter coast-s sea-large-border-south)
 	 (defparameter coast-se sea-large-border-south-east)
