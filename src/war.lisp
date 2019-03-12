@@ -228,9 +228,26 @@
 					      (cdr selected-tile)))))
 
 			  ((equal button sdl:sdl-button-wheel-up)
-			   (set-tile-size 'large))
+			   (set-tile-size 'large)
+			   (let ((new-focus (focus-on-tile selector-tile
+							   (sdl:width window)
+							   (sdl:height window))))
+			     (format t "~&large: ~a~%" new-focus)
+			     (setf x-shift (car new-focus)
+				   y-shift (cdr new-focus))
+			     )
+			   
+			   )
 			  ((equal button sdl:sdl-button-wheel-down)
-			   (set-tile-size 'small))))
+			   (set-tile-size 'small)
+			   (let ((new-focus (focus-on-tile selector-tile
+							   (sdl:width window)
+							   (sdl:height window))))
+			     (format t "~&small: ~a~%" new-focus)
+			     (setf x-shift (car new-focus)
+				   y-shift (cdr new-focus))
+			     )
+			   )))
 		   ((equal 'panel (mouse-over-what x y))
 		    (click-panel button state x y)
 		    ;;(setf selected-unit (select-from-panel y (tile-at
@@ -247,6 +264,17 @@
 		   (draw-panels)
 		   (sdl:update-display)
 		   )))))
+
+(defun focus-on-tile (coord-pair view-width view-height)
+  "Return coordinate pair to use as new graphics shifts"
+  (cons
+   (- 0 (* (car coord-pair) tile-size-x)
+      (- (floor tile-size-full-x 2) (floor view-width 2))) ; center tile
+   (- 0 (* (cdr coord-pair) tile-size-y)
+      (if (oddp (car coord-pair)) ; shift a little if x is odd
+	  (floor tile-size-y 2)
+	  0)
+      (- (floor tile-size-y 2) (floor view-height 2))))) ; center tile
 
 (defun mouse-over-what (mouse-x mouse-y)
   (if (>= mouse-x (- (sdl:width window) *panel-width*))
@@ -560,6 +588,7 @@
 
 	 (defparameter tile-size-x (car tile-large-size))
 	 (defparameter tile-size-y (cdr tile-large-size))
+	 (defparameter tile-size-full-x tile-large-size-full-x)
 	 (defparameter tile-size-hor-x tile-large-size-full-hor-x)
 	 
 	 (defparameter selector selector-large)
@@ -605,6 +634,7 @@
 	 (defparameter tile-size-x (car tile-small-size))
 	 (defparameter tile-size-y (cdr tile-small-size))
 	 (defparameter tile-size-hor-x tile-small-size-full-hor-x)
+	 (defparameter tile-size-full-x tile-small-size-full-x)
 	 
 	 (defparameter selector selector-small)
 	 (defparameter tile-size tile-small-size)
