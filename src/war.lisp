@@ -232,7 +232,6 @@
 			   (let ((new-focus (focus-on-tile selector-tile
 							   (sdl:width window)
 							   (sdl:height window))))
-			     (format t "~&large: ~a~%" new-focus)
 			     (setf x-shift (car new-focus)
 				   y-shift (cdr new-focus))
 			     )
@@ -243,7 +242,6 @@
 			   (let ((new-focus (focus-on-tile selector-tile
 							   (sdl:width window)
 							   (sdl:height window))))
-			     (format t "~&small: ~a~%" new-focus)
 			     (setf x-shift (car new-focus)
 				   y-shift (cdr new-focus))
 			     )
