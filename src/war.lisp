@@ -96,12 +96,17 @@
   nil)
 
 (defun create-location-at (location-symbol x y &optional (world *world*))
-  ;;This func is obsolete
-  ;;(pushnew location-symbol (tile-location (aref (world-map world) x y)))
-  ;;(if (eq location-symbol 'city) (pushnew location-symbol (tile-location (aref (world-map world) x y))))
-  (if (eq location-symbol 'field) (setf (tile-type (tile-at x y world))
-					(reverse (pushnew location-symbol
-							  (tile-type (aref (world-map world) x y))))))
+  (cond ((eq location-symbol 'field)
+	 (setf (tile-type (tile-at x y world))
+	       (reverse (pushnew location-symbol
+				 (tile-type (aref (world-map world) x y))))))
+	((eq location-symbol 'forest)
+	 (setf (tile-type (tile-at x y world))
+	       (reverse (pushnew location-symbol
+				 (tile-type (aref (world-map world) x y)))))))
+
+  
+  
   (pushnew (intern (concatenate 'string (symbol-name location-symbol) "-A")) ;; WIP
 	   (tile-variant (aref (world-map world) x y)))
   (finalize-tile-region x y world))
@@ -563,6 +568,8 @@
   (tile-graphics-setup field-c-large 25 0 0)
   (pushnew '(field field-a field-b field-c) *graphics-variants*)
 
+  (tile-graphics-setup forest-a-large 75 -4 -17)
+
   (tile-graphics-setup selector-large 200 11 0)
 
   (tile-river-setup stream-large-north-west -2 -2)
@@ -602,6 +609,8 @@
 	 (defparameter field-b field-b-large)
 	 (defparameter field-c field-c-large)
 
+	 (defparameter forest-a forest-a-large)
+
 	 (defparameter coast-s sea-large-border-south)
 	 (defparameter coast-se sea-large-border-south-east)
 	 (defparameter coast-sw sea-large-border-south-west)
@@ -622,6 +631,13 @@
 	 (defparameter field-outskirts-n field-a-large-border-north)
 	 (defparameter field-outskirts-ne field-a-large-border-north-east)
 	 ;;(defparameter field-outskirts-nw field-a-large-border-north-west)
+
+	 (defparameter forest-outskirts-s forest-a-large-border-south)
+	 (defparameter forest-outskirts-se forest-a-large-border-south-east)
+	 (defparameter forest-outskirts-sw forest-a-large-border-south-west)
+	 (defparameter forest-outskirts-n forest-a-large-border-north)
+	 (defparameter forest-outskirts-ne forest-a-large-border-north-east)
+	 (defparameter forest-outskirts-nw forest-a-large-border-north-west)
 
 	 (defparameter stream-nw stream-large-north-west)
 	 (defparameter stream-sw stream-large-south-west)
