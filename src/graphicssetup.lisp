@@ -20,16 +20,72 @@
 ;;;; spec notes:
 ;;;  - All full and overflowing tiles should be named 'NAME_VARIANT_SIZE.png'
 ;;       all caps
-;;       name of graphics, as used logically within game as identifying symbol for type
-;;       variant's id, proceeding alphabetically from A, ISO basic latin alphabet, Z->AA->AB
-;;       size is either LARGE or SMALL
+;;       -name of graphics, as used logically within game as identifying symbol for type
+;;       -variant's id, proceeding alphabetically from A, ISO basic latin alphabet, Z->AA->AB
+;;       -size is either LARGE or SMALL
 
+
+
+;;(macroexpand-1 '(gugs (field :large (1 2 3) :small (4 5 6)) (forest :large (3 2 1) :small (9 8 7))))
 (defmacro gugs (&rest args)
-  (dolist (form args)
+  ;; These list will be used in forming the setup functions:
+  (let ((tile-graphics-setup-list nil)
+	(set-large-list nil)
+	(set-small-list nil))
     
+    ;; Iterate through setup forms:
+    (do* ((head args (cdr head))
+	  (symbol (caar head) (caar head))
+	  (vars-large (getf (cdar head) :large)
+		      (getf (cdar head) :large))
+	  (priority-large (car vars-large) (car vars-large))
+	  (x-ofs-large (cadr vars-large) (cadr vars-large))
+	  (y-ofs-large (caddr vars-large) (caddr vars-large))
+	  (vars-small (getf (cdar head) :small)
+		      (getf (cdar head) :small))
+	  (priority-small (car vars-small) (car vars-small))
+	  (x-ofs-small (cadr vars-small) (cadr vars-small))
+	  (y-ofs-small (caddr vars-small) (caddr vars-small))
+	  (variant-list (find-variant-files symbol) ; Find files releated to current symbol
+			(find-variant-files symbol))
+	  )
+	 ((null head))
 
-    )
-  )
+      (push `(push ,variant-list *graphics-variants*) tile-graphics-setup-list)
+
+      (dolist (variant (cdr variant-list))
+
+	(let ((intern-large (intern (concatenate 'string (string variant) "-LARGE")))
+	      (intern-small (intern (concatenate 'string (string variant) "-SMALL"))))
+	  ;; load-tiles func:
+	  (push `(tile-graphics-setup
+		  ,intern-large
+		  ,priority-large ,x-ofs-large ,y-ofs-large)
+		tile-graphics-setup-list)
+	  (push `(tile-graphics-setup
+		  ,intern-small
+		  ,priority-small ,x-ofs-small ,y-ofs-small)
+		tile-graphics-setup-list)
+
+	  ;; set-tile-size func:
+	  (push `(defparameter ,variant
+		   ,intern-large)
+		set-large-list)
+	  (push `(defparameter ,variant
+		   ,intern-small)
+		set-small-list)
+	  )))
+
+    `(progn
+       (defun load-tiles ()
+	 (tile-graphics-setup selector-large 200 11 0)
+	 (tile-graphics-setup selector-small 200 5 0)
+
+	 ,@tile-graphics-setup-list
+
+	 (set-tile-size 'large)
+	 ))
+    ))
 
 (defun find-variant-files (symbol)
   "Return list containing symbol and variant-names (xxx-A) of found graphics"
@@ -41,9 +97,8 @@
 	(file-path-large (concatenate 'string file-path var-id "_LARGE.png")
 			 (concatenate 'string file-path var-id "_LARGE.png")))
        ((null (probe-file file-path-large)) (reverse return-list))
-    (setf return-list
-	  (push (intern (concatenate 'string var-name "-" var-id))
-		return-list))))
+    (push (intern (concatenate 'string var-name "-" var-id))
+	  return-list)))
 
 (defun next-variant-id (old-char-string)
   "Returns next character to be used as variant symbol/file identifier
