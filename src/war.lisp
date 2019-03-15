@@ -550,6 +550,7 @@
 	  :x-at ,x-offset :y-at ,y-offset))
        (setf (sdl:color-key-enabled-p (graphics-surface ,river-symbol-dir)) t)
        (setf (sdl:color-key (graphics-surface ,river-symbol-dir)) *war-color-key*))))
+
     
 
 (defun load-tiles ()
