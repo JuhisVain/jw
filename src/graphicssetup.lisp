@@ -8,14 +8,16 @@
 ;;    *graphics-variants*
 
 
-;;; (GUGS (aaa :large (priority x-ofs y-ofs)
-;;             :small (priority x-ofs y-ofs))
-;;        (bbb :large (priority x-ofs y-ofs)
-;;             :small (priority x-ofs y-ofs))
-
-;;; All tile graphics files in graphics folder should be
-;;   named x-a for primary and x-b, x-c, x-d etc.. for variants
-
+;;; (GUGS large-tile-width large-tile-height large-tile-horizontal
+;;        small-tile-width small-tile-height small-tile-horizontal
+;;        :full ((aaa :large (priority x-ofs y-ofs)
+;;                    :small (priority x-ofs y-ofs))
+;;               (bbb :large (priority x-ofs y-ofs)
+;;                    :small (priority x-ofs y-ofs)))
+;;        :border ((stream :large (:north (priority x-ofs y-ofs)
+;;                                :north-west (priority x-ofs y-ofs)
+;;                                :south-west (priority x-ofs y-ofs))
+;;                         :small (priority x-ofs y-ofs))))
 
 ;;;; spec notes:
 ;;;  - All full and overflowing tiles should be named 'NAME_VARIANT_SIZE.png'
@@ -23,18 +25,26 @@
 ;;       -name of graphics, as used logically within game as identifying symbol for type
 ;;       -variant's id, proceeding alphabetically from A, ISO basic latin alphabet, Z->AA->AB
 ;;       -size is either LARGE or SMALL
+;;   - All border tiles should be named 'NAME_VARIANT_SIZE_BORDER.png'
+;;       as above
+;;       -border is one of   N NW SW
 
 
+(macroexpand-1
+ '(gugs 1 2 3 4 5 6
+   :full ((field :large (1 2 3) :small (4 5 6))
+	  (forest :large (3 2 1) :small (9 8 7)))))
 
-;;(macroexpand-1 '(gugs (field :large (1 2 3) :small (4 5 6)) (forest :large (3 2 1) :small (9 8 7))))
-(defmacro gugs (&rest args)
+(defmacro gugs (large-tile-width large-tile-height large-tile-horizontal
+		small-tile-width small-tile-height small-tile-horizontal
+		&rest args)
   ;; These list will be used in forming the setup functions:
   (let ((tile-graphics-setup-list nil)
 	(set-large-list nil)
 	(set-small-list nil))
     
-    ;; Iterate through setup forms:
-    (do* ((head args (cdr head))
+    ;; Iterate through setup forms for full tiles:
+    (do* ((head (getf args :full) (cdr head))
 	  (symbol (caar head) (caar head))
 	  (vars-large (getf (cdar head) :large)
 		      (getf (cdar head) :large))
@@ -84,7 +94,17 @@
 	 ,@tile-graphics-setup-list
 
 	 (set-tile-size 'large)
-	 ))
+	 )
+
+       (defun set-tile-size (var)
+	 (cond ((equal var 'large)
+		,@set-large-list
+		)
+	       ((equal var 'small)
+		,@set-small-list)
+	   ))
+
+       )
     ))
 
 (defun find-variant-files (symbol)
