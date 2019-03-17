@@ -476,6 +476,7 @@
 			     :color sdl:*white*)))
 
 (defmacro tile-graphics-setup (tile-symbol priority &optional (x-offset 0) (y-offset 0))
+  ;;This should be a function, like most other of these macros
   (let ((symbol-name (gensym))
 	(direction (gensym))
 	(graphics (gensym))
@@ -483,33 +484,39 @@
 	(graphics-list (gensym))
 	(size-of-tile (cond ((search "LARGE" (symbol-name tile-symbol)) 'large)
 			    ((search "SMALL" (symbol-name tile-symbol)) 'small))))
-    `(let* ((,symbol-name (symbol-name ',tile-symbol))
-	    (,graphics-list (mapcar #'(lambda (,direction ,graphics)
-					(if ,graphics
-					    (let ((,new-symbol (intern
-								(if ,direction 
-								    (concatenate 'string ,symbol-name ,direction)
-								    ,symbol-name))))
-					      (eval
-					       `(defparameter ,,new-symbol ,,graphics)))))
-				    '(nil ;; NIL = center
-				      "-BORDER-NORTH" "-BORDER-NORTH-EAST" "-BORDER-SOUTH-EAST"
-				      "-BORDER-SOUTH" "-BORDER-SOUTH-WEST" "-BORDER-NORTH-WEST")
-				    (chop-tile
-				     (concatenate 'string "graphics/" (substitute #\_ #\- ,symbol-name) ".png")
-				     ,x-offset ,y-offset
-				     ,@(cond ((eq size-of-tile 'large)
-					      (list tile-large-size-full-hor-x
-						    tile-large-size-full-x
-						    tile-large-size-full-y))
-					     ((eq size-of-tile 'small)
-					      (list tile-small-size-full-hor-x
-						    tile-small-size-full-x
-						    tile-small-size-full-y))
-					     )))))
-       (dolist (,graphics ,graphics-list)
-	 (if ,graphics
-	     (setf (graphics-priority (symbol-value ,graphics)) ,priority))))))
+    `(if (null (probe-file (concatenate 'string "./graphics/" (substitute #\_ #\- (symbol-name ',tile-symbol)) ".png")))
+	 ;; if there is no such file, use the 'missing graphics' graphics
+	 (cond ((eq ',size-of-tile 'large)
+		(defparameter ,tile-symbol missing-large))
+	       ((eq ',size-of-tile 'small)
+		(defparameter ,tile-symbol missing-small)))
+	 (let* ((,symbol-name (symbol-name ',tile-symbol))
+		(,graphics-list (mapcar #'(lambda (,direction ,graphics)
+					    (if ,graphics
+						(let ((,new-symbol (intern
+								    (if ,direction 
+									(concatenate 'string ,symbol-name ,direction)
+									,symbol-name))))
+						  (eval
+						   `(defparameter ,,new-symbol ,,graphics)))))
+					'(nil ;; NIL = center
+					  "-BORDER-NORTH" "-BORDER-NORTH-EAST" "-BORDER-SOUTH-EAST"
+					  "-BORDER-SOUTH" "-BORDER-SOUTH-WEST" "-BORDER-NORTH-WEST")
+					(chop-tile
+					 (concatenate 'string "graphics/" (substitute #\_ #\- ,symbol-name) ".png")
+					 ,x-offset ,y-offset
+					 ,@(cond ((eq size-of-tile 'large)
+						  (list tile-large-size-full-hor-x
+							tile-large-size-full-x
+							tile-large-size-full-y))
+						 ((eq size-of-tile 'small)
+						  (list tile-small-size-full-hor-x
+							tile-small-size-full-x
+							tile-small-size-full-y))
+						 )))))
+	   (dolist (,graphics ,graphics-list)
+	     (if ,graphics
+		 (setf (graphics-priority (symbol-value ,graphics)) ,priority)))))))
 
 (defmacro create-tile (base-name &key (large nil) (small nil)) ; <- large & small in form (priority x-ofs y-ofs)
   `(progn

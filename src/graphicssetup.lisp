@@ -32,8 +32,12 @@
 
 (macroexpand-1
  '(gugs 1 2 3 4 5 6
-   :full ((field :large (1 2 3) :small (4 5 6))
-	  (forest :large (3 2 1) :small (9 8 7)))))
+   :full
+   ((sea :large (100 -4 -9) :small (0 0 0))
+    (grass :large (0 0 0) :small (0 0 0))
+    (field :large (25 -4 -9) :small (25 0 0))
+    (forest :large (75 -4 -17) :small (75 0 0))
+    )))
 
 (defmacro gugs (large-tile-width large-tile-height large-tile-horizontal
 		small-tile-width small-tile-height small-tile-horizontal
@@ -61,7 +65,7 @@
 	  )
 	 ((null head))
 
-      (push `(push ,variant-list *graphics-variants*) tile-graphics-setup-list)
+      (push `(push ',variant-list *graphics-variants*) tile-graphics-setup-list)
 
       (dolist (variant (cdr variant-list))
 
@@ -88,9 +92,15 @@
 
     `(progn
        (defun load-tiles ()
+	 (format t "~&Selectors~%")
 	 (tile-graphics-setup selector-large 200 11 0)
 	 (tile-graphics-setup selector-small 200 5 0)
 
+	 (format t "~&Missing~%")
+	 (tile-graphics-setup missing-large 199 0 0)
+	 (tile-graphics-setup missing-small 199 0 0)
+
+	 (format t "~&list~%")
 	 ,@tile-graphics-setup-list
 
 	 (set-tile-size 'large)
@@ -98,11 +108,15 @@
 
        (defun set-tile-size (var)
 	 (cond ((equal var 'large)
+		(defparameter selector selector-large)
+		(defparameter missing missing-large)
 		,@set-large-list
 		)
 	       ((equal var 'small)
+		(defparameter selector selector-small)
+		(defparameter missing missing-small)
 		,@set-small-list)
-	   ))
+	       ))
 
        )
     ))
