@@ -37,9 +37,69 @@
     (grass :large (0 0 0) :small (0 0 0))
     (field :large (25 -4 -9) :small (25 0 0))
     (forest :large (75 -4 -17) :small (75 0 0))
+    (city :large (50 -6 -6) :small (50 0 0))
     )))
 
-(defmacro gugs (large-tile-width large-tile-height large-tile-horizontal
+(defmacro gugs (&rest args)
+
+  ;; These list will be used in forming the setup functions:
+  (let ((load-tiles-list nil)
+	(set-large-list nil)
+	(set-small-list nil))
+
+    (do* ((head (getf args :full) (cdr head)))
+	 ((null head))
+
+      (let* ((symbol (caar head))
+	     
+	     (vars-large (getf (cdar head) :large))
+	     (priority-large (car vars-large))
+	     (x-ofs-large (cadr vars-large))
+	     (y-ofs-large (caddr vars-large))
+	     
+	     (vars-small (getf (cdar head) :small))
+	     (priority-small (car vars-small))
+	     (x-ofs-small (cadr vars-small))
+	     (y-ofs-small (caddr vars-small))
+
+	     (variant-list-large (find-variant-files symbol "LARGE"))
+	     (variant-list-small (find-variant-files symbol "SMALL")))
+
+	(push `(push ,variant-list-large *graphics-variants*) load-tiles-list)
+
+	(setf load-tiles-list
+	      (append (form-graphics-setups
+		       variant-list-large priority-large x-ofs-large y-ofs-large 'large)
+		      (form-graphics-setups
+		       variant-list-small priority-small x-ofs-small y-ofs-small 'small)
+		      load-tiles-list))
+
+	))
+    load-tiles-list
+    ))
+
+
+(defun form-graphics-setups (variant-list priority x-offset y-offset size-symbol)
+  "Makes a list containing tile-graphics-setup calls for
+elements in (cdr variant-list) of size size-symbol."
+  (and
+   (cdr variant-list) ; return nil if no variants in list
+   (let ((variant-setup-list nil))
+     (push `(tile-graphics-setup
+	     ,(intern (concatenate 'string (symbol-name (cadr variant-list))
+				   "-" (string-upcase (symbol-name size-symbol))))
+	     ,priority ,x-offset ,y-offset)
+	   variant-setup-list)
+     (dolist (variant (cddr variant-list)) ; remaining variants
+       (push `(tile-graphics-setup
+	       ,(intern (concatenate 'string (symbol-name variant)
+				     "-" (string-upcase (symbol-name size-symbol))))
+	       ,priority 0 0)
+	     variant-setup-list))
+     variant-setup-list)))
+
+
+(defmacro BROKENgugs (large-tile-width large-tile-height large-tile-horizontal
 		small-tile-width small-tile-height small-tile-horizontal
 		&rest args)
   ;; These list will be used in forming the setup functions:
@@ -62,13 +122,52 @@
 	  (y-ofs-small (caddr vars-small) (caddr vars-small))
 	  (variant-list (find-variant-files symbol) ; Find files releated to current symbol
 			(find-variant-files symbol))
+	  (variant-list-small (find-variant-files symbol "SMALL")
+			      (find-variant-files symbol "SMALL"))
 	  )
 	 ((null head))
 
       (push `(push ',variant-list *graphics-variants*) tile-graphics-setup-list)
 
-      
-      (dolist (variant (cdr variant-list))
+
+      (let ((intern-large (intern (concatenate 'string (string (cadr variant-list)) "-LARGE")))
+	    (intern-small (intern (concatenate 'string (string (cadr variant-list)) "-SMALL"))))
+	;; load-tiles func:
+	(push `(tile-graphics-setup
+		,intern-large
+		,priority-large ,x-ofs-large ,y-ofs-large)
+	      tile-graphics-setup-list)
+	(push `(tile-graphics-setup
+		,intern-small
+		,priority-small ,x-ofs-small ,y-ofs-small)
+	      tile-graphics-setup-list)
+
+	;; set-tile-size func:
+	(push `(defparameter ,(cadr variant-list)
+		 ,intern-large)
+	      set-large-list)
+
+	(push `(defparameter ,(cadr variant-list)
+		 ,intern-small)
+	      set-small-list)
+
+	;; THIS will not do anything if these things aren't bound
+	;; which they aren't because this binds them
+	(dolist (direction (list "-SOUTH" "-SOUTH-EAST" "-SOUTH-WEST"
+				 "-NORTH" "-NORTH-EAST" "-NORTH-WEST"))
+	  (if (boundp (intern (concatenate 'string (string (cadr variant-list)) "-LARGE-BORDER" direction)))
+	      (push `(defparameter
+			 ,(intern (concatenate 'string (string symbol) "-BORDER" direction))
+		       ,(intern (concatenate 'string (string (cadr variant-list)) "-LARGE-BORDER" direction)))
+		    set-large-list))
+	  (if (boundp (intern (concatenate 'string (string (cadr variant-list)) "-SMALL-BORDER" direction)))
+	      (push `(defparameter
+			 ,(intern (concatenate 'string (string symbol) "-BORDER" direction))
+		       ,(intern (concatenate 'string (string (cadr variant-list)) "-SMALL-BORDER" direction)))
+		    set-small-list)))
+	)
+
+      (dolist (variant (cddr variant-list))
 
 	(let ((intern-large (intern (concatenate 'string (string variant) "-LARGE")))
 	      (intern-small (intern (concatenate 'string (string variant) "-SMALL"))))
@@ -90,7 +189,6 @@
 		   ,intern-small)
 		set-small-list)
 	  ))
-
 
       )
 
@@ -125,15 +223,15 @@
        )
     ))
 
-(defun find-variant-files (symbol)
+(defun find-variant-files (symbol &optional (size-string "LARGE"))
   "Return list containing symbol and variant-names (xxx-A) of found graphics"
   (do* ((return-list (list symbol))
 	(var-name (string-upcase (string symbol)))
 	(var-id "A" (next-variant-id var-id))
 	(file-path (concatenate 'string "./graphics/" var-name "_"))
 	;; All tiles should have same large and small variants:
-	(file-path-large (concatenate 'string file-path var-id "_LARGE.png")
-			 (concatenate 'string file-path var-id "_LARGE.png")))
+	(file-path-large (concatenate 'string file-path var-id "_" size-string ".png")
+			 (concatenate 'string file-path var-id "_" size-string ".png")))
        ((null (probe-file file-path-large)) (reverse return-list))
     (push (intern (concatenate 'string var-name "-" var-id))
 	  return-list)))
