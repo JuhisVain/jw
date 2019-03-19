@@ -67,6 +67,7 @@
 
       (push `(push ',variant-list *graphics-variants*) tile-graphics-setup-list)
 
+      
       (dolist (variant (cdr variant-list))
 
 	(let ((intern-large (intern (concatenate 'string (string variant) "-LARGE")))
@@ -74,11 +75,11 @@
 	  ;; load-tiles func:
 	  (push `(tile-graphics-setup
 		  ,intern-large
-		  ,priority-large ,x-ofs-large ,y-ofs-large)
+		  ,priority-large 0 0)
 		tile-graphics-setup-list)
 	  (push `(tile-graphics-setup
 		  ,intern-small
-		  ,priority-small ,x-ofs-small ,y-ofs-small)
+		  ,priority-small 0 0)
 		tile-graphics-setup-list)
 
 	  ;; set-tile-size func:
@@ -88,7 +89,10 @@
 	  (push `(defparameter ,variant
 		   ,intern-small)
 		set-small-list)
-	  )))
+	  ))
+
+
+      )
 
     `(progn
        (defun load-tiles ()
