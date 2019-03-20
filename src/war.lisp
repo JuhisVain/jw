@@ -476,7 +476,7 @@
 			     :color sdl:*white*)))
 
 (defmacro tile-graphics-setup (tile-symbol priority &optional (x-offset 0) (y-offset 0))
-  ;;This should be a function, like most other of these macros
+  ;;This should be a function, like most of these macros
   (let ((symbol-name (gensym))
 	(direction (gensym))
 	(graphics (gensym))
@@ -516,7 +516,8 @@
 						 )))))
 	   (dolist (,graphics ,graphics-list)
 	     (if ,graphics
-		 (setf (graphics-priority (symbol-value ,graphics)) ,priority)))))))
+		 (setf (graphics-priority (symbol-value ,graphics)) ,priority)))
+	   ,graphics-list))))
 
 (defmacro create-tile (base-name &key (large nil) (small nil)) ; <- large & small in form (priority x-ofs y-ofs)
   `(progn

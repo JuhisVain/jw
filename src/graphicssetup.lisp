@@ -38,12 +38,15 @@
     (field :large (25 -4 -9) :small (25 0 0))
     (forest :large (75 -4 -17) :small (75 0 0))
     (city :large (50 -6 -6) :small (50 0 0))
+    (suburb :large (50 0 0) :small (50 0 0))
+    (swamp :large (1 0 0) :small (1 0 0))
+    
     )))
 
 (defmacro gugs (&rest args)
 
   ;; These list will be used in forming the setup functions:
-  (let ((load-tiles-list nil)
+  (let ((load-tiles-list '((set-tile-size 'large)))
 	(set-large-list nil)
 	(set-small-list nil))
 
@@ -65,17 +68,28 @@
 	     (variant-list-large (find-variant-files symbol "LARGE"))
 	     (variant-list-small (find-variant-files symbol "SMALL")))
 
+	;; Store variants
 	(push `(push ,variant-list-large *graphics-variants*) load-tiles-list)
 
-	(setf load-tiles-list
-	      (append (form-graphics-setups
+	(setf load-tiles-list ; Call tile graphics setup for everything found
+	      (nconc (form-graphics-setups
 		       variant-list-large priority-large x-ofs-large y-ofs-large 'large)
 		      (form-graphics-setups
 		       variant-list-small priority-small x-ofs-small y-ofs-small 'small)
-		      load-tiles-list))
+		      load-tiles-list))))
+    
+    (setf load-tiles-list ; Add some special graphics on top
+	  (append '(defun load-tiles ()) ; outrageous
+		  '((setf *graphics-variants* nil))
+		  '((tile-graphics-setup selector-large 200 11 0))
+		  '((tile-graphics-setup selector-small 200 5 0))
+		  '((tile-graphics-setup missing-large 300 0 0))
+		  '((tile-graphics-setup missing-small 300 0 0))
+		  load-tiles-list))
 
-	))
-    load-tiles-list
+    
+    
+    `(progn ,load-tiles-list)
     ))
 
 
@@ -98,130 +112,6 @@ elements in (cdr variant-list) of size size-symbol."
 	     variant-setup-list))
      variant-setup-list)))
 
-
-(defmacro BROKENgugs (large-tile-width large-tile-height large-tile-horizontal
-		small-tile-width small-tile-height small-tile-horizontal
-		&rest args)
-  ;; These list will be used in forming the setup functions:
-  (let ((tile-graphics-setup-list nil)
-	(set-large-list nil)
-	(set-small-list nil))
-    
-    ;; Iterate through setup forms for full tiles:
-    (do* ((head (getf args :full) (cdr head))
-	  (symbol (caar head) (caar head))
-	  (vars-large (getf (cdar head) :large)
-		      (getf (cdar head) :large))
-	  (priority-large (car vars-large) (car vars-large))
-	  (x-ofs-large (cadr vars-large) (cadr vars-large))
-	  (y-ofs-large (caddr vars-large) (caddr vars-large))
-	  (vars-small (getf (cdar head) :small)
-		      (getf (cdar head) :small))
-	  (priority-small (car vars-small) (car vars-small))
-	  (x-ofs-small (cadr vars-small) (cadr vars-small))
-	  (y-ofs-small (caddr vars-small) (caddr vars-small))
-	  (variant-list (find-variant-files symbol) ; Find files releated to current symbol
-			(find-variant-files symbol))
-	  (variant-list-small (find-variant-files symbol "SMALL")
-			      (find-variant-files symbol "SMALL"))
-	  )
-	 ((null head))
-
-      (push `(push ',variant-list *graphics-variants*) tile-graphics-setup-list)
-
-
-      (let ((intern-large (intern (concatenate 'string (string (cadr variant-list)) "-LARGE")))
-	    (intern-small (intern (concatenate 'string (string (cadr variant-list)) "-SMALL"))))
-	;; load-tiles func:
-	(push `(tile-graphics-setup
-		,intern-large
-		,priority-large ,x-ofs-large ,y-ofs-large)
-	      tile-graphics-setup-list)
-	(push `(tile-graphics-setup
-		,intern-small
-		,priority-small ,x-ofs-small ,y-ofs-small)
-	      tile-graphics-setup-list)
-
-	;; set-tile-size func:
-	(push `(defparameter ,(cadr variant-list)
-		 ,intern-large)
-	      set-large-list)
-
-	(push `(defparameter ,(cadr variant-list)
-		 ,intern-small)
-	      set-small-list)
-
-	;; THIS will not do anything if these things aren't bound
-	;; which they aren't because this binds them
-	(dolist (direction (list "-SOUTH" "-SOUTH-EAST" "-SOUTH-WEST"
-				 "-NORTH" "-NORTH-EAST" "-NORTH-WEST"))
-	  (if (boundp (intern (concatenate 'string (string (cadr variant-list)) "-LARGE-BORDER" direction)))
-	      (push `(defparameter
-			 ,(intern (concatenate 'string (string symbol) "-BORDER" direction))
-		       ,(intern (concatenate 'string (string (cadr variant-list)) "-LARGE-BORDER" direction)))
-		    set-large-list))
-	  (if (boundp (intern (concatenate 'string (string (cadr variant-list)) "-SMALL-BORDER" direction)))
-	      (push `(defparameter
-			 ,(intern (concatenate 'string (string symbol) "-BORDER" direction))
-		       ,(intern (concatenate 'string (string (cadr variant-list)) "-SMALL-BORDER" direction)))
-		    set-small-list)))
-	)
-
-      (dolist (variant (cddr variant-list))
-
-	(let ((intern-large (intern (concatenate 'string (string variant) "-LARGE")))
-	      (intern-small (intern (concatenate 'string (string variant) "-SMALL"))))
-	  ;; load-tiles func:
-	  (push `(tile-graphics-setup
-		  ,intern-large
-		  ,priority-large 0 0)
-		tile-graphics-setup-list)
-	  (push `(tile-graphics-setup
-		  ,intern-small
-		  ,priority-small 0 0)
-		tile-graphics-setup-list)
-
-	  ;; set-tile-size func:
-	  (push `(defparameter ,variant
-		   ,intern-large)
-		set-large-list)
-	  (push `(defparameter ,variant
-		   ,intern-small)
-		set-small-list)
-	  ))
-
-      )
-
-    `(progn
-       (defun load-tiles ()
-	 (format t "~&Selectors~%")
-	 (tile-graphics-setup selector-large 200 11 0)
-	 (tile-graphics-setup selector-small 200 5 0)
-
-	 (format t "~&Missing~%")
-	 (tile-graphics-setup missing-large 199 0 0)
-	 (tile-graphics-setup missing-small 199 0 0)
-
-	 (format t "~&list~%")
-	 ,@tile-graphics-setup-list
-
-	 (set-tile-size 'large)
-	 )
-
-       (defun set-tile-size (var)
-	 (cond ((equal var 'large)
-		(defparameter selector selector-large)
-		(defparameter missing missing-large)
-		,@set-large-list
-		)
-	       ((equal var 'small)
-		(defparameter selector selector-small)
-		(defparameter missing missing-small)
-		,@set-small-list)
-	       ))
-
-       )
-    ))
 
 (defun find-variant-files (symbol &optional (size-string "LARGE"))
   "Return list containing symbol and variant-names (xxx-A) of found graphics"
