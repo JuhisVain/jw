@@ -53,20 +53,22 @@
     (do* ((head (getf args :full) (cdr head)))
 	 ((null head))
 
-      (let* ((symbol (caar head))
+      (let* ((symbol (caar head)) ;             field
 	     
-	     (vars-large (getf (cdar head) :large))
-	     (priority-large (car vars-large))
-	     (x-ofs-large (cadr vars-large))
-	     (y-ofs-large (caddr vars-large))
+	     (vars-large (getf (cdar head) :large)) ; (25 -4 -9)
+	     (priority-large (car vars-large)) ;       25
+	     (x-ofs-large (cadr vars-large)) ;            -4
+	     (y-ofs-large (caddr vars-large)) ;              -9
 	     
 	     (vars-small (getf (cdar head) :small))
 	     (priority-small (car vars-small))
 	     (x-ofs-small (cadr vars-small))
 	     (y-ofs-small (caddr vars-small))
 
-	     (variant-list-large (find-variant-files symbol "LARGE"))
-	     (variant-list-small (find-variant-files symbol "SMALL")))
+	     (variant-list-large
+	      (find-variant-files symbol "LARGE")) ; '(field field-a field-b field-c)
+	     (variant-list-small
+	      (find-variant-files symbol "SMALL")))
 
 	;; Store variants
 	(push `(push ,variant-list-large *graphics-variants*) load-tiles-list)
@@ -76,7 +78,16 @@
 		       variant-list-large priority-large x-ofs-large y-ofs-large 'large)
 		      (form-graphics-setups
 		       variant-list-small priority-small x-ofs-small y-ofs-small 'small)
-		      load-tiles-list))))
+		      load-tiles-list))
+
+
+
+	(push
+	 `(defparameter )
+	 set-large-list)
+	
+
+	))
     
     (setf load-tiles-list ; Add some special graphics on top
 	  (append '(defun load-tiles ()) ; outrageous
@@ -86,11 +97,27 @@
 		  '((tile-graphics-setup missing-large 300 0 0))
 		  '((tile-graphics-setup missing-small 300 0 0))
 		  load-tiles-list))
-
     
     
     `(progn ,load-tiles-list)
     ))
+
+
+;; (form-variant-defpars (find-variant-files 'field) (find-variant-files 'field "SMALL"))
+(defun form-variant-defpars (variant-list-large variant-list-small)
+  "Returns list containing two lists containing defparameter statements.
+CAR holds large's list and CADR holds small's list."
+  (let ((ll-sl (list ()())))
+    (dolist (large-var (cdr variant-list-large))
+      (push `(defparameter ,large-var ,(abs-til-sym large-var 'large))
+	    (car ll-sl))
+
+      (if (member large-var variant-list-small)
+	  (push `(defparameter ,large-var ,(abs-til-sym large-var 'small))
+		(cadr ll-sl))
+	  (push `(defparameter ,large-var missing-small)
+		(cadr ll-sl))))
+    ll-sl))
 
 
 (defun form-graphics-setups (variant-list priority x-offset y-offset size-symbol)
@@ -100,17 +127,25 @@ elements in (cdr variant-list) of size size-symbol."
    (cdr variant-list) ; return nil if no variants in list
    (let ((variant-setup-list nil))
      (push `(tile-graphics-setup
-	     ,(intern (concatenate 'string (symbol-name (cadr variant-list))
-				   "-" (string-upcase (symbol-name size-symbol))))
+	     ,(abs-til-sym (car variant-list) size-symbol 'a)
 	     ,priority ,x-offset ,y-offset)
 	   variant-setup-list)
      (dolist (variant (cddr variant-list)) ; remaining variants
        (push `(tile-graphics-setup
-	       ,(intern (concatenate 'string (symbol-name variant)
-				     "-" (string-upcase (symbol-name size-symbol))))
+	       ,(abs-til-sym variant size-symbol)
 	       ,priority 0 0)
 	     variant-setup-list))
      variant-setup-list)))
+
+
+(defun abs-til-sym (tile-symbol size-symbol &optional (force-variant nil))
+  "Return absolute tile symbol such as FIELD-A-LARGE"
+  (if force-variant
+      (intern (concatenate 'string (symbol-name tile-symbol)
+			   "-" (symbol-name force-variant)
+			   "-" (symbol-name size-symbol)))
+      (intern (concatenate 'string (symbol-name tile-symbol)
+			   "-" (symbol-name size-symbol)))))
 
 
 (defun find-variant-files (symbol &optional (size-string "LARGE"))
