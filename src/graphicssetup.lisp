@@ -80,12 +80,14 @@
 		       variant-list-small priority-small x-ofs-small y-ofs-small 'small)
 		      load-tiles-list))
 
+	(let ((variant-defpars (form-variant-defpars variant-list-large
+						     variant-list-small)))
+	  (setf
+	   set-large-list
+	   (append (car variant-defpars) set-large-list)
+	   set-small-list
+	   (append (cadr variant-defpars) set-small-list)))
 
-
-	(push
-	 `(defparameter )
-	 set-large-list)
-	
 
 	))
     
@@ -97,9 +99,13 @@
 		  '((tile-graphics-setup missing-large 300 0 0))
 		  '((tile-graphics-setup missing-small 300 0 0))
 		  load-tiles-list))
+
+    ;; TODO: form defun set-tile-size, don't return the set-x-lists
     
     
-    `(progn ,load-tiles-list)
+    `(progn ,load-tiles-list
+	    ,set-large-list
+	    ,set-small-list)
     ))
 
 
