@@ -82,9 +82,23 @@
       (let ((head-results (process-gform (car head) 'misc)))
 	(setf load-tiles-list (nconc (car head-results) load-tiles-list))
       ))
+
+    
+    (list load-tiles-list set-large-list set-small-list) ;; just testing TODO remove
+
+    ;;(append '(defun load-tiles ()) load-tiles-list '((set-tile-size 'large)))
+
+    (setf (symbol-function 'load-tiles)
+	  (compile nil (append '(lambda ()) load-tiles-list '((set-tile-size 'large)))))
+
+    (unless (fboundp 'set-tile-size) ;; If there is not set-tile-size func, make dummy func
+      (setf (symbol-function 'set-tile-size) ; before it's called in load-tiles
+	    #'(lambda (x) x)))
+    
+    (load-tiles) ; Living on the razor's edge
+
     
     
-    (list load-tiles-list set-large-list set-small-list)
     ))
 
 (defun process-gform (graphics-form graphics-type)
