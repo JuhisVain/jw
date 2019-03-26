@@ -46,33 +46,48 @@
 (ggg
  :full
  '((sea :large (100 -4 -9) :small (0 0 0))
-  (grass :large (0 0 0) :small (0 0 0))
-  (field :large (25 -4 -9) :small (25 0 0))
-  (forest :large (75 -4 -17) :small (75 0 0))
-  (city :large (50 -6 -6) :small (50 0 0))
-  (suburb :large (50 0 0) :small (50 0 0))
-  (swamp :large (1 0 0) :small (1 0 0))
-  
-  ))
+   (grass :large (0 0 0) :small (0 0 0))
+   (field :large (25 -4 -9) :small (25 0 0))
+   (forest :large (75 -4 -17) :small (75 0 0))
+   (city :large (50 -6 -6) :small (50 0 0))
+   (suburb :large (50 0 0) :small (50 0 0))
+   (swamp :large (1 0 0) :small (1 0 0)))
+
+ :border '(rivers maybe roads?)
+
+ :misc
+ '((selector :large (200 11 0) :small (200 5 0))
+   (missing :large (300 0 0) :small (300 0 0)))
+ )
 
 (defun ggg (&rest args)
   (let ((load-tiles-list nil)
 	(set-large-list nil)
 	(set-small-list nil))
 
+    ;; Process full tiles:
     (do ((head (getf args :full) (cdr head)))
 	((null head))
-      (let ((head-results (process-gform (car head))))
-	;;(format t "~&~a~%" head-results)
-	
+      (let ((head-results (process-gform (car head) 'full)))
 	(setf load-tiles-list (nconc (car head-results) load-tiles-list))
 	(setf set-large-list (nconc (cadr head-results) set-large-list))
-	(setf set-small-list (nconc (caddr head-results) set-small-list))
-	))
+	(setf set-small-list (nconc (caddr head-results) set-small-list))))
+
+    ;; Process border tiles
+    ;; todo
+
+    ;; Process miscellaneous graphics:
+    (do ((head (getf args :misc) (cdr head)))
+	((null head))
+      (let ((head-results (process-gform (car head) 'misc)))
+	(setf load-tiles-list (nconc (car head-results) load-tiles-list))
+      ))
+    
+    
     (list load-tiles-list set-large-list set-small-list)
     ))
 
-(defun process-gform (graphics-form)
+(defun process-gform (graphics-form graphics-type)
   "Returns '((load-tiles contents) (set-tile-size 'large contents) (setsmall contents))"
   (let* ((load-tiles) (set-large) (set-small) ; Lists to return
 	 (symbol (car graphics-form)) ; Base name of graphic
@@ -91,15 +106,16 @@
 	 (variant-list-small
 	  (find-variant-files symbol "SMALL")))
 
-    
+
     ;; Store variants
-    (push `(push ',variant-list-large *graphics-variants*) load-tiles)
+    (when (eq graphics-type 'full)
+      (push `(push ',variant-list-large *graphics-variants*) load-tiles))
 
     (setf load-tiles ; Call tile graphics setup for everything found
 	  (nconc (form-graphics-setups
-		  variant-list-large priority-large x-ofs-large y-ofs-large 'large)
+		  variant-list-large priority-large x-ofs-large y-ofs-large 'large graphics-type)
 		 (form-graphics-setups
-		  variant-list-small priority-small x-ofs-small y-ofs-small 'small)
+		  variant-list-small priority-small x-ofs-small y-ofs-small 'small graphics-type)
 		 load-tiles))
 
     (let ((variant-defpars (form-variant-defpars variant-list-large
@@ -112,8 +128,6 @@
 
     (list load-tiles set-large set-small)
     ))
-
-
 
 
 ;; This can not be done at compile time -> redo in ggg
@@ -204,16 +218,23 @@ CAR holds large's list and CADR holds small's list."
     ll-sl))
 
 
-(defun form-graphics-setups (variant-list priority x-offset y-offset size-symbol)
-  "Makes a list containing tile-graphics-setup calls for
-elements in (cdr variant-list) of size size-symbol."
+(defun form-graphics-setups (variant-list priority x-offset y-offset size-symbol graphics-type)
+  "If graphics-type is 'full returns a list containing tile-graphics-setup calls for
+elements in (cdr variant-list) of size size-symbol. Graphics-type nil "
   (and
-   (cdr variant-list) ; return nil if no variants in list
+   (or (cdr variant-list) ; return nil if no variants in list
+       (eq graphics-type 'misc))
    (let ((variant-setup-list nil))
      (push `(tile-graphics-setup
-	     ,(abs-til-sym (car variant-list) size-symbol 'a)
+	     ,(abs-til-sym (car variant-list)
+			   size-symbol
+			   (cond ((eq graphics-type 'full) 'a)
+				 ((eq graphics-type 'misc) nil)))
 	     ,priority ,x-offset ,y-offset)
 	   variant-setup-list)
+     ;; Escape when no variants requested:
+     (when (eq graphics-type 'misc) (return-from form-graphics-setups variant-setup-list))
+     
      (dolist (variant (cddr variant-list)) ; remaining variants
        (push `(tile-graphics-setup
 	       ,(abs-til-sym variant size-symbol)
