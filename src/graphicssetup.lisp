@@ -91,9 +91,10 @@
 
     ;; If there is not set-tile-size func, make dummy func
     ;;   before it's called in load-tiles
-    (unless (fboundp 'set-tile-size)
-      (setf (symbol-function 'set-tile-size)
-	    #'(lambda (x) x)))
+    ;;(unless (fboundp 'set-tile-size) ; This will actually have to be forced until old set-tile-size is wiped
+    (setf (symbol-function 'set-tile-size)
+	  #'(lambda (x) x))
+    ;;)
 
     ;; Generates overflown border graphics required for set-tile-size func:
     ;;(load-tiles) ; Living on the razor's edge
@@ -140,16 +141,15 @@
 	  (push (car defpar) set-large-list)
 	  (push (cadr defpar) set-small-list))))
 
-    '(setf (symbol-function 'set-tile-size)
-      (compile (append '(lambda (size))
-		'((sdl:clear-display sdl:*black*)
-		  (defvar placeholder (make-graphics :surface (sdl:create-surface 0 0))))
-		`((cond ((eq size 'large))
-			)))))
-		  
+    (setf (symbol-function 'set-tile-size)
+	  (compile nil (append '(lambda (size))
+			       '((sdl:clear-display sdl:*black*)
+				 (defvar placeholder (make-graphics :surface (sdl:create-surface 0 0))))
+			       `((cond ((eq size 'large)
+					,@set-large-list)
+				       ((eq size 'small)
+					,@set-small-list))))))
     
-    
-    (list :load load-tiles-list :large set-large-list :small set-small-list)
     ))
 
 

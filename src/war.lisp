@@ -180,6 +180,34 @@
     (sdl:initialise-default-font)
 
     (load-tiles)
+
+
+
+
+
+    (ggg
+ :full
+ '((sea :large (100 -4 -9) :small (0 0 0))
+   (grass :large (0 0 0) :small (0 0 0))
+   (field :large (25 -4 -9) :small (25 0 0))
+   (forest :large (75 -4 -17) :small (75 0 0))
+   (city :large (50 -6 -6) :small (50 0 0))
+   (suburb :large (50 0 0) :small (50 0 0))
+   (swamp :large (1 0 0) :small (1 0 0)))
+
+ :border '(rivers maybe roads?)
+
+ :misc
+ '((selector :large (200 11 0) :small (200 5 0))
+   (missing :large (300 0 0) :small (300 0 0)))
+ )
+
+
+
+
+
+
+    
     (init-cgen)
     (sort-world-graphics) ;; Put graphics in order to render correctly. NOTE: This is a pretty heavy operation
     (setup-panels) ;; Setup the chrome
