@@ -84,23 +84,84 @@
       ))
 
     
-    (list load-tiles-list set-large-list set-small-list) ;; just testing TODO remove
-
-    ;;(append '(defun load-tiles ()) load-tiles-list '((set-tile-size 'large)))
+    ;;(list load-tiles-list set-large-list set-small-list) ;; just testing TODO remove
 
     (setf (symbol-function 'load-tiles)
 	  (compile nil (append '(lambda ()) load-tiles-list '((set-tile-size 'large)))))
 
-    (unless (fboundp 'set-tile-size) ;; If there is not set-tile-size func, make dummy func
-      (setf (symbol-function 'set-tile-size) ; before it's called in load-tiles
+    ;; If there is not set-tile-size func, make dummy func
+    ;;   before it's called in load-tiles
+    (unless (fboundp 'set-tile-size)
+      (setf (symbol-function 'set-tile-size)
 	    #'(lambda (x) x)))
-    
-    (load-tiles) ; Living on the razor's edge
 
+    ;; Generates overflown border graphics required for set-tile-size func:
+    ;;(load-tiles) ; Living on the razor's edge
+
+
+    (do* ((head (getf args :full) (cdr head)))
+	 ((null head))
+      (let ((defpars
+	     (mapcar #'(lambda (direction)
+			 (let* ((symbol-name (symbol-name (caar head)))
+				(border-sym-name-large
+				 (intern (concatenate 'string ; 'field-a-large-border-north-east etc..
+						      symbol-name
+						      "-A-LARGE-BORDER-"
+						      direction)))
+				(border-sym-name-small
+				 (intern (concatenate 'string
+						      symbol-name
+						      "-A-SMALL-BORDER-"
+						      direction))))
+			   (list ;; ((defparameter field-outskirts-ne field-a-large-border-north-east)
+			    ;;  (defparameter field-outskirts-ne missing-small)) etc..
+			    `(defparameter
+				 ,(intern (concatenate 'string
+						       symbol-name
+						       "-OUTSKIRTS-"
+						       (long-dir-short-string direction)))
+			       ,(if (boundp border-sym-name-large)
+				    border-sym-name-large
+				    'placeholder))
+			    ;; Using the placeholder to initialize logic symbols should be made redundant
+			    ;;   instead make some list for the finalizer functions to check what borders to use
+
+			    `(defparameter
+				 ,(intern (concatenate 'string
+						       symbol-name
+						       "-OUTSKIRTS-"
+						       (long-dir-short-string direction)))
+			       ,(if (boundp border-sym-name-small)
+				    border-sym-name-small
+				    'placeholder)))))
+		     (list "NORTH" "NORTH-WEST" "NORTH-EAST" "SOUTH" "SOUTH-WEST" "SOUTH-EAST"))))
+	(dolist (defpar defpars)
+	  (push (car defpar) set-large-list)
+	  (push (cadr defpar) set-small-list))))
+
+    '(setf (symbol-function 'set-tile-size)
+      (compile (append '(lambda (size))
+		'((sdl:clear-display sdl:*black*)
+		  (defvar placeholder (make-graphics :surface (sdl:create-surface 0 0))))
+		`((cond ((eq size 'large))
+			)))))
+		  
     
     
+    (list :load load-tiles-list :large set-large-list :small set-small-list)
     ))
 
+
+(defun long-dir-short-string (direction-string)
+  (let ((ass-dir '(("NORTH" . "N")
+		   ("NORTH-WEST" . "NW")
+		   ("NORTH-EAST" . "NE")
+		   ("SOUTH" . "S")
+		   ("SOUTH-WEST" . "SW")
+		   ("SOUTH-EAST" . "SE"))))
+    (cdr (assoc direction-string ass-dir :test #'string=))))
+    
 (defun process-gform (graphics-form graphics-type)
   "Returns '((load-tiles contents) (set-tile-size 'large contents) (setsmall contents))"
   (let* ((load-tiles) (set-large) (set-small) ; Lists to return
