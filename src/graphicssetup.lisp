@@ -30,7 +30,7 @@
 ;;       -border is one of   N NW SW
 
 
-(macroexpand-1
+'(macroexpand-1
  '(gugs 1 2 3 4 5 6
    :full
    ((sea :large (100 -4 -9) :small (0 0 0))
@@ -43,7 +43,7 @@
     
     )))
 
-(ggg
+'(ggg
  :full
  '((sea :large (100 -4 -9) :small (0 0 0))
    (grass :large (0 0 0) :small (0 0 0))
@@ -146,8 +146,20 @@
 			       '((sdl:clear-display sdl:*black*)
 				 (defvar placeholder (make-graphics :surface (sdl:create-surface 0 0))))
 			       `((cond ((eq size 'large)
+					(defparameter selector selector-large)
+					(defparameter tile-size-x (car tile-large-size))
+					(defparameter tile-size-y (cdr tile-large-size))
+					(defparameter tile-size-full-x tile-large-size-full-x)
+					(defparameter tile-size-hor-x tile-large-size-full-hor-x)
+					(defparameter tile-size tile-large-size)
 					,@set-large-list)
 				       ((eq size 'small)
+					(defparameter selector selector-small)
+					(defparameter tile-size-x (car tile-small-size))
+					(defparameter tile-size-y (cdr tile-small-size))
+					(defparameter tile-size-full-x tile-small-size-full-x)
+					(defparameter tile-size-hor-x tile-small-size-full-hor-x)
+					(defparameter tile-size tile-small-size)
 					,@set-small-list))))))
     
     ))

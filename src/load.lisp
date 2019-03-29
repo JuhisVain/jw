@@ -8,3 +8,4 @@
 (load "panel.lisp")
 (load "tilechopper.lisp")
 (load "cgen.lisp")
+(load "graphicssetup.lisp")

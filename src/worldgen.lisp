@@ -152,7 +152,7 @@
 	    (if neighbour-tile
 		(progn
 		  (if (member 'sea (tile-type (aref (world-map world) (car neighbour-tile) (cdr neighbour-tile))))
-		      (push (intern (concatenate 'string "COAST-" (symbol-name direction)))
+		      (push (intern (concatenate 'string "SEA-OUTSKIRTS-" (symbol-name direction)))
 			    (tile-variant (aref (world-map world) x y))))
 		  (if (member-if #'(lambda (x) (eq (car x) 'city))
 				 (tile-location (aref (world-map world) (car neighbour-tile) (cdr neighbour-tile))))
@@ -174,7 +174,7 @@
 	    (push 'forest-a (tile-variant (tile-at x y world)))))
       )
   ;; Pushing tile's type as base element of graphics list:
-  (push (car (tile-type (tile-at x y world)))
+  (push (random-variant (car (tile-type (tile-at x y world))))
 	(tile-variant (tile-at x y world)))
   )
 
@@ -186,6 +186,11 @@ With seed, which the caller must generate in some way, returns (nth (rem seed le
 	(return-from has-variants
 	  (if seed (nth (rem seed (length (cdr sym-list))) (cdr sym-list))
 	      (cdr sym-list))))))
+
+(defun random-variant (tile-type-symbol)
+  "Returns randomly chosen variant graphics symbol from *graphics-variants*"
+  (let ((variants (cdr (assoc tile-type-symbol *graphics-variants*))))
+    (nth (random (length variants)) variants)))
 
 (defun sort-tile-graphics (tile)
   "Sorts a tile's variant field according to set priorities in ascending order"
@@ -240,7 +245,7 @@ With seed, which the caller must generate in some way, returns (nth (rem seed le
     (if world
 	(progn
 	  (pushnew (list 'city new-city) (tile-location (tile-at x y world)))
-	  (pushnew 'city-a (tile-variant (tile-at x y)))
+	  (pushnew (random-variant 'city) (tile-variant (tile-at x y)))
 	  (finalize-tile-region x y world)
 	  (pushnew new-city (world-cities world))))
     new-city))
