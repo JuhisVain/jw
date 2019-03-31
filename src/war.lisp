@@ -172,6 +172,8 @@
     (cons adj-screen-x adj-screen-y)))
 
 
+
+
 (defun test ()
   (sdl:with-init()
     (defparameter window (sdl:window 1500 900 :title-caption "a war game"))
@@ -179,13 +181,7 @@
     
     (sdl:initialise-default-font)
 
-    ;;(load-tiles)
-
-
-
-
-
-    (ggg ;; Todo: check if possible to execute on top-level
+    (grand-unified-graphics-setup
      :full
      '((sea :large (100 -4 -9) :small (0 0 0))
        (grass :large (0 0 0) :small (0 0 0))
@@ -202,21 +198,15 @@
        (missing :large (300 0 0) :small (300 0 0)))
      )
 
-
     (load-tiles)
     (set-tile-size 'small)
     (set-tile-size 'large)
 
     (unless *world* (init-test 40 40 :islands 20 :mirror t))
     ;; init-test can't be executed before variant and outskirts have been generated in ggg
-
     
     (init-cgen)
 
-    (format t "~&null *World*? ~a, now sorting~%" (null *world*))
-    
-    ;;;; TODO: figure out wtf is happening around here... first run will not sort variant-fields...
-    
     (sort-world-graphics) ;; Put graphics in order to render correctly. NOTE: This is a pretty heavy operation
     (setup-panels) ;; Setup the chrome
 

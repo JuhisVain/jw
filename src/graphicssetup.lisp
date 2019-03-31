@@ -30,20 +30,7 @@
 ;;       -border is one of   N NW SW
 
 
-'(macroexpand-1
- '(gugs 1 2 3 4 5 6
-   :full
-   ((sea :large (100 -4 -9) :small (0 0 0))
-    (grass :large (0 0 0) :small (0 0 0))
-    (field :large (25 -4 -9) :small (25 0 0))
-    (forest :large (75 -4 -17) :small (75 0 0))
-    (city :large (50 -6 -6) :small (50 0 0))
-    (suburb :large (50 0 0) :small (50 0 0))
-    (swamp :large (1 0 0) :small (1 0 0))
-    
-    )))
-
-'(ggg
+'(grand-unified-graphics-setup
  :full
  '((sea :large (100 -4 -9) :small (0 0 0))
    (grass :large (0 0 0) :small (0 0 0))
@@ -60,7 +47,7 @@
    (missing :large (300 0 0) :small (300 0 0)))
  )
 
-(defun ggg (&rest args)
+(defun grand-unified-graphics-setup (&rest args)
   (let ((load-tiles-list nil)
 	(set-large-list nil)
 	(set-small-list nil))
@@ -97,7 +84,7 @@
     ;;)
 
     ;; Generates overflown border graphics required for set-tile-size func:
-    ;;(load-tiles) ; Living on the razor's edge
+    (load-tiles) ; Living on the razor's edge
 
 
     (do* ((head (getf args :full) (cdr head)))
@@ -217,77 +204,6 @@
     ))
 
 
-;; This can not be done at compile time -> redo in ggg
-(defmacro gugs (&rest args)
-
-  ;; These list will be used in forming the setup functions:
-  (let ((load-tiles-list '((set-tile-size 'large)))
-	(set-large-list nil)
-	(set-small-list nil))
-
-    (do* ((head (getf args :full) (cdr head)))
-	 ((null head))
-
-      (let* ((symbol (caar head)) ;             field
-	     
-	     (vars-large (getf (cdar head) :large)) ; (25 -4 -9)
-	     (priority-large (car vars-large)) ;       25
-	     (x-ofs-large (cadr vars-large)) ;            -4
-	     (y-ofs-large (caddr vars-large)) ;              -9
-	     
-	     (vars-small (getf (cdar head) :small))
-	     (priority-small (car vars-small))
-	     (x-ofs-small (cadr vars-small))
-	     (y-ofs-small (caddr vars-small))
-
-	     (variant-list-large
-	      (find-variant-files symbol "LARGE")) ; '(field field-a field-b field-c)
-	     (variant-list-small
-	      (find-variant-files symbol "SMALL")))
-
-	;; Store variants
-	(push `(push ',variant-list-large *graphics-variants*) load-tiles-list)
-
-	(setf load-tiles-list ; Call tile graphics setup for everything found
-	      (nconc (form-graphics-setups
-		       variant-list-large priority-large x-ofs-large y-ofs-large 'large)
-		      (form-graphics-setups
-		       variant-list-small priority-small x-ofs-small y-ofs-small 'small)
-		      load-tiles-list))
-
-	(let ((variant-defpars (form-variant-defpars variant-list-large
-						     variant-list-small)))
-	  (setf
-	   set-large-list
-	   (append (car variant-defpars) set-large-list)
-	   set-small-list
-	   (append (cadr variant-defpars) set-small-list)))
-	))
-    
-    (setf load-tiles-list ; Add some special graphics on top
-	  (append '(defun load-tiles ()) ; outrageous
-		  '((setf *graphics-variants* nil))
-		  '((tile-graphics-setup selector-large 200 11 0))
-		  '((tile-graphics-setup selector-small 200 5 0))
-		  '((tile-graphics-setup missing-large 300 0 0))
-		  '((tile-graphics-setup missing-small 300 0 0))
-		  load-tiles-list))
-
-    ;; TODO: form defun set-tile-size, don't return the set-x-lists
-    
-    
-    `(progn ,load-tiles-list
-	    (defun set-tile-size (size)
-	      "Switches between tile sizes"
-	      (sdl:clear-display sdl:*black*)
-	      (cond ((equal size 'large)
-		     ,@set-large-list)
-		    ((equal size 'small)
-		     ,@set-small-list))
-	    )
-    )))
-
-
 ;; (form-variant-defpars (find-variant-files 'field) (find-variant-files 'field "SMALL"))
 (defun form-variant-defpars (variant-list-large variant-list-small)
   "Returns list containing two lists containing defparameter statements.
@@ -371,45 +287,3 @@ elements in (cdr variant-list) of size size-symbol. Graphics-type nil "
 	(progn
 	  (setf (elt rev-string i) (code-char (1+ (char-code character))))
 	  (return-from next-variant-id (reverse rev-string))))))
-
-;; (macroexpand-1 '(grand-unified-graphics-setup (field :large (1 2 3) :small (3 2 1))))
-(defmacro OBSOLETEgrand-unified-graphics-setup (&rest args)
-  ;; The xxx_A.png files specify primary graphics -> overflowing borders should only be found in those
-  
-  
-  ;; To be used like:
-  ;; (gugs (xxx :large (priority x-ofs y-ofs)
-  ;;            :small (priority x-ofs y-ofs))
-  ;;       etc..)
-  ;; should create xxx-a and variants xxx-b xxx-c etc. stored in *graphics-variants*
-  (do* ((current args (cdr args))
-	(form (car current) (car current))
-	(load-tiles-list)
-	(set-tile-size-list))
-       ((null current) (list load-tiles-list set-tile-size-list))
-    (setf load-tiles-list
-	  (push `(create-tile ,@form) ; Create the tile-type symbol and
-		load-tiles-list))     ; if and only when needed: primary border symbols
-				      ; for use in variant assignment in size change func
-
-    (do* ((variant-char "A" (next-variant-char variant-char)) ; You'd think this could be simpler;TODO: make fun
-	  (variant-path-large
-	   (probe-file (concatenate 'string "./graphics/" (string-upcase (string (car form))) "_"
-				    (string variant-char) "_LARGE.png"))
-	   (probe-file (concatenate 'string "./graphics/" (string-upcase (string (car form))) "_"
-				    (string variant-char) "_LARGE.png")))
-	  (variant-path-small
-	   (probe-file (concatenate 'string "./graphics/" (string-upcase (string (car form))) "_"
-			 (string variant-char) "_SMALL.png"))
-	   (probe-file (concatenate 'string "./graphics/" (string-upcase (string (car form))) "_"
-				    (string variant-char) "_SMALL.png"))))
-	 ((null variant-path-large))
-      (setf set-tile-size-list ; will need to duplicate + append the prime large/small variants
-	    (push `(,(intern (concatenate 'string
-					  (string-upcase (string (car form)))
-					  "-" (string variant-char))))
-		  set-tile-size-list))
-      )
-    )
-  )
-
