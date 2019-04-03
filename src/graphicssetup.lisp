@@ -206,7 +206,8 @@
 
 ;; (form-variant-defpars (find-variant-files 'field) (find-variant-files 'field "SMALL"))
 (defun form-variant-defpars (variant-list-large variant-list-small)
-  "Returns list containing two lists containing defparameter statements.
+  "Returns list containing two lists containing defparameter statements,
+used as switchable pointers to the actual graphics.
 CAR holds large's list and CADR holds small's list."
   (let ((ll-sl (list ()())))
     (dolist (large-var (cdr variant-list-large))

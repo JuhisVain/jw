@@ -501,6 +501,36 @@
 			     left-top-y
 			     :color sdl:*white*)))
 
+;; TODO: Rewrite tile-graphics-setup as func below, move to graphicssetup.lisp
+(defun tgs (tile-symbol priority &optional (x-offset 0) (y-offset 0))
+  (let* ((size-of-tile (cond ((search "LARGE" (symbol-name tile-symbol)) 'large)
+			     ((search "SMALL" (symbol-name tile-symbol)) 'small)))
+	 (tile-dims (case size-of-tile
+		      ('large (list tile-large-size-full-hor-x tile-large-size-full-x tile-large-size-full-y))
+		      ('small (list tile-small-size-full-hor-x tile-small-size-full-x tile-small-size-full-y))))
+	 (symbol-string (substitute #\_ #\- (symbol-name tile-symbol)))
+	 (graphics-path (concatenate 'string "./graphics/" symbol-string ".png")))
+    (if (null (probe-file graphics-path))
+	(case size-of-tile
+
+	  ;;; TODO: call grand-unified-graphics-setup inside macro which defparameters tilesymbols to nil
+	  ;; do here : ('large (setf (tile-symbol missing-large))) etc..
+	  ('large (eval `(defparameter ,tile-symbol missing-large)))
+	  ('small (eval `(defparameter ,tile-symbol missing-small))))
+	;;else
+	(mapcar #'(lambda (direction graphics)
+		    (when graphics
+		      
+		      (eval )))
+		
+		'(nil "-BORDER-NORTH" "-BORDER-NORTH-EAST" "-BORDER-SOUTH-EAST"
+		  "-BORDER-SOUTH" "-BORDER-SOUTH-WEST" "-BORDER-NORTH-WEST")
+		(chop-tile graphics-path x-offset y-offset
+			   (car tile-dims) (cadr tile-dims) (caddr tile-dims))))
+	
+	))
+
+;; (macroexpand-1 '(tile-graphics-setup grass-large-a 1 2 3))
 (defmacro tile-graphics-setup (tile-symbol priority &optional (x-offset 0) (y-offset 0))
   ;;This should be a function, like most of these macros
   (let ((symbol-name (gensym))
