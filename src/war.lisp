@@ -203,7 +203,7 @@
     (set-tile-size 'large)
 
     (unless *world* (init-test 40 40 :islands 20 :mirror t))
-    ;; init-test can't be executed before variant and outskirts have been generated in ggg
+    ;; init-test can't be executed before variant and outskirts have been generated in grand-unified-graphics-setup
     
     (init-cgen)
 
@@ -502,36 +502,40 @@
 			     :color sdl:*white*)))
 
 ;; TODO: Rewrite tile-graphics-setup as func below, move to graphicssetup.lisp
-(defun tgs (tile-symbol priority &optional (x-offset 0) (y-offset 0))
+(defun tile-graphics-setup (tile-symbol priority &optional (x-offset 0) (y-offset 0))
   (let* ((size-of-tile (cond ((search "LARGE" (symbol-name tile-symbol)) 'large)
 			     ((search "SMALL" (symbol-name tile-symbol)) 'small)))
 	 (tile-dims (case size-of-tile
-		      ('large (list tile-large-size-full-hor-x tile-large-size-full-x tile-large-size-full-y))
-		      ('small (list tile-small-size-full-hor-x tile-small-size-full-x tile-small-size-full-y))))
+		      ((large) (list tile-large-size-full-hor-x tile-large-size-full-x tile-large-size-full-y))
+		      ((small) (list tile-small-size-full-hor-x tile-small-size-full-x tile-small-size-full-y))))
 	 (symbol-string (substitute #\_ #\- (symbol-name tile-symbol)))
-	 (graphics-path (concatenate 'string "./graphics/" symbol-string ".png")))
+	 (graphics-path (concatenate 'string "./graphics/" symbol-string ".png"))) ;; TODO: check out (make-pathname)
     (if (null (probe-file graphics-path))
 	(case size-of-tile
-
-	  ;;; TODO: call grand-unified-graphics-setup inside macro which defparameters tilesymbols to nil
-	  ;; do here : ('large (setf (tile-symbol missing-large))) etc..
-	  ('large (eval `(defparameter ,tile-symbol missing-large)))
-	  ('small (eval `(defparameter ,tile-symbol missing-small))))
+	  ;; Can't be helped:
+	  ((large) (eval `(defparameter ,tile-symbol missing-large)))
+	  ((small) (eval `(defparameter ,tile-symbol missing-small))))
 	;;else
-	(mapcar #'(lambda (direction graphics)
-		    (when graphics
-		      
-		      (eval )))
-		
-		'(nil "-BORDER-NORTH" "-BORDER-NORTH-EAST" "-BORDER-SOUTH-EAST"
-		  "-BORDER-SOUTH" "-BORDER-SOUTH-WEST" "-BORDER-NORTH-WEST")
-		(chop-tile graphics-path x-offset y-offset
-			   (car tile-dims) (cadr tile-dims) (caddr tile-dims))))
-	
-	))
+	(let ((graphics-list
+	       (mapcar #'(lambda (direction graphics)
+			   (when graphics
+			     
+			     (eval `(defparameter ,(if direction (intern
+								  (concatenate 'string (string tile-symbol) direction))
+						       tile-symbol)
+				      ,graphics))))
+		       
+		       '(nil "-BORDER-NORTH" "-BORDER-NORTH-EAST" "-BORDER-SOUTH-EAST"
+			 "-BORDER-SOUTH" "-BORDER-SOUTH-WEST" "-BORDER-NORTH-WEST")
+		       (chop-tile graphics-path x-offset y-offset
+				  (car tile-dims) (cadr tile-dims) (caddr tile-dims)))))
+	  (dolist (graphics graphics-list)
+	    (when graphics (setf (graphics-priority (symbol-value graphics)) priority)))
+	  
+	  ))))
 
 ;; (macroexpand-1 '(tile-graphics-setup grass-large-a 1 2 3))
-(defmacro tile-graphics-setup (tile-symbol priority &optional (x-offset 0) (y-offset 0))
+'(defmacro tile-graphics-setup (tile-symbol priority &optional (x-offset 0) (y-offset 0))
   ;;This should be a function, like most of these macros
   (let ((symbol-name (gensym))
 	(direction (gensym))

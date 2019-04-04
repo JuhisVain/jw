@@ -230,7 +230,7 @@ elements in (cdr variant-list) of size size-symbol. Graphics-type nil "
        (eq graphics-type 'misc))
    (let ((variant-setup-list nil))
      (push `(tile-graphics-setup
-	     ,(abs-til-sym (car variant-list)
+	     ',(abs-til-sym (car variant-list)
 			   size-symbol
 			   (cond ((eq graphics-type 'full) 'a)
 				 ((eq graphics-type 'misc) nil)))
@@ -241,7 +241,7 @@ elements in (cdr variant-list) of size size-symbol. Graphics-type nil "
      
      (dolist (variant (cddr variant-list)) ; remaining variants
        (push `(tile-graphics-setup
-	       ,(abs-til-sym variant size-symbol)
+	       ',(abs-til-sym variant size-symbol)
 	       ,priority 0 0)
 	     variant-setup-list))
      variant-setup-list)))
