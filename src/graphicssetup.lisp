@@ -30,6 +30,10 @@
 ;;       -border is one of   N NW SW
 
 
+;;; Other:
+;; Might want to have a (reload-graphics tile-symbol) function
+
+
 '(grand-unified-graphics-setup
  :full
  '((sea :large (100 -4 -9) :small (0 0 0))

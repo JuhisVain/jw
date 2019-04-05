@@ -590,9 +590,37 @@
 			       ,(car small) ,(cadr small) ,(caddr small)))))
 
 
+
+(defun cross-border-graphics-setup (symbol size direction priority x-offset y-offset)
+  "Setup for unchopped graphics that are to be set over tile-borders. Roads and rivers etc.."
+  (let* ((symbol-name
+	  (intern (concatenate 'string
+			       (symbol-name symbol) "-"
+			       (symbol-name size) "-"
+			       (symbol-name direction))))
+	 (graphics-file
+	  (substitute #\_ #\-
+		      (concatenate 'string
+				   (symbol-name symbol) "_"
+				   (symbol-name size) "_"
+				   (long-dir-short-string (symbol-name direction))))))
+    (eval
+    `(defvar ,symbol-name
+       (make-graphics
+	:surface (sdl-image:load-image
+		  ,(concatenate 'string "./graphics/"
+			       graphics-file ".png"))
+	:x-at ,x-offset :y-at ,y-offset :priority ,priority)))
+
+    (setf (sdl:color-key-enabled-p (graphics-surface (symbol-value symbol-name))) t)
+    (setf (sdl:color-key (graphics-surface (symbol-value symbol-name))) *war-color-key*)
+    ))
+  
+
 ;; Could be used for things other than rivers as well
-(defmacro tile-river-setup (river-symbol-dir x-offset y-offset)
-  (let* ((symbol-name (symbol-name river-symbol-dir))
+'(defmacro cross-border-graphics-setup (cross-symbol-dir priority x-offset y-offset)
+  "Setup for unchopped graphics that are to be set over tile-borders. Roads and rivers etc.."
+  (let* ((symbol-name (symbol-name cross-symbol-dir))
 	 (to-conc nil))
     (cond ((search "SOUTH-WEST" symbol-name)
 	   (setf to-conc "SW"))
@@ -607,7 +635,7 @@
 	  ((search "NORTH" symbol-name)
 	   (setf to-conc "N")))
     `(progn
-       (defparameter ,river-symbol-dir
+       (defvar ,cross-symbol-dir
 	 (make-graphics
 	  :surface (sdl-image:load-image 
 		    (concatenate 'string "graphics/"
@@ -615,9 +643,10 @@
 					 (or (search "SOUTH" ,symbol-name)
 					     (search "NORTH" ,symbol-name)))
 				 ,to-conc ".png"))
-	  :x-at ,x-offset :y-at ,y-offset))
-       (setf (sdl:color-key-enabled-p (graphics-surface ,river-symbol-dir)) t)
-       (setf (sdl:color-key (graphics-surface ,river-symbol-dir)) *war-color-key*))))
+	  :x-at ,x-offset :y-at ,y-offset
+	  :priority ,priority))
+       (setf (sdl:color-key-enabled-p (graphics-surface ,cross-symbol-dir)) t)
+       (setf (sdl:color-key (graphics-surface ,cross-symbol-dir)) *war-color-key*))))
 
     
 
