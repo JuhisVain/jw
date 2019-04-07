@@ -65,7 +65,12 @@
 	(setf set-small-list (nconc (caddr head-results) set-small-list))))
 
     ;; Process border tiles
-    ;; todo
+    (do ((head (getf args :border) (cdr head)))
+	((null head))
+      (let ((head-results (process-gform (car head) 'border)))
+	(setf load-tiles-list (nconc (car head-results) load-tiles-list))
+	(setf set-large-list (nconc (cadr head-results) set-large-list))
+	(setf set-small-list (nconc (caddr head-results) set-small-list))))
 
     ;; Process miscellaneous graphics:
     (do ((head (getf args :misc) (cdr head)))
@@ -164,6 +169,46 @@
 		   ("SOUTH-WEST" . "SW")
 		   ("SOUTH-EAST" . "SE"))))
     (cdr (assoc direction-string ass-dir :test #'string=))))
+
+
+;; test for border graphics setup formation:
+'(process-borderform '(stream :large (:north (1 2 3)
+				:north-west (4 5 6)
+				:south-west (7 8 9))
+			  :small (:north (10 20 30)
+				:north-west (40 50 60)
+				:south-west (70 80 90))))
+
+(defun process-borderform (border-form)
+  (let* ((load-tiles) (set-large) (set-small) ; Lists to return
+	 (symbol-list
+	  (mapcar #'(lambda (dir-string)
+		      (intern 
+		       (concatenate 'string
+				    (symbol-name (car border-form))
+				    "-" dir-string)))
+		  '("N" "NW" "SW")))
+	 (variant-list-large-list
+	  (mapcar #'(lambda (symbol)
+		      (find-variant-files symbol "LARGE"))
+		  symbol-list))
+	 (variant-list-small-list
+	  (mapcar #'(lambda (symbol)
+		      (find-variant-files symbol "SMALL"))
+		  symbol-list))
+	 (large-vars (getf (cdr border-form) :large))
+	 (small-vars (getf (cdr border-form) :small)))
+
+    (dolist (variant-list-large variant-list-large-list)
+      (push `(push ',variant-list-large *graphics-variants*) load-tiles)
+      (dolist (variant (cdr variant-list-large))
+	(push `(cross-border-graphics-setup ,variant 'large
+					    ,(car (getf large-vars :north))
+					    ,(cadr (getf large-vars :north))
+					    ,(caddr (getf large-vars :north)))
+	      load-tiles)))
+    load-tiles
+  ))
     
 (defun process-gform (graphics-form graphics-type)
   "Returns '((load-tiles contents) (set-tile-size 'large contents) (setsmall contents))"
@@ -266,7 +311,7 @@ elements in (cdr variant-list) of size size-symbol. Graphics-type nil "
   (do* ((return-list (list symbol))
 	(var-name (string-upcase (string symbol)))
 	(var-id "A" (next-variant-id var-id))
-	(file-path (concatenate 'string "./graphics/" var-name "_"))
+	(file-path (concatenate 'string "./graphics/" (substitute #\_ #\- var-name) "_"))
 	;; All tiles should have same large and small variants:
 	(file-path-large (concatenate 'string file-path var-id "_" size-string ".png")
 			 (concatenate 'string file-path var-id "_" size-string ".png")))

@@ -591,34 +591,33 @@
 
 
 
-(defun cross-border-graphics-setup (symbol size direction priority x-offset y-offset)
+(defun cross-border-graphics-setup (symbol size priority x-offset y-offset)
   "Setup for unchopped graphics that are to be set over tile-borders. Roads and rivers etc.."
-  (let* ((symbol-name
-	  (intern (concatenate 'string
-			       (symbol-name symbol) "-"
-			       (symbol-name size) "-"
-			       (symbol-name direction))))
+  (let* ((symbol-name (concatenate 'string
+				   (symbol-name symbol) "-"
+				   (symbol-name size)))
 	 (graphics-file
-	  (substitute #\_ #\-
-		      (concatenate 'string
-				   (symbol-name symbol) "_"
-				   (symbol-name size) "_"
-				   (long-dir-short-string (symbol-name direction))))))
+	  (substitute #\_ #\- symbol-name)))
     (eval
-    `(defvar ,symbol-name
-       (make-graphics
-	:surface (sdl-image:load-image
-		  ,(concatenate 'string "./graphics/"
-			       graphics-file ".png"))
-	:x-at ,x-offset :y-at ,y-offset :priority ,priority)))
+     `(defvar ,(intern symbol-name)
+	(make-graphics
+	 :surface (sdl-image:load-image
+		   ,(concatenate 'string "./graphics/"
+				 graphics-file ".png"))
+	 :x-at ,x-offset :y-at ,y-offset :priority ,priority))
+     )
 
-    (setf (sdl:color-key-enabled-p (graphics-surface (symbol-value symbol-name))) t)
-    (setf (sdl:color-key (graphics-surface (symbol-value symbol-name))) *war-color-key*)
+    (setf (sdl:color-key-enabled-p (graphics-surface
+				    (symbol-value (intern symbol-name))))
+	  t)
+    (setf (sdl:color-key (graphics-surface (symbol-value
+					    (symbol-value (intern symbol-name)))))
+	  *war-color-key*)
     ))
   
 
 ;; Could be used for things other than rivers as well
-'(defmacro cross-border-graphics-setup (cross-symbol-dir priority x-offset y-offset)
+'(defmacro OBSOLETEcross-border-graphics-setup (cross-symbol-dir priority x-offset y-offset)
   "Setup for unchopped graphics that are to be set over tile-borders. Roads and rivers etc.."
   (let* ((symbol-name (symbol-name cross-symbol-dir))
 	 (to-conc nil))
