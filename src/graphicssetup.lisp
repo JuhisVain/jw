@@ -199,16 +199,29 @@
 	 (large-vars (getf (cdr border-form) :large))
 	 (small-vars (getf (cdr border-form) :small)))
 
-    (dolist (variant-list-large variant-list-large-list)
-      (push `(push ',variant-list-large *graphics-variants*) load-tiles)
-      (dolist (variant (cdr variant-list-large))
-	(push `(cross-border-graphics-setup ,variant 'large
-					    ,(car (getf large-vars :north))
-					    ,(cadr (getf large-vars :north))
-					    ,(caddr (getf large-vars :north)))
-	      load-tiles)))
+
+    (do ((large-head variant-list-large-list (cdr large-head)) ; Do primary directions
+	 (small-head variant-list-small-list (cdr small-head))
+	 (directions '(:north :north-west :south-west) (cdr directions)))
+	((null large-head))
+
+      (format t "~&~a~2%" large-head)
+      (do ((larvar-head (cdar large-head) (cdr larvar-head)) ; Do graphics variants
+	   (smavar-head (cdar small-head) (cdr smavar-head)))
+	  ((null larvar-head))
+	(let* ((current (car larvar-head))
+	       (large-setup-vars (getf large-vars (car directions)))
+	       (small-setup-vars (getf small-vars (car directions))))
+	  
+	  (push `(cross-border-graphics-setup ,current 'large ,@large-setup-vars) load-tiles)
+	  (push `(cross-border-graphics-setup ,current 'small ,@small-setup-vars) load-tiles)
+
+	  )))
+    
+    ;;(list variant-list-large-list variant-list-small-list)
     load-tiles
-  ))
+    ))
+
     
 (defun process-gform (graphics-form graphics-type)
   "Returns '((load-tiles contents) (set-tile-size 'large contents) (setsmall contents))"
