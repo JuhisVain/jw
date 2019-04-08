@@ -180,6 +180,8 @@
 				:south-west (70 80 90))))
 
 (defun process-borderform (border-form)
+  "Returns '((load-tiles contents) (set-tile-size 'large contents) (setsmall contents))
+for border graphics setup"
   (let* ((load-tiles) (set-large) (set-small) ; Lists to return
 	 (symbol-list
 	  (mapcar #'(lambda (dir-string)
@@ -200,26 +202,41 @@
 	 (small-vars (getf (cdr border-form) :small)))
 
 
-    (do ((large-head variant-list-large-list (cdr large-head)) ; Do primary directions
-	 (small-head variant-list-small-list (cdr small-head))
-	 (directions '(:north :north-west :south-west) (cdr directions)))
-	((null large-head))
+    (do* ((large-head variant-list-large-list (cdr large-head)) ; Do primary directions
+	  (small-head variant-list-small-list (cdr small-head))
+	  (directions '(:north :north-west :south-west) (cdr directions))
+	  )
+	 ((null large-head))
+      
+      (push `(push ',(car large-head) *graphics-variants*) load-tiles)
 
-      (format t "~&~a~2%" large-head)
+      (let ((variant-defpars (form-variant-defpars (car large-head) (car small-head))))
+	(setf
+	 set-large
+	 (append (car variant-defpars) set-large)
+	 set-small
+	 (append (cadr variant-defpars) set-small)))
+      
       (do ((larvar-head (cdar large-head) (cdr larvar-head)) ; Do graphics variants
 	   (smavar-head (cdar small-head) (cdr smavar-head)))
 	  ((null larvar-head))
 	(let* ((current (car larvar-head))
 	       (large-setup-vars (getf large-vars (car directions)))
 	       (small-setup-vars (getf small-vars (car directions))))
-	  
+
 	  (push `(cross-border-graphics-setup ,current 'large ,@large-setup-vars) load-tiles)
 	  (push `(cross-border-graphics-setup ,current 'small ,@small-setup-vars) load-tiles)
 
+	  
+	  
 	  )))
     
-    ;;(list variant-list-large-list variant-list-small-list)
-    load-tiles
+    ;;variant-list-large-list
+    ;;load-tiles
+
+    (list load-tiles set-large set-small)
+    
+    
     ))
 
     
