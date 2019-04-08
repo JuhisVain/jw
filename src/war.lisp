@@ -592,7 +592,8 @@
 
 
 (defun cross-border-graphics-setup (symbol size priority x-offset y-offset)
-  "Setup for unchopped graphics that are to be set over tile-borders. Roads and rivers etc.."
+  "Setup for unchopped graphics that are to be set over tile-borders. Roads and rivers etc..
+Creates symbol with name like STREAM-NW-A-LARGE if appropriate file is found."
   (let* ((symbol-name (concatenate 'string
 				   (symbol-name symbol) "-"
 				   (symbol-name size)))
