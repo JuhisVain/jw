@@ -596,24 +596,19 @@
   (let* ((symbol-name (concatenate 'string
 				   (symbol-name symbol) "-"
 				   (symbol-name size)))
+	 (final-symbol (intern symbol-name))
 	 (graphics-file
-	  (substitute #\_ #\- symbol-name)))
-    (eval
-     `(defvar ,(intern symbol-name)
-	(make-graphics
-	 :surface (sdl-image:load-image
-		   ,(concatenate 'string "./graphics/"
-				 graphics-file ".png"))
-	 :x-at ,x-offset :y-at ,y-offset :priority ,priority))
-     )
+	  (concatenate 'string "./graphics/" (substitute #\_ #\- symbol-name) ".png")))
 
-    (setf (sdl:color-key-enabled-p (graphics-surface
-				    (symbol-value (intern symbol-name))))
-	  t)
-    (setf (sdl:color-key (graphics-surface (symbol-value
-					    (symbol-value (intern symbol-name)))))
-	  *war-color-key*)
-    ))
+    (when (probe-file graphics-file)  
+      (eval
+       `(defvar ,(intern symbol-name)
+	  (make-graphics
+	   :surface (sdl-image:load-image ,graphics-file)
+	   :x-at ,x-offset :y-at ,y-offset :priority ,priority))))
+
+    (setf (sdl:color-key-enabled-p (graphics-surface final-symbol)) t)
+    (setf (sdl:color-key (graphics-surface (symbol-value final-symbol))) *war-color-key*)))
   
 
 ;; Could be used for things other than rivers as well
