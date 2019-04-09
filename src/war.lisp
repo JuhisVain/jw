@@ -191,7 +191,13 @@
        (suburb :large (50 0 0) :small (50 0 0))
        (swamp :large (1 0 0) :small (1 0 0)))
 
-     :border '(rivers maybe roads?)
+     :border '((stream
+		:large (:north (50 24 -8)
+			:north-west (50 -2 -2)
+			:south-west (50 -2 50))
+		:small (:north (10 20 30) ;; DUMMY data
+			:north-west (40 50 60)
+			:south-west (70 80 90))))
 
      :misc
      '((selector :large (200 11 0) :small (200 5 0))
@@ -601,15 +607,15 @@ Creates symbol with name like STREAM-NW-A-LARGE if appropriate file is found."
 	 (graphics-file
 	  (concatenate 'string "./graphics/" (substitute #\_ #\- symbol-name) ".png")))
 
-    (when (probe-file graphics-file)  
+    (when (probe-file graphics-file)
       (eval
-       `(defvar ,(intern symbol-name)
+       `(defvar ,final-symbol
 	  (make-graphics
 	   :surface (sdl-image:load-image ,graphics-file)
-	   :x-at ,x-offset :y-at ,y-offset :priority ,priority))))
+	   :x-at ,x-offset :y-at ,y-offset :priority ,priority)))
 
-    (setf (sdl:color-key-enabled-p (graphics-surface final-symbol)) t)
-    (setf (sdl:color-key (graphics-surface (symbol-value final-symbol))) *war-color-key*)))
+      (setf (sdl:color-key-enabled-p (graphics-surface (symbol-value final-symbol))) t)
+      (setf (sdl:color-key (graphics-surface (symbol-value final-symbol))) *war-color-key*))))
   
 
 ;; Could be used for things other than rivers as well
@@ -768,8 +774,11 @@ Creates symbol with name like STREAM-NW-A-LARGE if appropriate file is found."
 	  (river-symbol
 	   (intern
 	    (concatenate 'string
-			 (string-upcase (symbol-name size)) "-"
-			 (string-upcase (symbol-name direction))))))
+			 (string-upcase (symbol-name size))
+			 "-"
+			 (string-upcase (symbol-name direction))
+			 "-A" ;; TODO: I had some func somewhere that picked a random variant
+			 ))))
       ;; Logic rivers
       (pushnew river-symbol
 	       (tile-river-borders tile))

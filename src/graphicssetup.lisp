@@ -67,11 +67,16 @@
     ;; Process border tiles
     (do ((head (getf args :border) (cdr head)))
 	((null head))
-      (let ((head-results (process-gform (car head) 'border)))
+      (let ((head-results (process-borderform (car head))))
 	(setf load-tiles-list (nconc (car head-results) load-tiles-list))
 	(setf set-large-list (nconc (cadr head-results) set-large-list))
 	(setf set-small-list (nconc (caddr head-results) set-small-list))))
 
+
+    '(return-from grand-unified-graphics-setup (list 'loadtiles load-tiles-list
+						    'setlarge set-large-list
+						    'setsmall set-small-list))
+    
     ;; Process miscellaneous graphics:
     (do ((head (getf args :misc) (cdr head)))
 	((null head))
@@ -224,8 +229,8 @@ for border graphics setup"
 	       (large-setup-vars (getf large-vars (car directions)))
 	       (small-setup-vars (getf small-vars (car directions))))
 
-	  (push `(cross-border-graphics-setup ,current 'large ,@large-setup-vars) load-tiles)
-	  (push `(cross-border-graphics-setup ,current 'small ,@small-setup-vars) load-tiles)
+	  (push `(cross-border-graphics-setup ',current 'large ,@large-setup-vars) load-tiles)
+	  (push `(cross-border-graphics-setup ',current 'small ,@small-setup-vars) load-tiles)
 
 	  
 	  
