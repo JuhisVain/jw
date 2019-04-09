@@ -71,11 +71,6 @@
 	(setf load-tiles-list (nconc (car head-results) load-tiles-list))
 	(setf set-large-list (nconc (cadr head-results) set-large-list))
 	(setf set-small-list (nconc (caddr head-results) set-small-list))))
-
-
-    '(return-from grand-unified-graphics-setup (list 'loadtiles load-tiles-list
-						    'setlarge set-large-list
-						    'setsmall set-small-list))
     
     ;; Process miscellaneous graphics:
     (do ((head (getf args :misc) (cdr head)))
