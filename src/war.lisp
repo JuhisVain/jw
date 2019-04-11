@@ -767,6 +767,8 @@ Creates symbol with name like STREAM-NW-A-LARGE if appropriate file is found."
 	 )))
 
 (defun add-river (tile-x tile-y size direction &optional (recursion t))
+  "Creates rivers logically at (tile-x,tile-y) and it's neighbour
+and graphically at (tile-x,tile-y). Direction should be one of ('N 'NW 'SW)."
   (let ((tile-neighbour (neighbour-tile tile-x tile-y direction)))
     (if (eq 'sea (tile-type tile-neighbour))
 	(return-from add-river)) ;; No rivers in sea
