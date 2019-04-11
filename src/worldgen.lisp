@@ -178,14 +178,13 @@
 	(tile-variant (tile-at x y world)))
   )
 
-(defun has-variants (tile-graphics-symbol &optional seed)
-  "If given no seed, returns list containing variant symbols.
+(defun has-variants (primary-symbol &optional seed)
+  "If given no seed, returns list containing variant symbols, or NIL on failure.
 With seed, which the caller must generate in some way, returns (nth (rem seed length)) symbol"
-  (dolist (sym-list *graphics-variants*)
-    (if (eq tile-graphics-symbol (car sym-list))
-	(return-from has-variants
-	  (if seed (nth (rem seed (length (cdr sym-list))) (cdr sym-list))
-	      (cdr sym-list))))))
+  (let ((variants (cdr (assoc primary-symbol *graphics-variants*))))
+    (if (and variants seed)
+	(nth (rem seed (length variants)) variants)
+	variants)))
 
 (defun random-variant (tile-type-symbol)
   "Returns randomly chosen variant graphics symbol from *graphics-variants*,
