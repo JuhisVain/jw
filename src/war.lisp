@@ -370,11 +370,12 @@
   (let ((sea 100) ; temporary shadows for move costs
 	(grass 2)
 	(city 10)
+	(field 3)
 
 	(frontier (make-heap))
 	(came-from (make-hash-table :test 'equal)))
     
-    (declare (special sea) (special grass) (special city))
+    (declare (special sea) (special grass) (special city) (special field))
     
     (heap-insert frontier start move-range)
     (setf (gethash start came-from) `(,move-range nil))
