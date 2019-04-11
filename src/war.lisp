@@ -107,8 +107,7 @@
 
   
   
-  (pushnew (random-variant (intern (concatenate 'string (symbol-name location-symbol)))) ;; WIP
-	   (tile-variant (aref (world-map world) x y)))
+  (pushnew (random-variant location-symbol) (tile-variant (aref (world-map world) x y)))
   (finalize-tile-region x y world))
 
 
@@ -777,7 +776,7 @@ and graphically at (tile-x,tile-y). Direction should be one of ('N 'NW 'SW)."
     (let ((tile (tile-at tile-x tile-y))
 	  (river-symbol (random-variant primary-symbol)))
       ;; Logic rivers
-      (pushnew river-symbol
+      (pushnew primary-symbol
 	       (tile-river-borders tile))
       ;; Graphic rivers
       (if (member direction '(N SW NW))
