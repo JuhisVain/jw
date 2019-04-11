@@ -769,18 +769,13 @@ Creates symbol with name like STREAM-NW-A-LARGE if appropriate file is found."
 (defun add-river (tile-x tile-y size direction &optional (recursion t))
   "Creates rivers logically at (tile-x,tile-y) and it's neighbour
 and graphically at (tile-x,tile-y). Direction should be one of ('N 'NW 'SW)."
-  (let ((tile-neighbour (neighbour-tile tile-x tile-y direction)))
+  (let ((tile-neighbour (neighbour-tile tile-x tile-y direction))
+	(primary-symbol
+	 (intern (concatenate 'string (symbol-name size) "-" (symbol-name direction)))))
     (if (eq 'sea (tile-type tile-neighbour))
 	(return-from add-river)) ;; No rivers in sea
     (let ((tile (tile-at tile-x tile-y))
-	  (river-symbol
-	   (intern
-	    (concatenate 'string
-			 (string-upcase (symbol-name size))
-			 "-"
-			 (string-upcase (symbol-name direction))
-			 "-A" ;; TODO: I had some func somewhere that picked a random variant
-			 ))))
+	  (river-symbol (random-variant primary-symbol)))
       ;; Logic rivers
       (pushnew river-symbol
 	       (tile-river-borders tile))

@@ -188,9 +188,10 @@ With seed, which the caller must generate in some way, returns (nth (rem seed le
 	      (cdr sym-list))))))
 
 (defun random-variant (tile-type-symbol)
-  "Returns randomly chosen variant graphics symbol from *graphics-variants*"
+  "Returns randomly chosen variant graphics symbol from *graphics-variants*,
+NIL on failure."
   (let ((variants (cdr (assoc tile-type-symbol *graphics-variants*))))
-    (nth (random (length variants)) variants)))
+    (when variants (nth (random (length variants)) variants))))
 
 (defun sort-tile-graphics (tile)
   "Sorts a tile's variant field according to set priorities in ascending order"
