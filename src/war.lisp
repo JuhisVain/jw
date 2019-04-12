@@ -221,26 +221,34 @@
 	  (selector-tile '(0 . 0)) (selector-graphics '(0 . 0))
 	  ;;(selected-tile nil)
 	  (selected-graphics nil)
-	  (selected-unit nil))
+	  (selected-unit nil)
+	  (gui-state-changed t)) ;; Set to t when there is something new to draw
 
 	  (sdl:with-events ()
 	    (:quit-event () t)
 	    (:key-down-event (:key keyb :mod keyb-mod)
+			     (setf gui-state-changed t) ;; testing
 			     (format t "~&Key: ~a, mod: ~a~%" keyb keyb-mod)
 			     (case keyb ((:sdl-key-escape) (setf selected-unit nil))))
 
 	    (:mouse-motion-event (:x x :y y)
-				 (setf selector-tile
-				       (cursor-coordinates-on-map
-					x y x-shift y-shift))
-				 (setf selector-graphics 
-				       (cursor-coordinates-on-screen
-					x y x-shift y-shift (car selector-tile)))
-				 
-				 )
+				 (let ((old-selector-tile selector-tile))
+				   (setf selector-tile
+					 (cursor-coordinates-on-map
+					  x y x-shift y-shift))
+				   (unless (equal old-selector-tile
+						  selector-tile)
+				     (setf gui-state-changed t)
+				     )
+				   (setf selector-graphics 
+					 (cursor-coordinates-on-screen
+					  x y x-shift y-shift (car selector-tile)))
+				   
+				   ))
 	    
 	    (:mouse-button-down-event
 	     (:button button :state state :x x :y y)
+	     (setf gui-state-changed t)
 	     (cond ((equal 'world (mouse-over-what x y))
 		    (cond ((equal button sdl:sdl-button-right)
 			   (sdl:clear-display sdl:*black*)
@@ -291,12 +299,14 @@
 
 	    (:idle ()
 
-		   (draw-world x-shift y-shift
-			       selector-graphics selector-tile
-			       selected-tile selected-unit)
-		   ;;(draw-panel selected-tile selected-unit)
-		   (draw-panels)
-		   (sdl:update-display)
+		   (when gui-state-changed
+		     (draw-world x-shift y-shift
+				 selector-graphics selector-tile
+				 selected-tile selected-unit)
+		     ;;(draw-panel selected-tile selected-unit)
+		     (draw-panels)
+		     (sdl:update-display))
+		   (setf gui-state-changed nil)
 		   )))))
 
 (defun focus-on-tile (coord-pair view-width view-height)
