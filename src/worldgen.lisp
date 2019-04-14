@@ -141,6 +141,30 @@
 	       (setf y 0))))
   world)
 
+(defun pointers-to-variants (sym-list &optional seed)
+  "Transforms list of logical tiletype symbols into graphics pointers."
+  (let ((variant-seed (if seed seed (random 100))))
+    (remove nil (mapcar #'(lambda (sym)
+			    (has-variants sym variant-seed))
+			sym-list))))
+
+(defun collect-graphics (tile)
+  (declare (tile tile))
+  "Collect symbols from tile's logical fields."
+  (remove nil
+	  (append (tile-type tile)
+		  (mapcar #'car (tile-location tile))
+		  (tile-river-borders tile)
+		  (tile-road-links tile)
+		  (tile-rail-links tile))))
+
+(defun finalize-tile-variant-list (x y &optional (world *world*))
+  "Initializes a tile's variant-list with graphics generated from it's own fields."
+  (let ((tile (tile-at x y world))
+	(variant-seed (+ x y)))
+    (setf (tile-variant tile)
+	  (pointers-to-variants (collect-graphics tile) variant-seed))))
+
 (defun finalize-tile (x y &optional (world *world*))
   "Pulls neighbouring tiles' types as outskirts to tile at (x,y)"
   (setf (tile-variant (tile-at x y world)) nil) ; reset variant list
@@ -203,6 +227,13 @@ NIL on failure."
 	      #'(lambda (a b)
 		  (< (graphics-priority (symbol-value a))
 		     (graphics-priority (symbol-value b)))))))
+
+(defun sort-variant-list (variant-list)
+  "Sorts a variant list from a tile according to set priorities in ascending order"
+  (sort variant-list
+	#'(lambda (a b)
+	    (< (graphics-priority (symbol-value a))
+	       (graphics-priority (symbol-value b))))))
 
 (defun finalize-tile-region (x y &optional (world *world*))
   "Finalizes tile at (x,y) and all it's neighbours"
