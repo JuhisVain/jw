@@ -116,7 +116,7 @@
 			    `(defparameter
 				 ,(intern (concatenate 'string
 						       symbol-name
-						       "-OUTSKIRTS-"
+						       "-A-OUTSKIRTS-" ;; TODO: make using other variants for borders possible
 						       (long-dir-short-string direction)))
 			       ,(if (boundp border-sym-name-large)
 				    border-sym-name-large
@@ -127,7 +127,7 @@
 			    `(defparameter
 				 ,(intern (concatenate 'string
 						       symbol-name
-						       "-OUTSKIRTS-"
+						       "-A-OUTSKIRTS-"
 						       (long-dir-short-string direction)))
 			       ,(if (boundp border-sym-name-small)
 				    border-sym-name-small
