@@ -1,6 +1,8 @@
 (in-package :war)
 
 (defvar *graphics-variants* nil) ; ((name1 name1-a name1-b) (name2 name2-a name2-b name2-c)) etc..
+(defconstant +std-short-dirs+ '(N NE SE S SW NW))
+(defconstant +std-long-dirs+ '(NORTH NORTH-EAST SOUTH-EAST SOUTH SOUTH-WEST NORTH-WEST))
 
 (defun init-world (width height
 		   &key
@@ -158,6 +160,17 @@
 		  (tile-road-links tile)
 		  (tile-rail-links tile))))
 
+;;; It would be safer to parse (tile-at x y)'s variant field for symbols derived from
+;;      symbols contained in tile's type and location fields:
+(defun collect-overflowing-graphics (x y &optional (world *world*))
+  "Collect symbols from (x,y)tile's fields containing graphics that might overflow."
+  (let ((tile (tile-at x y world)))
+    (pointers-to-variants
+     (remove nil
+	     (append (tile-type tile)
+		     (mapcar #'car (tile-location tile))))
+     (+ x y))))
+
 (defun finalize-tile-variant-list (x y &optional (world *world*))
   "Initializes a tile's variant-list with graphics generated from it's own fields."
   (let ((tile (tile-at x y world))
@@ -165,27 +178,55 @@
     (setf (tile-variant tile)
 	  (pointers-to-variants (collect-graphics tile) variant-seed))))
 
+(defun pull-outskirts (x y &optional (world *world*))
+  "Lists neighbouring tiles' types as outskirts."
+  (let ((outskirts nil))
+    (mapcar #'(lambda (ncrd dir)
+		(when ncrd
+		  (dolist (sym (collect-overflowing-graphics (car ncrd) (cdr ncrd)))
+		    (let ((candidate-border
+			   (intern (concatenate 'string
+						(symbol-name sym)
+						"-OUTSKIRTS-"
+						(symbol-name dir)))))
+		      (when (and
+			     (boundp candidate-border) ;; TODO: will need to use earlier outskirt variant if unbound
+			     (symbol-value candidate-border))
+			(push candidate-border outskirts))
+		      )
+		    )
+		  ))
+	    (neighbour-tiles x y world)
+	    +std-short-dirs+)
+    outskirts))
+
+(defun neighbour-tiles (x y &optional (world *world*))
+  "Returns list of cons coordinates to (x.y)'s neighbours, or nils to off map."
+  (mapcar #'(lambda (dir)
+	      (neighbour-tile-coords x y dir world))
+	  +std-short-dirs+))
+
 (defun finalize-tile (x y &optional (world *world*))
   "Pulls neighbouring tiles' types as outskirts to tile at (x,y)"
   (setf (tile-variant (tile-at x y world)) nil) ; reset variant list
   (when (not (member 'sea (tile-type (tile-at x y world)))) ; don't do for sea tiles (for now)
     
-    (dolist (direction (list 'N 'NE 'SE 'S 'SW 'NW))
+    (dolist (direction +std-short-dirs+)
       (let ((neighbour-tile (neighbour-tile-coords x y direction world)))
 	(when neighbour-tile
 	  (if (member 'sea (tile-type (aref (world-map world) (car neighbour-tile) (cdr neighbour-tile))))
-	      (push (intern (concatenate 'string "SEA-OUTSKIRTS-" (symbol-name direction)))
+	      (push (intern (concatenate 'string "SEA-A-OUTSKIRTS-" (symbol-name direction)))
 		    (tile-variant (aref (world-map world) x y))))
 	  (if (member-if #'(lambda (x) (eq (car x) 'city))
 			 (tile-location (aref (world-map world) (car neighbour-tile) (cdr neighbour-tile))))
-	      (push (intern (concatenate 'string "CITY-OUTSKIRTS-" (symbol-name direction)))
+	      (push (intern (concatenate 'string "CITY-A-OUTSKIRTS-" (symbol-name direction)))
 		    (tile-variant (aref (world-map world) x y))))
 	  (if (member 'field (tile-type (aref (world-map world) (car neighbour-tile) (cdr neighbour-tile))))
 	      (unless (or (eq direction 'sw) (eq direction 'nw))
-		(push (intern (concatenate 'string "FIELD-OUTSKIRTS-" (symbol-name direction)))
+		(push (intern (concatenate 'string "FIELD-A-OUTSKIRTS-" (symbol-name direction)))
 		      (tile-variant (aref (world-map world) x y)))))
 	  (if (member 'forest (tile-type (aref (world-map world) (car neighbour-tile) (cdr neighbour-tile))))
-	      (push (intern (concatenate 'string "FOREST-OUTSKIRTS-" (symbol-name direction)))
+	      (push (intern (concatenate 'string "FOREST-A-OUTSKIRTS-" (symbol-name direction)))
 		    (tile-variant (aref (world-map world) x y))))
 	  )))
     (if (member-if #'(lambda (x) (eq (car x) 'city)) (tile-location (tile-at x y world)))

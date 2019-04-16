@@ -120,7 +120,8 @@
 						       (long-dir-short-string direction)))
 			       ,(if (boundp border-sym-name-large)
 				    border-sym-name-large
-				    'placeholder))
+				    ;;'placeholder
+				    nil))
 			    ;; Using the placeholder to initialize logic symbols should be made redundant
 			    ;;   instead make some list for the finalizer functions to check what borders to use
 
@@ -131,7 +132,8 @@
 						       (long-dir-short-string direction)))
 			       ,(if (boundp border-sym-name-small)
 				    border-sym-name-small
-				    'placeholder)))))
+				    ;;'placeholder
+				    nil)))))
 		     (list "NORTH" "NORTH-WEST" "NORTH-EAST" "SOUTH" "SOUTH-WEST" "SOUTH-EAST"))))
 	(dolist (defpar defpars)
 	  (push (car defpar) set-large-list)
