@@ -534,11 +534,11 @@
 	;;else
 	(let ((graphics-list
 	       (mapcar #'(lambda (direction graphics)
-			   (when graphics
+			   (when graphics ; Did chop-tile actually produce anything?
 			     
-			     (eval `(defparameter ,(if direction (intern
-								  (concatenate 'string (string tile-symbol) direction))
-						       tile-symbol)
+			     (eval `(defparameter ,(if direction
+						       (intern (concatenate 'string (string tile-symbol) direction))
+						       tile-symbol) ; direction is nil: this is the central tile
 				      ,graphics))))
 		       
 		       '(nil "-BORDER-NORTH" "-BORDER-NORTH-EAST" "-BORDER-SOUTH-EAST"
