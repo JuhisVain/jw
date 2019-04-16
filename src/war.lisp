@@ -551,7 +551,7 @@
 	  ))))
 
 ;; (macroexpand-1 '(tile-graphics-setup grass-large-a 1 2 3))
-'(defmacro tile-graphics-setup (tile-symbol priority &optional (x-offset 0) (y-offset 0))
+'(defmacro OBSOLETEtile-graphics-setup (tile-symbol priority &optional (x-offset 0) (y-offset 0))
   ;;This should be a function, like most of these macros
   (let ((symbol-name (gensym))
 	(direction (gensym))
