@@ -189,9 +189,12 @@
 						(symbol-name sym)
 						"-OUTSKIRTS-"
 						(symbol-name dir)))))
+		      (format t "~&---~a xxx ~a~%" (symbol-name sym) (symbol-name dir))
 		      (when (and
 			     (boundp candidate-border) ;; TODO: will need to use earlier outskirt variant if unbound
-			     (symbol-value candidate-border))
+			     (or (symbol-value candidate-border)
+				 (and (setf candidate-border (primary-outskirt-graphics candidate-border))
+				      (symbol-value candidate-border))))
 			(push candidate-border outskirts))
 		      )
 		    )
@@ -199,6 +202,16 @@
 	    (neighbour-tiles x y world)
 	    +std-short-dirs+)
     outskirts))
+
+(defun primary-outskirt-graphics (sym)
+  "Forms the 'xxx-A-outskirts-dir' variant out of the given outskirt symbol."
+  (let* ((sym-name (symbol-name sym))
+	 (rev-sym-name (reverse sym-name)))
+    (intern (concatenate
+	     'string
+	     (subseq sym-name 0 (position #\- sym-name))
+	     "-A-OUTSKIRTS-"
+	     (reverse (subseq rev-sym-name 0 (position #\- rev-sym-name)))))))
 
 (defun neighbour-tiles (x y &optional (world *world*))
   "Returns list of cons coordinates to (x.y)'s neighbours, or nils to off map."
