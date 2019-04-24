@@ -160,15 +160,11 @@
 		  (tile-road-links tile)
 		  (tile-rail-links tile))))
 
-;;; It would be safer to parse (tile-at x y)'s variant field for symbols derived from
-;;      symbols contained in tile's type and location fields:
 (defun collect-overflowing-graphics (x y &optional (world *world*))
   "Collect symbols from (x,y)tile's fields containing graphics that might overflow."
   (let ((tile (tile-at x y world)))
     (pointers-to-variants
-     (remove nil
-	     (append (tile-type tile)
-		     (mapcar #'car (tile-location tile))))
+     (collect-graphics tile)
      (+ x y))))
 
 (defun finalize-tile-variant-list (x y &optional (world *world*))
@@ -207,15 +203,17 @@
   "Lists neighbouring tiles' types as outskirts."
   (do ((outskirts)
        (neighbours (neighbour-tiles x y world) (cdr neighbours))
-       (dir-head +std-short-dirs+ (cdr dir-head)))
+       (dir-head +std-short-dirs+ (cdr dir-head))
+       (this-graphics (collect-graphics (tile-at x y world))))
       ((null neighbours))
     (let* ((neigh-x (caar neighbours))
 	   (neigh-y (cdar neighbours))
 	   (dir (car dir-head))
-	   (overflows (collect-overflowing-graphics neigh-x neigh-y world)))
-      ;; TODO : should collect logic symbols instead to compare with symbols in current tile to decide what to cull
+	   (logic-overflows (collect-graphics (tile-at neigh-x neigh-y world)))
+	   (variant-overflows (collect-overflowing-graphics neigh-x neigh-y world)))
+      (format t "~&LOGIC: ~a~%VARIANT:~a~2%" logic-overflows variant-overflows)
+
       
-      (format t "~&~a~%" overflows)
       
       )))
 
@@ -223,11 +221,15 @@
   "Returns most relevant reference to outskirt graphics for primary-symbol."
   (let ((var-in-primary (get-variant primary-symbol)))
     (intern (concatenate 'string
-			 (symbol-name primary-symbol)
-			 "-"
-			 (if variant (symbol-name variant) "A")
+			 (cond (var-in-primary (symbol-name primary-symbol))
+			       (t (concatenate 'string
+					       (symbol-name primary-symbol)
+					       "-"
+					       (if variant
+						   (symbol-name variant)
+						   "A"))))
 			 "-OUTSKIRTS-"
-			 (symbol-name direction))))
+			 (symbol-name direction)))))
 
 (defun get-variant (sym)
   "If hyphen found, return what's after it."
