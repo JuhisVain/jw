@@ -178,7 +178,7 @@
     (setf (tile-variant tile)
 	  (pointers-to-variants (collect-graphics tile) variant-seed))))
 
-(defun pull-outskirts (x y &optional (world *world*))
+(defun OBSOLETEpull-outskirts (x y &optional (world *world*))
   "Lists neighbouring tiles' types as outskirts."
   (let ((outskirts nil))
     (mapcar #'(lambda (ncrd dir)
@@ -191,7 +191,7 @@
 						(symbol-name dir)))))
 		      (format t "~&---~a xxx ~a~%" (symbol-name sym) (symbol-name dir))
 		      (when (and
-			     (boundp candidate-border) ;; TODO: will need to use earlier outskirt variant if unbound
+			     (boundp candidate-border)
 			     (or (symbol-value candidate-border)
 				 (and (setf candidate-border (primary-outskirt-graphics candidate-border))
 				      (symbol-value candidate-border))))
@@ -202,6 +202,38 @@
 	    (neighbour-tiles x y world)
 	    +std-short-dirs+)
     outskirts))
+
+(defun pull-outskirts (x y &optional (world *world*))
+  "Lists neighbouring tiles' types as outskirts."
+  (do ((outskirts)
+       (neighbours (neighbour-tiles x y world) (cdr neighbours))
+       (dir-head +std-short-dirs+ (cdr dir-head)))
+      ((null neighbours))
+    (let* ((neigh-x (caar neighbours))
+	   (neigh-y (cdar neighbours))
+	   (dir (car dir-head))
+	   (overflows (collect-overflowing-graphics neigh-x neigh-y world)))
+      ;; TODO : should collect logic symbols instead to compare with symbols in current tile to decide what to cull
+      
+      (format t "~&~a~%" overflows)
+      
+      )))
+
+(defun get-overflown (primary-symbol direction &optional variant)
+  "Returns most relevant reference to outskirt graphics for primary-symbol."
+  (let ((var-in-primary (get-variant primary-symbol)))
+    (intern (concatenate 'string
+			 (symbol-name primary-symbol)
+			 "-"
+			 (if variant (symbol-name variant) "A")
+			 "-OUTSKIRTS-"
+			 (symbol-name direction))))
+
+(defun get-variant (sym)
+  "If hyphen found, return what's after it."
+  (let ((rev-sym (reverse (symbol-name sym))))
+    (when (find #\- rev-sym)
+      (intern (reverse (subseq rev-sym 0 (position #\- rev-sym)))))))
 
 (defun primary-outskirt-graphics (sym)
   "Forms the 'xxx-A-outskirts-dir' variant out of the given outskirt symbol."
