@@ -277,7 +277,15 @@ outskirt towards direction."
 	      (neighbour-tile-coords x y dir world))
 	  +std-short-dirs+))
 
+;;; TODO: missing rivers and such
+;;   + might want to handle complete masks in some way (as in no field outskirts on sea tiles etc..)
 (defun finalize-tile (x y &optional (world *world*))
+  (setf (tile-variant (tile-at x y world))
+	(append
+	 (collect-overflowing-graphics x y world)
+	 (pull-outskirts x y world))))
+
+(defun OBSOLETEfinalize-tile (x y &optional (world *world*))
   "Pulls neighbouring tiles' types as outskirts to tile at (x,y)"
   (setf (tile-variant (tile-at x y world)) nil) ; reset variant list
   (when (not (member 'sea (tile-type (tile-at x y world)))) ; don't do for sea tiles (for now)
