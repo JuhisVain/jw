@@ -151,21 +151,22 @@
 			sym-list))))
 
 (defun collect-graphics (tile)
-  (declare (tile tile))
   "Collect symbols from tile's logical fields."
-  (remove nil
-	  (append (tile-type tile)
-		  (mapcar #'car (tile-location tile))
-		  (tile-river-borders tile)
-		  (tile-road-links tile)
-		  (tile-rail-links tile))))
+  (when tile
+    (remove nil
+	    (append (tile-type tile)
+		    (mapcar #'car (tile-location tile))
+		    (tile-river-borders tile)
+		    (tile-road-links tile)
+		    (tile-rail-links tile)))))
 
 (defun collect-overflowing-graphics (x y &optional (world *world*))
   "Collect symbols from (x,y)tile's fields containing graphics that might overflow."
   (let ((tile (tile-at x y world)))
-    (pointers-to-variants
-     (collect-graphics tile)
-     (+ x y))))
+    (when tile
+      (pointers-to-variants
+       (collect-graphics tile)
+       (+ x y)))))
 
 (defun finalize-tile-variant-list (x y &optional (world *world*))
   "Initializes a tile's variant-list with graphics generated from it's own fields."
