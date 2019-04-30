@@ -205,16 +205,23 @@
        (neighbours (neighbour-tiles x y world) (cdr neighbours))
        (dir-head +std-short-dirs+ (cdr dir-head))
        (this-graphics (collect-graphics (tile-at x y world))))
-      ((null neighbours))
+      ((null neighbours) outskirts)
     (let* ((neigh-x (caar neighbours))
 	   (neigh-y (cdar neighbours))
 	   (dir (car dir-head))
 	   (logic-overflows (collect-graphics (tile-at neigh-x neigh-y world)))
 	   (variant-overflows (collect-overflowing-graphics neigh-x neigh-y world)))
-      (format t "~&LOGIC: ~a~%VARIANT:~a~2%" logic-overflows variant-overflows)
+      ;;(format t "~&LOGIC: ~a~%VARIANT:~a~2%" logic-overflows variant-overflows)
 
-      
-      
+      (setf outskirts
+	    (nconc
+	     (remove nil
+		     (mapcar #'(lambda (log-ovs var-ovs)
+				 (unless (member log-ovs this-graphics)
+				   (get-outskirt var-ovs dir)))
+			     logic-overflows
+			     variant-overflows))
+	     outskirts))
       )))
 
 (defun get-overflown (primary-symbol direction &optional variant)
@@ -236,6 +243,20 @@
   (let ((rev-sym (reverse (symbol-name sym))))
     (when (find #\- rev-sym)
       (intern (reverse (subseq rev-sym 0 (position #\- rev-sym)))))))
+
+(defun get-base (sym)
+  "If hyphen found, return what's before it."
+  (let ((sym-name (symbol-name sym)))
+    (intern (subseq sym-name 0 (position #\- sym-name)))))
+
+(defun get-outskirt (primary-symbol direction &optional seed)
+  "Return a valid reference to graphics of primary-symbol's
+outskirt towards direction."
+  ;;; TODO: Store outskirts also in *graphics-variants* and pick them from there based on seed.
+  (let* ((potential-symbol (get-overflown primary-symbol direction))
+	 (symbol-main-variant (get-overflown (get-base primary-symbol) direction)))
+    (cond ((and (boundp potential-symbol) (symbol-value potential-symbol)) potential-symbol)
+	  ((and (boundp symbol-main-variant) (symbol-value symbol-main-variant)) symbol-main-variant))))
 
 (defun primary-outskirt-graphics (sym)
   "Forms the 'xxx-A-outskirts-dir' variant out of the given outskirt symbol."
