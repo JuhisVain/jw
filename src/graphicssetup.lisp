@@ -38,7 +38,7 @@
  :full
  '((sea :large (100 -4 -9) :small (0 0 0))
    (grass :large (0 0 0) :small (0 0 0))
-   (field :large (25 -4 -9) :small (25 0 0))
+   (field :large (25 -4 -9) :small (25 0 0) :overrides (:outskirts-everywhere))
    (forest :large (75 -4 -17) :small (75 0 0))
    (city :large (50 -6 -6) :small (50 0 0))
    (suburb :large (50 0 0) :small (50 0 0))
@@ -49,7 +49,11 @@
  :misc
  '((selector :large (200 11 0) :small (200 5 0))
    (missing :large (300 0 0) :small (300 0 0)))
- )
+  )
+
+(defvar *graphics-overrides-alist* nil "Store parameters for graphics logic here")
+(defun get-overrides (symbol)
+  (cdr (assoc symbol *graphics-overrides-alist*)))
 
 (defun grand-unified-graphics-setup (&rest args)
   (let ((load-tiles-list nil)
@@ -256,11 +260,15 @@ for border graphics setup"
 	 (x-ofs-small (cadr vars-small))
 	 (y-ofs-small (caddr vars-small))
 
+	 (overrides (getf (cdr graphics-form) :overrides))
+	 
 	 (variant-list-large
 	  (find-variant-files symbol "LARGE")) ; '(field field-a field-b field-c)
 	 (variant-list-small
 	  (find-variant-files symbol "SMALL")))
 
+    ;; Store overrides
+    (push (cons symbol overrides) *graphics-overrides-alist*)
 
     ;; Store variants
     (when (eq graphics-type 'full)

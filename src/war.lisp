@@ -184,7 +184,7 @@
      :full
      '((sea :large (100 -4 -9) :small (0 0 0))
        (grass :large (0 0 0) :small (0 0 0))
-       (field :large (25 -4 -9) :small (25 0 0))
+       (field :large (25 -4 -9) :small (25 0 0) :overrides (:outskirts-everywhere))
        (forest :large (75 -4 -17) :small (75 0 0))
        (city :large (50 -6 -6) :small (50 0 0))
        (suburb :large (50 0 0) :small (50 0 0))

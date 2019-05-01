@@ -217,9 +217,11 @@
 	    (nconc
 	     (remove nil
 		     (mapcar #'(lambda (log-ovs var-ovs)
-				 ;; if this tile has same type as neighbour, ignore outskirts,
+				 ;; if this tile has same type as neighbour AND
+				 ;; is not set to place outskirts everywhere -> ignore outskirts,
 				 ;; else get some relevant outskirts reference:
-				 (unless (member log-ovs this-graphics) 
+				 (unless (and (member log-ovs this-graphics)
+					      (not (member :outskirts-everywhere (get-overrides log-ovs))))
 				   (get-outskirt var-ovs dir)))
 			     logic-overflows
 			     variant-overflows))
