@@ -212,7 +212,6 @@
 	   (dir (car dir-head))
 	   (logic-overflows (collect-graphics (tile-at neigh-x neigh-y world)))
 	   (variant-overflows (collect-overflowing-graphics neigh-x neigh-y world)))
-      ;;(format t "~&LOGIC: ~a~%VARIANT:~a~2%" logic-overflows variant-overflows)
 
       (setf outskirts
 	    (nconc
@@ -414,7 +413,7 @@ NIL on failure."
 ;;This is a utility function for tile graphics editing
 (defun dummy-outskirts (x y type-symbol-var)
   "Create all outskirts related to type-symbol in tile at x y
--> screenshot that + do some gimping to fix tile borders"
+-> screenshot that + do some gimping to fix tile borders" ;or not
   (let ((old-variant-list (reverse (tile-variant (tile-at x y))))
 	(type-outskirts (mapcar #'(lambda (dir)
 				    (intern (concatenate 'string
