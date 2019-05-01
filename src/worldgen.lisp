@@ -411,3 +411,19 @@ NIL on failure."
 			    )))
     (nth (random (1+ (car city-name-list))) (cdr city-name-list))))
 
+;;This is a utility function for tile graphics editing
+(defun dummy-outskirts (x y type-symbol-var)
+  "Create all outskirts related to type-symbol in tile at x y
+-> screenshot that + do some gimping to fix tile borders"
+  (let ((old-variant-list (reverse (tile-variant (tile-at x y))))
+	(type-outskirts (mapcar #'(lambda (dir)
+				    (intern (concatenate 'string
+							 (symbol-name type-symbol-var)
+							 "-OUTSKIRTS-"
+							 (symbol-name dir))))
+				+std-short-dirs+)))
+    (setf (tile-variant (tile-at x y))
+	  (let ((newlist '(grass-a)))
+	    (dolist (x type-outskirts)
+	      (and (boundp x) (symbol-value x) (setf newlist (push x old-variant-list))))
+	    (reverse old-variant-list)))))
