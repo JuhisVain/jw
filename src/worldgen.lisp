@@ -440,3 +440,48 @@ NIL on failure."
 	    (dolist (x type-outskirts)
 	      (and (boundp x) (symbol-value x) (setf newlist (push x old-variant-list))))
 	    (reverse old-variant-list)))))
+
+(defun add-rail (x y direction &optional (world *world*))
+  "Adds a single piece of rail."
+  (let ((tile (tile-at x y world))
+	(destination (neighbour-tile x y direction world)))
+    (when (or (member 'sea (tile-type tile))
+	      (member 'sea (tile-type destination)))
+      (return-from add-rail nil))
+
+    (pushnew (intern (concatenate 'string "RAIL-" (symbol-name direction)))
+	     (tile-rail-links tile))
+    (pushnew (intern (concatenate 'string "RAIL-" (symbol-name (case direction
+								 (N 'S)
+								 (NE 'SW)
+								 (NW 'SE)
+								 (S 'N)
+								 (SE 'NW)
+								 (SW 'NE)))))
+	     (tile-rail-links destination))))
+
+
+(defun add-river (tile-x tile-y size direction &optional (recursion t))
+  "Creates rivers logically at (tile-x,tile-y) and it's neighbour
+and graphically at (tile-x,tile-y). Direction should be one of ('N 'NW 'SW)."
+  (let ((tile-neighbour (neighbour-tile tile-x tile-y direction))
+	(primary-symbol
+	 (intern (concatenate 'string (symbol-name size) "-" (symbol-name direction)))))
+    (if (eq 'sea (tile-type tile-neighbour))
+	(return-from add-river)) ;; No rivers in sea
+    (let ((tile (tile-at tile-x tile-y))
+	  (river-symbol (random-variant primary-symbol)))
+      ;; Logic rivers
+      (pushnew primary-symbol
+	       (tile-river-borders tile))
+      (if recursion
+	  (let ((opposing
+		 (neighbour-tile-coords tile-x tile-y direction *world*)))
+	    (add-river (car opposing) (cdr opposing) size
+		       (cond ((eq direction 'N) 'S)
+			     ((eq direction 'NE) 'SW)
+			     ((eq direction 'NW) 'SE)
+			     ((eq direction 'S) 'N)
+			     ((eq direction 'SE) 'NW)
+			     ((eq direction 'SW) 'NE))
+		       nil))))))

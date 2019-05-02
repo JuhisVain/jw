@@ -196,7 +196,14 @@
 			:south-west (50 -2 50))
 		:small (:north (10 20 30) ;; DUMMY data
 			:north-west (40 50 60)
-			:south-west (70 80 90))))
+			:south-west (70 80 90)))
+	       (rail
+		:large (:north (60 44 -53)
+			:north-west (60 -40 -1)
+			:south-west (60 -39 50))
+		:small (:north (60 1 1)
+			:north-west (60 1 1)
+			:south-west (60 1 1))))
 
      :misc
      '((selector :large (200 11 0) :small (200 5 0))
@@ -780,39 +787,6 @@ Creates symbol with name like STREAM-NW-A-LARGE if appropriate file is found."
 	 (defparameter coast-ne placeholder)
 	 (defparameter coast-nw placeholder)
 	 )))
-
-(defun add-river (tile-x tile-y size direction &optional (recursion t))
-  "Creates rivers logically at (tile-x,tile-y) and it's neighbour
-and graphically at (tile-x,tile-y). Direction should be one of ('N 'NW 'SW)."
-  (let ((tile-neighbour (neighbour-tile tile-x tile-y direction))
-	(primary-symbol
-	 (intern (concatenate 'string (symbol-name size) "-" (symbol-name direction)))))
-    (if (eq 'sea (tile-type tile-neighbour))
-	(return-from add-river)) ;; No rivers in sea
-    (let ((tile (tile-at tile-x tile-y))
-	  (river-symbol (random-variant primary-symbol)))
-      ;; Logic rivers
-      (pushnew primary-symbol
-	       (tile-river-borders tile))
-      ;; Graphic rivers ;; should be done elsewhere
-;;      (if (member direction '(N SW NW))
-;;	  (pushnew river-symbol
-;;		   (tile-variant tile)))
-
-      (if recursion
-	  (let ((opposing
-		 (neighbour-tile-coords tile-x tile-y direction *world*)))
-	    (add-river (car opposing) (cdr opposing) size
-		       (cond ((eq direction 'N) 'S)
-			     ((eq direction 'NE) 'SW)
-			     ((eq direction 'NW) 'SE)
-			     ((eq direction 'S) 'N)
-			     ((eq direction 'SE) 'NW)
-			     ((eq direction 'SW) 'NE))
-		       nil))))))
-
-(defun create-rivers ()
-  )
 
 (defun tile-at (x y &optional (world *world*))
   "Returns struct tile at (x,y) or nil on failure"
