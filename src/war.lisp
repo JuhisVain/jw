@@ -191,9 +191,9 @@
        (swamp :large (1 0 0) :small (1 0 0)))
 
      :border '((stream
-		:large (:north (50 24 -8)
-			:north-west (50 -2 -2)
-			:south-west (50 -2 50))
+		:large (:north (55 24 -8)
+			:north-west (55 -2 -2)
+			:south-west (55 -2 50))
 		:small (:north (10 20 30) ;; DUMMY data
 			:north-west (40 50 60)
 			:south-west (70 80 90)))
