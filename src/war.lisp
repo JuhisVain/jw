@@ -454,6 +454,9 @@
 			  (return))
 
 		      (dolist (,slot (,accessor (aref (world-map *world*) ,x ,y)))
+
+
+		      
 			(draw-at ,x ,y x-shift y-shift
 				 ,(if sub-accessor
 				      `(,sub-accessor ,slot)
@@ -478,6 +481,8 @@
 
 
 (defun draw-at (x y x-shift y-shift graphics &optional (destination sdl:*default-surface*))
+  (when (null graphics)
+    (return-from draw-at))
   (let* ((tile-width tile-size-x)
 	 (tile-height tile-size-y)
 	 (gx-location (* x tile-width))
@@ -789,10 +794,10 @@ and graphically at (tile-x,tile-y). Direction should be one of ('N 'NW 'SW)."
       ;; Logic rivers
       (pushnew primary-symbol
 	       (tile-river-borders tile))
-      ;; Graphic rivers
-      (if (member direction '(N SW NW))
-	  (pushnew river-symbol
-		   (tile-variant tile)))
+      ;; Graphic rivers ;; should be done elsewhere
+;;      (if (member direction '(N SW NW))
+;;	  (pushnew river-symbol
+;;		   (tile-variant tile)))
 
       (if recursion
 	  (let ((opposing
