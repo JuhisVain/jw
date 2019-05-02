@@ -122,7 +122,7 @@
     came-from))
 
 
-(defun finalize-world (world)
+(defun finalize-world (&optional (world *world*))
   ;; Adds outskirt graphics
   (do ((x 0)
        (y 0))
@@ -166,6 +166,17 @@
     (when tile
       (pointers-to-variants
        (collect-graphics tile)
+       (+ x y)))))
+
+(defun collect-border-graphics (x y &optional (world *world*))
+  "Collect symbols from (x,y)tile's fields containing graphics that are supposed to
+be drawn 'between' tiles."
+  (let ((tile (tile-at x y world)))
+    (when tile
+      (pointers-to-variants
+       (append (tile-river-borders tile)
+	       (tile-road-links tile)
+	       (tile-rail-links tile))
        (+ x y)))))
 
 (defun finalize-tile-variant-list (x y &optional (world *world*))
@@ -284,7 +295,8 @@ outskirt towards direction."
   (setf (tile-variant (tile-at x y world))
 	(append
 	 (collect-overflowing-graphics x y world)
-	 (pull-outskirts x y world))))
+	 (pull-outskirts x y world)
+	 (collect-border-graphics x y world))))
 
 (defun OBSOLETEfinalize-tile (x y &optional (world *world*))
   "Pulls neighbouring tiles' types as outskirts to tile at (x,y)"
