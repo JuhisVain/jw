@@ -310,10 +310,11 @@ outskirt towards direction."
 ;;   + might want to handle complete masks in some way (as in no field outskirts on sea tiles etc..)
 (defun finalize-tile (x y &optional (world *world*))
   (setf (tile-variant (tile-at x y world))
-	(append
-	 (collect-overflowing-graphics x y world)
-	 (pull-outskirts x y world)
-	 (collect-border-graphics x y world))))
+	(remove-duplicates
+	 (append
+	  (collect-overflowing-graphics x y world)
+	  (pull-outskirts x y world)
+	  (collect-border-graphics x y world)))))
 
 (defun OBSOLETEfinalize-tile (x y &optional (world *world*))
   "Pulls neighbouring tiles' types as outskirts to tile at (x,y)"
@@ -468,13 +469,7 @@ NIL on failure."
 
     (pushnew (intern (concatenate 'string "RAIL-" (symbol-name direction)))
 	     (tile-rail-links tile))
-    (pushnew (intern (concatenate 'string "RAIL-" (symbol-name (case direction
-								 (N 'S)
-								 (NE 'SW)
-								 (NW 'SE)
-								 (S 'N)
-								 (SE 'NW)
-								 (SW 'NE)))))
+    (pushnew (intern (concatenate 'string "RAIL-" (symbol-name (oppdir direction))))
 	     (tile-rail-links destination))))
 
 
