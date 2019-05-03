@@ -21,6 +21,14 @@
     (SOUTH-WEST 'NORTH-EAST)
     (NORTH-WEST 'SOUTH-EAST)))
 
+(defun short-dir (long-dir)
+  "Translate a direction in long form to short form."
+  (mapcar #'(lambda (short long)
+	      (when (eq long-dir long) (return-from short-dir short)))
+	  +std-short-dirs+
+	  +std-long-dirs+)
+  nil)
+
 (defun init-world (width height
 		   &key
 		     (algo 'random) ; Algorithm to use for map generation
@@ -460,6 +468,7 @@ NIL on failure."
 
 (defun add-rail (x y direction &optional (world *world*))
   "Adds a single piece of rail running from tile X Y to tile towards DIRECTION."
+
   (let ((tile (tile-at x y world))
 	(destination (neighbour-tile x y direction world)))
     (when (or (member 'sea (tile-type tile))
