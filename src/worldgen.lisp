@@ -468,7 +468,7 @@ NIL on failure."
 
 (defun add-rail (x y direction &optional (world *world*))
   "Adds a single piece of rail running from tile X Y to tile towards DIRECTION."
-
+  (when (member direction +std-long-dirs+) (setf direction (short-dir direction)))
   (let ((tile (tile-at x y world))
 	(destination (neighbour-tile x y direction world)))
     (when (or (member 'sea (tile-type tile))
@@ -484,6 +484,7 @@ NIL on failure."
 
 (defun add-river (x y size location-on-tile &optional (world *world*))
   "Adds a single piece of river of type SIZE running on border LOCATION-ON-TILE of tile X Y."
+  (when (member direction +std-long-dirs+) (setf direction (short-dir direction)))
   (let ((tile (tile-at x y world))
 	(destination (neighbour-tile x y location-on-tile world)))
     (when (or (member 'sea (tile-type tile))
