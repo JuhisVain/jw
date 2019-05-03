@@ -306,8 +306,7 @@ outskirt towards direction."
 	      (neighbour-tile-coords x y dir world))
 	  +std-short-dirs+))
 
-;;; TODO: missing rivers and such
-;;   + might want to handle complete masks in some way (as in no field outskirts on sea tiles etc..)
+;;   TODO: might want to handle complete masks in some way (as in no field outskirts on sea tiles etc..)
 (defun finalize-tile (x y &optional (world *world*))
   (setf (tile-variant (tile-at x y world))
 	(remove-duplicates
@@ -460,7 +459,7 @@ NIL on failure."
 	    (reverse old-variant-list)))))
 
 (defun add-rail (x y direction &optional (world *world*))
-  "Adds a single piece of rail."
+  "Adds a single piece of rail running from tile X Y to tile towards DIRECTION."
   (let ((tile (tile-at x y world))
 	(destination (neighbour-tile x y direction world)))
     (when (or (member 'sea (tile-type tile))
@@ -470,30 +469,20 @@ NIL on failure."
     (pushnew (intern (concatenate 'string "RAIL-" (symbol-name direction)))
 	     (tile-rail-links tile))
     (pushnew (intern (concatenate 'string "RAIL-" (symbol-name (oppdir direction))))
-	     (tile-rail-links destination))))
+	     (tile-rail-links destination))
+    (finalize-tile-region x y))) ; Not efficient to form variant lists here but way easier to test
 
 
-(defun add-river (tile-x tile-y size direction &optional (recursion t))
-  "Creates rivers logically at (tile-x,tile-y) and it's neighbour
-and graphically at (tile-x,tile-y). Direction should be one of ('N 'NW 'SW)."
-  (let ((tile-neighbour (neighbour-tile tile-x tile-y direction))
-	(primary-symbol
-	 (intern (concatenate 'string (symbol-name size) "-" (symbol-name direction)))))
-    (if (eq 'sea (tile-type tile-neighbour))
-	(return-from add-river)) ;; No rivers in sea
-    (let ((tile (tile-at tile-x tile-y))
-	  (river-symbol (random-variant primary-symbol)))
-      ;; Logic rivers
-      (pushnew primary-symbol
-	       (tile-river-borders tile))
-      (if recursion
-	  (let ((opposing
-		 (neighbour-tile-coords tile-x tile-y direction *world*)))
-	    (add-river (car opposing) (cdr opposing) size
-		       (cond ((eq direction 'N) 'S)
-			     ((eq direction 'NE) 'SW)
-			     ((eq direction 'NW) 'SE)
-			     ((eq direction 'S) 'N)
-			     ((eq direction 'SE) 'NW)
-			     ((eq direction 'SW) 'NE))
-		       nil))))))
+(defun add-river (x y size location-on-tile &optional (world *world*))
+  "Adds a single piece of river of type SIZE running on border LOCATION-ON-TILE of tile X Y."
+  (let ((tile (tile-at x y world))
+	(destination (neighbour-tile x y location-on-tile world)))
+    (when (or (member 'sea (tile-type tile))
+	      (member 'sea (tile-type destination)))
+      (return-from add-river nil))
+    
+    (pushnew (intern (concatenate 'string (symbol-name size) "-" (symbol-name location-on-tile)))
+	     (tile-rail-links tile))
+    (pushnew (intern (concatenate 'string (symbol-name size) "-" (symbol-name (oppdir location-on-tile))))
+	     (tile-rail-links destination))
+    (finalize-tile-region x y)))
