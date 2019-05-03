@@ -4,6 +4,23 @@
 (defconstant +std-short-dirs+ '(N NE SE S SW NW))
 (defconstant +std-long-dirs+ '(NORTH NORTH-EAST SOUTH-EAST SOUTH SOUTH-WEST NORTH-WEST))
 
+(defun oppdir (direction)
+  "Return direction symbol opposite to direction."
+  (declare (symbol direction))
+  (case direction
+    (N 'S)
+    (NE 'SW)
+    (NW 'SE)
+    (S 'N)
+    (SE 'NW)
+    (SW 'NE)
+    (NORTH 'SOUTH)
+    (NORTH-EAST 'SOUTH-WEST)
+    (SOUTH-EAST 'NORTH-WEST)
+    (SOUTH 'NORTH)
+    (SOUTH-WEST 'NORTH-EAST)
+    (NORTH-WEST 'SOUTH-EAST)))
+
 (defun init-world (width height
 		   &key
 		     (algo 'random) ; Algorithm to use for map generation
