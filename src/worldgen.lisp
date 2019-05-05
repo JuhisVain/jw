@@ -86,7 +86,8 @@
 		    (list-randoms islands height))
 					;(+ 30 (random 20))
 	    island-size
-	    template-world)))
+	    template-world)))           ; NOTE: These "tiles" have been hacked to have integers in type field
+					; -> no magic dynamic vars required in this case
 
       (maphash #'(lambda (key value)
 		   (setf (tile-type (aref (world-map world) (car key) (cdr key)))
@@ -109,6 +110,9 @@
   (if (< size 1) nil
       (cons (random rand-num) (list-randoms (1- size) rand-num))))
 
+
+;;; To use this: various types of tile symbols need to be bound AND be declared special.
+;; Unless apparently if you abuse tile structs and push numbers where they don't belong...
 (defun breadth-first-fill (start-list range world)
   (let ((frontier (make-heap))
 	(came-from (make-hash-table :test 'equal)))
@@ -496,3 +500,7 @@ NIL on failure."
     (pushnew (intern (concatenate 'string (symbol-name size) "-" (symbol-name (oppdir location-on-tile))))
 	     (tile-rail-links destination))
     (finalize-tile-region x y)))
+
+
+(defun run-river (start-x start-y dest-x dest-y)
+  )
