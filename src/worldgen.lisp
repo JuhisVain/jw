@@ -470,6 +470,16 @@ NIL on failure."
 	      (and (boundp x) (symbol-value x) (setf newlist (push x old-variant-list))))
 	    (reverse old-variant-list)))))
 
+
+(defun create-location-at (location-symbol x y &optional (world *world*))
+  "Creates symbol location-symbol in type field of tile at x y, and sets up tile's graphics."
+  (setf (tile-type (tile-at x y world))
+	(reverse (pushnew location-symbol
+			  (tile-type (aref (world-map world) x y)))))
+  (finalize-tile-region x y world)
+  (tile-type (tile-at x y world)))
+
+
 (defun add-rail (x y direction &optional (world *world*))
   "Adds a single piece of rail running from tile X Y to tile towards DIRECTION."
   (when (member direction +std-long-dirs+) (setf direction (short-dir direction)))

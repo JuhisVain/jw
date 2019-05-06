@@ -95,14 +95,6 @@
   (setf *world* (init-world height width :algo 'testing :mirror mirror :islands islands))
   nil)
 
-(defun create-location-at (location-symbol x y &optional (world *world*))
-  (setf (tile-type (tile-at x y world))
-	(reverse (pushnew location-symbol
-			  (tile-type (aref (world-map world) x y)))))
-  (finalize-tile-region x y world)
-  (tile-type (tile-at x y world)))
-
-
 (defun cursor-coordinates-on-map (screen-x screen-y x-shift y-shift)
   "What tile is the user hovering mouse over?"
   (let* ((half-height (/ tile-size-y 2)) ; The y coordinate of imaginary left border lines
