@@ -96,19 +96,11 @@
   nil)
 
 (defun create-location-at (location-symbol x y &optional (world *world*))
-  (cond ((eq location-symbol 'field)
-	 (setf (tile-type (tile-at x y world))
-	       (reverse (pushnew location-symbol
-				 (tile-type (aref (world-map world) x y))))))
-	((eq location-symbol 'forest)
-	 (setf (tile-type (tile-at x y world))
-	       (reverse (pushnew location-symbol
-				 (tile-type (aref (world-map world) x y)))))))
-
-  
-  
-  (pushnew (random-variant location-symbol) (tile-variant (aref (world-map world) x y)))
-  (finalize-tile-region x y world))
+  (setf (tile-type (tile-at x y world))
+	(reverse (pushnew location-symbol
+			  (tile-type (aref (world-map world) x y)))))
+  (finalize-tile-region x y world)
+  (tile-type (tile-at x y world)))
 
 
 (defun cursor-coordinates-on-map (screen-x screen-y x-shift y-shift)
@@ -188,7 +180,8 @@
        (forest :large (75 -4 -17) :small (75 0 0))
        (city :large (50 -6 -6) :small (50 0 0))
        (suburb :large (50 0 0) :small (50 0 0))
-       (swamp :large (1 0 0) :small (1 0 0)))
+       (swamp :large (1 0 0) :small (1 0 0))
+       (mountain :large (80 -5 -8) :small (80 0 0) :overrides (:outskirts-everywhere)))
 
      :border '((stream
 		:large (:north (55 24 -8)
