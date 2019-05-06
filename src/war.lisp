@@ -195,7 +195,6 @@
        (missing :large (300 0 0) :small (300 0 0)))
      )
 
-    (load-tiles)
     (set-tile-size 'small)
     (set-tile-size 'large)
 
