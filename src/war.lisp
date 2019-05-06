@@ -547,50 +547,6 @@
 	  
 	  ))))
 
-;; (macroexpand-1 '(tile-graphics-setup grass-large-a 1 2 3))
-'(defmacro OBSOLETEtile-graphics-setup (tile-symbol priority &optional (x-offset 0) (y-offset 0))
-  ;;This should be a function, like most of these macros
-  (let ((symbol-name (gensym))
-	(direction (gensym))
-	(graphics (gensym))
-	(new-symbol (gensym))
-	(graphics-list (gensym))
-	(size-of-tile (cond ((search "LARGE" (symbol-name tile-symbol)) 'large)
-			    ((search "SMALL" (symbol-name tile-symbol)) 'small))))
-    `(if (null (probe-file (concatenate 'string "./graphics/" (substitute #\_ #\- (symbol-name ',tile-symbol)) ".png")))
-	 ;; if there is no such file, use the 'missing graphics' graphics
-	 (cond ((eq ',size-of-tile 'large)
-		(defparameter ,tile-symbol missing-large))
-	       ((eq ',size-of-tile 'small)
-		(defparameter ,tile-symbol missing-small)))
-	 (let* ((,symbol-name (symbol-name ',tile-symbol))
-		(,graphics-list (mapcar #'(lambda (,direction ,graphics)
-					    (if ,graphics
-						(let ((,new-symbol (intern
-								    (if ,direction 
-									(concatenate 'string ,symbol-name ,direction)
-									,symbol-name))))
-						  (eval
-						   `(defparameter ,,new-symbol ,,graphics)))))
-					'(nil ;; NIL = center
-					  "-BORDER-NORTH" "-BORDER-NORTH-EAST" "-BORDER-SOUTH-EAST"
-					  "-BORDER-SOUTH" "-BORDER-SOUTH-WEST" "-BORDER-NORTH-WEST")
-					(chop-tile
-					 (concatenate 'string "graphics/" (substitute #\_ #\- ,symbol-name) ".png")
-					 ,x-offset ,y-offset
-					 ,@(cond ((eq size-of-tile 'large)
-						  (list tile-large-size-full-hor-x
-							tile-large-size-full-x
-							tile-large-size-full-y))
-						 ((eq size-of-tile 'small)
-						  (list tile-small-size-full-hor-x
-							tile-small-size-full-x
-							tile-small-size-full-y))
-						 )))))
-	   (dolist (,graphics ,graphics-list)
-	     (if ,graphics
-		 (setf (graphics-priority (symbol-value ,graphics)) ,priority)))
-	   ,graphics-list))))
 
 (defmacro create-tile (base-name &key (large nil) (small nil)) ; <- large & small in form (priority x-ofs y-ofs)
   `(progn
@@ -623,40 +579,7 @@ Creates symbol with name like STREAM-NW-A-LARGE if appropriate file is found."
 
       (setf (sdl:color-key-enabled-p (graphics-surface (symbol-value final-symbol))) t)
       (setf (sdl:color-key (graphics-surface (symbol-value final-symbol))) *war-color-key*))))
-  
 
-;; Could be used for things other than rivers as well
-'(defmacro OBSOLETEcross-border-graphics-setup (cross-symbol-dir priority x-offset y-offset)
-  "Setup for unchopped graphics that are to be set over tile-borders. Roads and rivers etc.."
-  (let* ((symbol-name (symbol-name cross-symbol-dir))
-	 (to-conc nil))
-    (cond ((search "SOUTH-WEST" symbol-name)
-	   (setf to-conc "SW"))
-	  ((search "SOUTH-EAST" symbol-name)
-	   (setf to-conc "SE"))
-	  ((search "SOUTH" symbol-name)
-	   (setf to-conc "S"))
-	  ((search "NORTH-EAST" symbol-name)
-	   (setf to-conc "NE"))
-	  ((search "NORTH-WEST" symbol-name)
-	   (setf to-conc "NW"))
-	  ((search "NORTH" symbol-name)
-	   (setf to-conc "N")))
-    `(progn
-       (defvar ,cross-symbol-dir
-	 (make-graphics
-	  :surface (sdl-image:load-image 
-		    (concatenate 'string "graphics/"
-				 (subseq (substitute #\_ #\- ,symbol-name) 0
-					 (or (search "SOUTH" ,symbol-name)
-					     (search "NORTH" ,symbol-name)))
-				 ,to-conc ".png"))
-	  :x-at ,x-offset :y-at ,y-offset
-	  :priority ,priority))
-       (setf (sdl:color-key-enabled-p (graphics-surface ,cross-symbol-dir)) t)
-       (setf (sdl:color-key (graphics-surface ,cross-symbol-dir)) *war-color-key*))))
-
-    
 
 '(defun OBSOLETEload-tiles ()
   ;;(tile-graphics-setup sea-large 100 -4 -9)
