@@ -146,25 +146,155 @@
 		       (cond ((>= move-cost 0)
 			      (heap-insert frontier neighbour move-cost)
 			      (setf (gethash neighbour came-from)
-				    (cons move-cost (cdr current))))))))))
-	
-	))
+				    (cons move-cost (cdr current))))))))))))
     came-from))
 
+;;; Breadth-first-fill for tile borders.
+;; Coordinates now refer to vertices NORTH-WEST and WEST of tiles, so that
+;; tile (0,0) possesses vertices (0,0) and (0,1)
+;; tile (0,1) possesses vertices (0,2) and (0,3) etc...
+(defun breadth-first-fill-borders (start-x start-y range world move-cost-func)
+  "Move-cost-func should take 5 parameters (from-x from-y to-x to-y world)"
+  (let ((frontier (make-heap))
+	(came-from (make-hash-table :test 'equal)))
+    
+    (heap-insert frontier (cons start-x start-y) range)
+    (setf (gethash (cons start-x start-y) came-from) (list range nil))
+    
+    (do ((current))
+	  ((heap-empty frontier))
+
+	(setf current (heap-remove-max frontier))
+
+	(if (> (car current) 0)
+	    (dolist (neighbour (mapcar #'(lambda (direction)
+					   (neighbour-vertex-coords
+					    (cadr current)
+					    (cddr current)
+					    direction world))
+				       '(up right left)))
+	      
+	      (cond ((null neighbour) nil)
+		    ((null (gethash neighbour came-from))
+		     (let ((move-cost (- (car current)
+					 (funcall move-cost-func
+						  (cadr current) (cddr current)
+						  (car neighbour) (cdr neighbour)
+						  world)
+					 )))
+		       (cond ((>= move-cost 0)
+			      (heap-insert frontier neighbour move-cost)
+			      (setf (gethash neighbour came-from)
+				    (cons move-cost (cdr current)))))))))))
+    
+    came-from
+    ))
+
+;;testing:
+(breadth-first-fill-borders
+ 5 14 10 *world*
+ #'(lambda (from-x from-y to-x to-y world)
+     ))
 
 
+(defun test-batt ()
+  (mapcar #'(lambda (hood-1 hood-2 contents)
+	      (setf (tile-type (tile-at (car hood-1) (cdr hood-1))) contents)
+	      (setf (tile-type (tile-at (car hood-2) (cdr hood-2))) contents))
+	  (mapcar #'(lambda (dir)
+		      (neighbour-tile-coords 17 16 dir *world*))
+		  +std-short-dirs+)
+	  (mapcar #'(lambda (dir)
+		      (neighbour-tile-coords 24 15 dir *world*))
+		  +std-short-dirs+)
+	  '((1)
+	    (1 2)
+	    (1 2 3)
+	    (1 2 3 4)
+	    (1 2 3 4 5)
+	    (1 2 3 4 5 6)))
+
+  ;; bran shut down now continue tomoreros
+  
+  )
+
+(defun border-adjacent-tile-types (from-x from-y to-x to-y &optional (world *world*))
 
 
+  ;; TODO: check if the give coordinates are touching
+  (let ((dx (- to-x from-x))
+	(dy (- to-y from-y)))
+
+    (format t "~&dx: ~a :dy: ~a~%"
+	    dx dy
+	    )
+    
+    (let ((half-y (floor from-y 2))) ; there are 2 vertices vertically per tile
+      (if (evenp from-y) ; a NORTH-WEST vertex
+	  (cond ((= dx 1) ; moving EAST on tile columns
+		 (format t "~&(~a,~a) // (~a,~a)~%"
+			 from-x half-y
+			 from-x (1- half-y))
+		 (list (tile-type (tile-at from-x half-y))
+		       (tile-type (tile-at from-x (1- half-y)))))
+		((= dy 1) ; moving "downwards" on vertices to vert W of this tile
+		 (format t "~&(~a,~a) // (~a,~a)~%" from-x half-y (1- from-x) (if (evenp from-x) (1- half-y) half-y))
+		 (list (tile-type (tile-at from-x half-y))
+		       (tile-type (tile-at (1- from-x) (if (evenp from-x) (1- half-y) half-y)))))
+		((= dy -1) ; moving "up" on vertices to tile W of tile above
+		 (format t "~&(~a,~a) // (~a,~a)~%"
+			 from-x (1- half-y)
+			 (1- from-x) (if (evenp from-x) (1- half-y) half-y))
+		 (list (tile-type (tile-at from-x (1- half-y)))
+		       (tile-type (tile-at (1- from-x) (if (evenp from-x) (1- half-y) half-y)))))
+		(t (format t "~&Error even fy ~a~2%" (list dx dy))))
+	  ;; if oddp from-y:
+	  (cond ((= dx -1) ; moving WEST on tile columns
+		 (format t "~&(~a,~a) // (~a,~a)~%"
+			 (1- from-x) (if (evenp from-x) (1- half-y) half-y)
+			 (1- from-x) half-y)
+			 
+		 (list (tile-type (tile-at (1- from-x) (if (evenp from-x) (1- half-y) half-y)))
+		       (tile-type (tile-at (1- from-x) (floor to-y 2)))))
+		((= dy 1) ; moving "downwards" on vertices to vert NW of tile below
+		 (format t "~&(~a,~a) // (~a,~a)~%" from-x half-y (1- from-x) (if (evenp from-x) half-y (1+ half-y)))
+		 (list (tile-type (tile-at from-x half-y))
+		       (tile-type (tile-at (1- from-x) (if (evenp from-x) half-y (1+ half-y))))))
+		((= dy -1) ; moving "up" on vertices to vert NW of this tile
+		 (format t "~&(~a,~a) // (~a,~a)~%" from-x half-y (1- from-x) (if (evenp from-x) (1+ half-y) half-y))
+		 (list (tile-type (tile-at from-x half-y))
+		       (tile-type (tile-at (1- from-x) (if (evenp from-x) (1+ half-y) half-y)))))
+		(t (format t "~&Error odd fy ~a~2%" (list dx dy))))
+	  )
+      
+      )))
 
 
+(defun neighbour-vertex-coords (vert-x vert-y direction &optional (world *world*))
+  "Direction should be one of 'UP 'RIGHT or 'LEFT"
+  ;; TODO: Check limits based on world-width & world-height
+  (cond ((and (evenp vert-y) (evenp vert-x))
+	 (case direction
+	   (up (cons vert-x (1- vert-y)))
+	   (right (cons (1+ vert-x) (1- vert-y)))
+	   (left (cons vert-x (1+ vert-y)))))
+	((and (evenp vert-y) (oddp vert-x))
+	 (case direction
+	   (up (cons vert-x (1- vert-y)))
+	   (right (cons (1+ vert-x) (1+ vert-y)))
+	   (left (cons vert-x (1+ vert-y)))))
+	((and (oddp vert-y) (evenp vert-x))
+	 (case direction
+	   (up (cons vert-x (1- vert-y)))
+	   (right (cons (1+ vert-x) vert-y))
+	   (left (cons vert-x (1+ vert-y)))))
+	(t ; both odd
+	 (case direction
+	   (up (cons vert-x (1- vert-y)))
+	   (right (cons vert-x (1+ vert-y)))
+	   (left (cons (1- vert-x) (1+ vert-y)))))
 
-
-
-
-
-
-
-
+  ))
 
 (defun finalize-world (&optional (world *world*))
   ;; Adds outskirt graphics
