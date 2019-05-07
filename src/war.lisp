@@ -521,7 +521,7 @@
 		      ((large) (list tile-large-size-full-hor-x tile-large-size-full-x tile-large-size-full-y))
 		      ((small) (list tile-small-size-full-hor-x tile-small-size-full-x tile-small-size-full-y))))
 	 (symbol-string (substitute #\_ #\- (symbol-name tile-symbol)))
-	 (graphics-path (concatenate 'string "./graphics/" symbol-string ".png"))) ;; TODO: check out (make-pathname)
+	 (graphics-path (concatenate 'string "./graphics/" symbol-string ".png")))
     (if (null (probe-file graphics-path))
 	(case size-of-tile
 	  ;; Can't be helped:
@@ -530,12 +530,17 @@
 	;;else
 	(let ((graphics-list
 	       (mapcar #'(lambda (direction graphics)
-			   (when graphics ; Did chop-tile actually produce anything?
-			     
-			     (eval `(defparameter ,(if direction
-						       (intern (concatenate 'string (string tile-symbol) direction))
-						       tile-symbol) ; direction is nil: this is the central tile
-				      ,graphics))))
+			   (let ((current-symbol (if direction
+						     (intern (concatenate 'string (string tile-symbol) direction))
+						     tile-symbol))) ; direction is nil: this is the central tile
+			     ;; Free surface if we have already bound the symbol on a previous run:
+			     (when (boundp current-symbol)
+			       (sdl:free (graphics-surface (symbol-value current-symbol))))
+			     ;; Did chop-tile actually produce anything?
+			     (when graphics 
+			       (eval `(defparameter ,current-symbol
+					,graphics)))
+			     ))
 		       
 		       '(nil "-BORDER-NORTH" "-BORDER-NORTH-EAST" "-BORDER-SOUTH-EAST"
 			 "-BORDER-SOUTH" "-BORDER-SOUTH-WEST" "-BORDER-NORTH-WEST")
