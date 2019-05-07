@@ -86,8 +86,11 @@
 		    (list-randoms islands height))
 					;(+ 30 (random 20))
 	    island-size
-	    template-world)))           ; NOTE: These "tiles" have been hacked to have integers in type field
+	    template-world           ; NOTE: These "tiles" have been hacked to have integers in type field
 					; -> no magic dynamic vars required in this case
+	    #'(lambda (x y world)
+		(car (last (tile-type (tile-at x y world)))))
+	    )))
 
       (maphash #'(lambda (key value)
 		   (setf (tile-type (aref (world-map world) (car key) (cdr key)))
@@ -113,7 +116,7 @@
 
 ;;; To use this: various types of tile symbols need to be bound AND be declared special.
 ;; Unless apparently if you abuse tile structs and push numbers where they don't belong...
-(defun breadth-first-fill (start-list range world)
+(defun OBSOLETEbreadth-first-fill (start-list range world)
   (let ((frontier (make-heap))
 	(came-from (make-hash-table :test 'equal)))
 
@@ -149,6 +152,55 @@
 	
 	))
     came-from))
+
+(defun breadth-first-fill (start-list range world move-cost-func)
+  ;;move-cost-func takes x and y coord and world of tile to move to
+  (let ((frontier (make-heap))
+	(came-from (make-hash-table :test 'equal)))
+
+    (dolist (start start-list)
+      (heap-insert frontier start range)
+      (setf (gethash start came-from) (list range nil))
+
+      (do ((current))
+	  ((heap-empty frontier))
+
+	(setf current (heap-remove-max frontier))
+
+	(if (> (car current) 0)
+	    (dolist (neighbour (mapcar #'(lambda (direction)
+					   (neighbour-tile-coords
+					    (cadr current)
+					    (cddr current)
+					    direction world))
+				       '(n ne se s sw nw)))
+	      
+	      (cond ((null neighbour) nil)
+		    ((null (gethash neighbour came-from))
+		     (let ((move-cost (- (car current)
+					 (funcall move-cost-func (car neighbour) (cdr neighbour) world)
+					 )))
+		       (cond ((>= move-cost 0)
+			      (heap-insert frontier neighbour move-cost)
+			      (setf (gethash neighbour came-from)
+				    (cons move-cost (cdr current))))))))))
+	
+	))
+    came-from))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 (defun finalize-world (&optional (world *world*))
@@ -512,5 +564,14 @@ NIL on failure."
     (finalize-tile-region x y)))
 
 
-(defun run-river (start-x start-y dest-x dest-y)
-  )
+;; 6 10   5 6 ;; testing coords
+(defun run-river-from-to (mouth-x mouth-y end-x end-y)
+  "Runs a river from mouth xy to end xy. Mouth coordinates should refer to a SEA tile
+on the coast, end coords to a tile on land."
+  (let ((grass 1) (sea 10000) (mountain 20))
+    (declare (special grass sea mountain))
+    (breadth-first-fill (list (cons mouth-x mouth-y)) 500 *world*
+			#'(lambda (x y world)
+			    (case ))) ;; problemo: not possible to use the current breadth first fill to run on borders
+    ))
+
