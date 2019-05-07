@@ -534,6 +534,7 @@
 						     (intern (concatenate 'string (string tile-symbol) direction))
 						     tile-symbol))) ; direction is nil: this is the central tile
 			     ;; Free surface if we have already bound the symbol on a previous run:
+			     ;; TODO: Ideally use a checksum on surfaces or preferably the whole unchopped image
 			     (when (boundp current-symbol)
 			       (sdl:free (graphics-surface (symbol-value current-symbol))))
 			     ;; Did chop-tile actually produce anything?
