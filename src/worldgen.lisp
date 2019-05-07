@@ -116,43 +116,6 @@
 
 ;;; To use this: various types of tile symbols need to be bound AND be declared special.
 ;; Unless apparently if you abuse tile structs and push numbers where they don't belong...
-(defun OBSOLETEbreadth-first-fill (start-list range world)
-  (let ((frontier (make-heap))
-	(came-from (make-hash-table :test 'equal)))
-
-    (dolist (start start-list)
-      (heap-insert frontier start range)
-      (setf (gethash start came-from) (list range nil))
-
-      (do ((current))
-	  ((heap-empty frontier))
-
-	(setf current (heap-remove-max frontier))
-
-	(if (> (car current) 0)
-	    (dolist (neighbour (mapcar #'(lambda (direction)
-					   (neighbour-tile-coords
-					    (cadr current)
-					    (cddr current)
-					    direction world))
-				       '(n ne se s sw nw)))
-	      
-	      (cond ((null neighbour) nil)
-		    ((null (gethash neighbour came-from))
-		     (let ((move-cost (- (car current)
-					 (eval
-					  (car (last
-						(tile-type (aref (world-map world)
-								 (car neighbour)
-								 (cdr neighbour)))))))))
-		       (cond ((>= move-cost 0)
-			      (heap-insert frontier neighbour move-cost)
-			      (setf (gethash neighbour came-from)
-				    (cons move-cost (cdr current))))))))))
-	
-	))
-    came-from))
-
 (defun breadth-first-fill (start-list range world move-cost-func)
   ;;move-cost-func takes x and y coord and world of tile to move to
   (let ((frontier (make-heap))
