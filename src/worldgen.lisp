@@ -149,39 +149,57 @@
 				    (cons move-cost (cdr current))))))))))))
     came-from))
 
-;;; Breadth-first-fill for tile borders.
-;; Coordinates now refer to vertices NORTH-WEST and WEST of tiles, so that
-;; tile (0,0) possesses vertices (0,0) and (0,1)
-;; tile (0,1) possesses vertices (0,2) and (0,3) etc...
-(defun breadth-first-fill-borders (start-x start-y range world move-cost-func)
-  "Move-cost-func should take 5 parameters (from-x from-y to-x to-y world)"
+
+
+;;test below with this
+;; Currently duplicate borders from the other side appear in the hash map
+'(maphash #'(lambda (key val) (format t "~&KEY: ~a~%~a" key val))
+	   (breadth-first-fill-borders
+  5 7 'n 2 *world*
+  #'(lambda (xy dir world)
+      (let ((grass 1)
+	    (sea 1000)
+	    (field 1)
+	    (mountain 10)
+	    (forest 1)
+	    (swamp 1)
+	    (type-lists (border-adjacent-tile-types xy dir world)))
+	(declare (special grass sea field
+			  mountain forest swamp))
+
+	(min (symbol-value (car (last (car type-lists))))
+	     (symbol-value (car (last (cadr type-lists)))))))))
+
+(defun breadth-first-fill-borders (start-x start-y start-dir range world move-cost-func)
+
   (let ((frontier (make-heap))
 	(came-from (make-hash-table :test 'equal)))
     
-    (heap-insert frontier (cons start-x start-y) range)
-    (setf (gethash (cons start-x start-y) came-from) (list range nil))
+    (heap-insert frontier (list (cons start-x start-y) start-dir) range)
+    (setf (gethash (list (cons start-x start-y) start-dir) came-from) (list range nil))
     
     (do ((current))
-	  ((heap-empty frontier))
+	((heap-empty frontier))
 
-	(setf current (heap-remove-max frontier))
+      (setf current (heap-remove-max frontier))
+      (format t "~&current: ~a~%" current)
 
 	(if (> (car current) 0)
-	    (dolist (neighbour (mapcar #'(lambda (direction)
-					   (neighbour-vertex-coords
-					    (cadr current)
-					    (cddr current)
-					    direction world))
-				       '(up right left)))
+	    (dolist (neighbour (list-neighbour-borders (caadr current) ; x
+						       (cdadr current) ; y
+						       (caddr current))) ; dir
 	      
 	      (cond ((null neighbour) nil)
 		    ((null (gethash neighbour came-from))
-		     (let ((move-cost (- (car current)
-					 (funcall move-cost-func
-						  (cadr current) (cddr current)
-						  (car neighbour) (cdr neighbour)
-						  world)
-					 )))
+		     (let ((move-cost
+			    (- (car current)
+			       (funcall move-cost-func
+					(car neighbour)
+					(cadr neighbour)
+					world))
+			     
+			     ))
+		       (format t "~&current:~a~%" current)
 		       (cond ((>= move-cost 0)
 			      (heap-insert frontier neighbour move-cost)
 			      (setf (gethash neighbour came-from)
@@ -190,13 +208,73 @@
     came-from
     ))
 
+(defun list-neighbour-borders (tile-x tile-y border &optional (world *world*))
+  "Returns the inout's neighbouring borders as list of four instances of ((x . y) dir)"
+  (case border ; reorganize
+    (s (setf border 'n)
+       (let ((ntc (neighbour-tile-coords tile-x tile-y 's world)))
+	 (setf tile-x (car ntc)
+	       tile-y (cdr ntc))))
+    (se (setf border 'nw)
+	(let ((ntc (neighbour-tile-coords tile-x tile-y 'se world)))
+	  (setf tile-x (car ntc)
+		tile-y (cdr ntc))))
+    (ne (setf border 'sw)
+	(let ((ntc (neighbour-tile-coords tile-x tile-y 'ne world)))
+	  (setf tile-x (car ntc)
+		tile-y (cdr ntc)))))
+  (case border
+    (n (list (list (cons tile-x (1- tile-y)) 'sw)
+	     (list (cons tile-x (1- tile-y)) 'se)
+	     (list (cons tile-x tile-y) 'nw)
+	     (list (cons tile-x tile-y) 'ne)))
+    (nw (let ((ntc (neighbour-tile-coords tile-x tile-y 'nw world)))
+	  (list (list ntc 'ne)
+		(list ntc 's)
+		(list (cons tile-x tile-y) 'n)
+		(list (cons tile-x tile-y) 'sw))))
+    (sw (let ((ntc (neighbour-tile-coords tile-x tile-y 'sw world)))
+	  (list (list ntc 'n)
+		(list ntc 'se)
+		(list (cons tile-x tile-y) 's)
+		(list (cons tile-x tile-y) 'nw))))))
+
 ;;testing:
-(breadth-first-fill-borders
- 5 14 10 *world*
- #'(lambda (from-x from-y to-x to-y world)
-     ))
+'(breadth-first-fill-borders
+  5 14 'nw 10 *world*
+  #'(lambda (xy dir world)
+      (let ((grass 1)
+	    (sea 1000)
+	    (field 1)
+	    (mountain 10)
+	    (forest 1)
+	    (swamp 1)
+	    (type-lists (border-adjacent-tile-types xy dir world)))
+	(declare (special grass sea field
+			  mountain forest swamp))
+
+	(min (symbol-value (car (last (car type-lists))))
+	     (symbol-value (car (last (cadr type-lists))))))))
+
+  
+
+(defun vert-coord-dir (x1 y1 x2 y2)
+  "The vertex direction of (x2,y2) from (x1,y1), nil on failure."
+  (dolist (dir '(up right left))
+    (if (equal (neighbour-vertex-coords x1 y1 dir)
+	       (cons x2 y2))
+	(return-from vert-coord-dir dir))))
+
+(defun border-adjacent-tile-types (coord-pair dir &optional (world *world*))
+  "Returns list with tile-type lists of tiles bordering DIR of tile (tile-x,tile-y)"
+  (let ((tile-x (car coord-pair))
+	(tile-y (cdr coord-pair)))
+    (list (tile-type (tile-at tile-x tile-y world))
+	  (tile-type (neighbour-tile tile-x tile-y dir world)))))
 
 
+
+;; Script to create some test data for vertex thingies:
 (defun test-batt ()
   (mapcar #'(lambda (hood-1 hood-2 contents)
 	      (setf (tile-type (tile-at (car hood-1) (cdr hood-1))) contents)
@@ -207,21 +285,27 @@
 	  (mapcar #'(lambda (dir)
 		      (neighbour-tile-coords 24 15 dir *world*))
 		  +std-short-dirs+)
-	  '((1)
-	    (1 2)
-	    (1 2 3)
-	    (1 2 3 4)
-	    (1 2 3 4 5)
-	    (1 2 3 4 5 6)))
+	  '((grass mountain)
+	    (grass forest)
+	    (grass mountain forest)
+	    (grass field)
+	    (grass swamp)
+	    (grass mountain swamp)))
 
-  ;; bran shut down now continue tomoreros
+  
   
   )
 
-(defun border-adjacent-tile-types (from-x from-y to-x to-y &optional (world *world*))
 
+(defun border-adjacent-tile-types-by-vert (from-x from-y to-x to-y &optional (world *world*))
 
-  ;; TODO: check if the give coordinates are touching
+  ;; Check if coords are connected:
+  (unless (vert-coord-dir from-x from-y to-x to-y)
+    (format t "~&Border-adjacent-tile-types vertices not connected:~%~a // ~a~2%"
+	    (cons from-x from-y) (cons to-x to-y))
+    (return-from border-adjacent-tile-types-by-vert nil))
+
+  
   (let ((dx (- to-x from-x))
 	(dy (- to-y from-y)))
 
