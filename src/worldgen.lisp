@@ -170,7 +170,10 @@
 	(min (symbol-value (car (last (car type-lists))))
 	     (symbol-value (car (last (cadr type-lists)))))))))
 
-(defun breadth-first-fill-borders (start-x start-y start-dir range world move-cost-func)
+(defun breadth-first-fill-borders
+    (start-x start-y start-dir range world move-cost-func end-when-func)
+  "Move-cost-func takes 3 arguments: (cons x y) dir world
+End-when-func takes 2 arguments: (cons x y) dir"
 
   (let ((frontier (make-heap))
 	(came-from (make-hash-table :test 'equal)))
@@ -182,7 +185,6 @@
 	((heap-empty frontier))
 
       (setf current (heap-remove-max frontier))
-      (format t "~&current: ~a~%" current)
 
 	(if (> (car current) 0)
 	    (dolist (neighbour (list-neighbour-borders (caadr current) ; x
@@ -199,17 +201,18 @@
 					world))
 			     
 			     ))
-		       (format t "~&current:~a~%" current)
 		       (cond ((>= move-cost 0)
 			      (heap-insert frontier neighbour move-cost)
 			      (setf (gethash neighbour came-from)
-				    (cons move-cost (cdr current)))))))))))
-    
+				    (cons move-cost (cdr current))))))))
+	      (if (funcall end-when-func (car neighbour) (cadr neighbour))
+		  (return-from breadth-first-fill-borders came-from)))))
     came-from
     ))
 
 (defun list-neighbour-borders (tile-x tile-y border &optional (world *world*))
-  "Returns the inout's neighbouring borders as list of four instances of ((x . y) dir)"
+  "Returns the inout's neighbouring borders as list of four instances of ((x . y) dir),
+dir being one of (N NW SW)."
   (case border ; reorganize
     (s (setf border 'n)
        (let ((ntc (neighbour-tile-coords tile-x tile-y 's world)))
@@ -728,7 +731,7 @@ NIL on failure."
 
 (defun add-river (x y size location-on-tile &optional (world *world*))
   "Adds a single piece of river of type SIZE running on border LOCATION-ON-TILE of tile X Y."
-  (when (member direction +std-long-dirs+) (setf direction (short-dir direction)))
+  (when (member location-on-tile +std-long-dirs+) (setf location-on-tile (short-dir location-on-tile)))
   (let ((tile (tile-at x y world))
 	(destination (neighbour-tile x y location-on-tile world)))
     (when (or (member 'sea (tile-type tile))
@@ -742,14 +745,42 @@ NIL on failure."
     (finalize-tile-region x y)))
 
 
-;; 6 10   5 6 ;; testing coords
-(defun run-river-from-to (mouth-x mouth-y end-x end-y)
-  "Runs a river from mouth xy to end xy. Mouth coordinates should refer to a SEA tile
-on the coast, end coords to a tile on land."
-  (let ((grass 1) (sea 10000) (mountain 20))
-    (declare (special grass sea mountain))
-    (breadth-first-fill (list (cons mouth-x mouth-y)) 500 *world*
-			#'(lambda (x y world)
-			    (case ))) ;; problemo: not possible to use the current breadth first fill to run on borders
-    ))
+(defun run-river-from-to (mouth-x mouth-y mouth-dir end-x end-y end-dir)
+  "Runs a river from mouth xy to end xy. Mouth coordinates + dir should refer to a land tile
+border on the coast, end coords to a tile border inland."
+  (dolist (border
+	    (border-hash-path
+	     (list (cons end-x end-y) end-dir)
+	     (breadth-first-fill-borders
+	      mouth-x mouth-y mouth-dir 1000 *world*
+	      #'(lambda (xy dir world)
+		  (let ((grass 1)
+			(sea 1000)
+			(field 1)
+			(mountain 10)
+			(forest 1)
+			(swamp 1)
+			(type-lists (border-adjacent-tile-types xy dir world)))
+		    (declare (special grass sea field
+				      mountain forest swamp))
+		    (min (symbol-value (car (last (car type-lists))))
+			 (symbol-value (car (last (cadr type-lists)))))))
 
+	      #'(lambda (xy dir)
+		  (if (and (equal xy (cons end-x end-y)) (eq end-dir dir)) t))
+	      )))
+
+    (let ((x (caar border))
+	  (y (cdar border))
+	  (pos (cadr border)))
+      (add-river x y 'stream pos)
+  
+  )))
+
+
+(defun border-hash-path (start-border hashmap)
+  "Traverse a hashmap of borders shortest route."
+  (if (and (car start-border) start-border)
+      (cons start-border
+	    (let ((border (gethash start-border hashmap)))
+	      (border-hash-path (cdr border) hashmap)))))
