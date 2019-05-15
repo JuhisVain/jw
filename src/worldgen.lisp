@@ -268,10 +268,12 @@ dir being one of (N NW SW)."
 
 (defun border-adjacent-tile-types (coord-pair dir &optional (world *world*))
   "Returns list with tile-type lists of tiles bordering DIR of tile (tile-x,tile-y)"
-  (let ((tile-x (car coord-pair))
-	(tile-y (cdr coord-pair)))
-    (list (tile-type (tile-at tile-x tile-y world))
-	  (tile-type (neighbour-tile tile-x tile-y dir world)))))
+  (let* ((tile-x (car coord-pair))
+	 (tile-y (cdr coord-pair))
+	 (neighbour-tile (neighbour-tile tile-x tile-y dir world)))
+    (when neighbour-tile
+      (list (tile-type (tile-at tile-x tile-y world))
+	    (tile-type neighbour-tile)))))
 
 
 (defun neighbour-vertex-coords (vert-x vert-y direction &optional (world *world*))
