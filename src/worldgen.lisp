@@ -190,14 +190,15 @@ End-when-func takes 2 arguments: (cons x y) dir"
 						       (caddr current))) ; dir
 	      
 	      (cond ((null neighbour) nil)
+		    ((null (car neighbour)) nil)
 		    ((null (gethash neighbour came-from))
 		     (let ((move-cost
 			    (- (car current)
-			       (funcall move-cost-func
-					(car neighbour)
-					(cadr neighbour)
-					world))
-			     
+			       (or (funcall move-cost-func
+					    (car neighbour)
+					    (cadr neighbour)
+					    world)
+				   (1+ range))) ; if move-cost-func returns nil, make move-cost var < 0
 			     ))
 		       (cond ((>= move-cost 0)
 			      (heap-insert frontier neighbour move-cost)
@@ -272,7 +273,9 @@ dir being one of (N NW SW)."
 	 (tile-y (cdr coord-pair))
 	 (neighbour-tile (neighbour-tile tile-x tile-y dir world)))
     (when neighbour-tile
-      (list (tile-type (tile-at tile-x tile-y world))
+      (list (tile-type (if (coord-in-bounds coord-pair)
+			   (tile-at tile-x tile-y world)
+			   neighbour-tile)) ; if not in bounds, use neighbour's typelist
 	    (tile-type neighbour-tile)))))
 
 
@@ -633,14 +636,16 @@ border on the coast, end coords to a tile border inland."
 		  (let ((grass 1) ; move costs for rivers
 			(sea 1000)
 			(field 1)
-			(mountain 10)
+			(mountain 100)
 			(forest 1)
 			(swamp 1)
 			(type-lists (border-adjacent-tile-types xy dir world)))
 		    (declare (special grass sea field
 				      mountain forest swamp))
-		    (min (symbol-value (car (last (car type-lists))))
-			 (symbol-value (car (last (cadr type-lists)))))))
+		    (when type-lists
+			(min (highest-move-cost (car type-lists))
+			     (highest-move-cost (cadr type-lists))
+			     ))))
 
 	      #'(lambda (xy dir)
 		  (if (and (equal xy (cons end-x end-y)) (eq end-dir dir)) t)))))
@@ -652,6 +657,8 @@ border on the coast, end coords to a tile border inland."
   
   )))
 
+(defun highest-move-cost (type-list)
+  (apply #'max (mapcar #'symbol-value type-list)))
 
 (defun border-hash-path (start-border hashmap)
   "Traverse a hashmap of borders shortest route."
