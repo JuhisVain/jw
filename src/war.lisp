@@ -720,7 +720,7 @@ Creates symbol with name like STREAM-NW-A-LARGE if appropriate file is found."
 
 (defun neighbour-tile (here-x here-y direction &optional (world *world*))
   (let ((neighbour-coords (neighbour-tile-coords here-x here-y direction world)))
-    (aref (world-map world) (car neighbour-coords) (cdr neighbour-coords))))
+    (when neighbour-coords (tile-at (car neighbour-coords) (cdr neighbour-coords) world))))
 
 (defun neighbour-tile-coords (here-x here-y direction world)
   (let* ((map-width (1- (array-dimension (world-map world) 0)))
