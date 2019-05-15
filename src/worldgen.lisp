@@ -67,14 +67,13 @@
     ;; Initialize world with sea tiles:
     (dotimes (x width)
       (dotimes (y height)
-	;;(setf (aref (world-map world) x y) (make-tile))
 	(setf (tile-at x y world) (make-tile))
 	))
     
     ;; Create some random noise to use for breadth-first-fill:
     (dotimes (x tw-width)
       (dotimes (y tw-height)
-	(setf (aref (world-map template-world) x y)
+	(setf (tile-at x y template-world)
 	      (make-tile :type (list (random 10))) ; This is the WEIGHT of filling the tile
 	      )))
 
@@ -84,7 +83,6 @@
 	   (breadth-first-fill ;(cons (random width) (random height))
 	    (mapcar #'cons (list-randoms islands width)
 		    (list-randoms islands height))
-					;(+ 30 (random 20))
 	    island-size
 	    template-world           ; NOTE: These "tiles" have been hacked to have integers in type field
 					; -> no magic dynamic vars required in this case
@@ -259,7 +257,6 @@ dir being one of (N NW SW)."
 
 	(min (symbol-value (car (last (car type-lists))))
 	     (symbol-value (car (last (cadr type-lists))))))))
-
   
 
 (defun vert-coord-dir (x1 y1 x2 y2)
@@ -275,87 +272,6 @@ dir being one of (N NW SW)."
 	(tile-y (cdr coord-pair)))
     (list (tile-type (tile-at tile-x tile-y world))
 	  (tile-type (neighbour-tile tile-x tile-y dir world)))))
-
-
-
-;; Script to create some test data for vertex thingies:
-(defun test-batt ()
-  (mapcar #'(lambda (hood-1 hood-2 contents)
-	      (setf (tile-type (tile-at (car hood-1) (cdr hood-1))) contents)
-	      (setf (tile-type (tile-at (car hood-2) (cdr hood-2))) contents))
-	  (mapcar #'(lambda (dir)
-		      (neighbour-tile-coords 17 16 dir *world*))
-		  +std-short-dirs+)
-	  (mapcar #'(lambda (dir)
-		      (neighbour-tile-coords 24 15 dir *world*))
-		  +std-short-dirs+)
-	  '((grass mountain)
-	    (grass forest)
-	    (grass mountain forest)
-	    (grass field)
-	    (grass swamp)
-	    (grass mountain swamp)))
-
-  
-  
-  )
-
-
-(defun border-adjacent-tile-types-by-vert (from-x from-y to-x to-y &optional (world *world*))
-
-  ;; Check if coords are connected:
-  (unless (vert-coord-dir from-x from-y to-x to-y)
-    (format t "~&Border-adjacent-tile-types vertices not connected:~%~a // ~a~2%"
-	    (cons from-x from-y) (cons to-x to-y))
-    (return-from border-adjacent-tile-types-by-vert nil))
-
-  
-  (let ((dx (- to-x from-x))
-	(dy (- to-y from-y)))
-
-    (format t "~&dx: ~a :dy: ~a~%"
-	    dx dy
-	    )
-    
-    (let ((half-y (floor from-y 2))) ; there are 2 vertices vertically per tile
-      (if (evenp from-y) ; a NORTH-WEST vertex
-	  (cond ((= dx 1) ; moving EAST on tile columns
-		 (format t "~&(~a,~a) // (~a,~a)~%"
-			 from-x half-y
-			 from-x (1- half-y))
-		 (list (tile-type (tile-at from-x half-y))
-		       (tile-type (tile-at from-x (1- half-y)))))
-		((= dy 1) ; moving "downwards" on vertices to vert W of this tile
-		 (format t "~&(~a,~a) // (~a,~a)~%" from-x half-y (1- from-x) (if (evenp from-x) (1- half-y) half-y))
-		 (list (tile-type (tile-at from-x half-y))
-		       (tile-type (tile-at (1- from-x) (if (evenp from-x) (1- half-y) half-y)))))
-		((= dy -1) ; moving "up" on vertices to tile W of tile above
-		 (format t "~&(~a,~a) // (~a,~a)~%"
-			 from-x (1- half-y)
-			 (1- from-x) (if (evenp from-x) (1- half-y) half-y))
-		 (list (tile-type (tile-at from-x (1- half-y)))
-		       (tile-type (tile-at (1- from-x) (if (evenp from-x) (1- half-y) half-y)))))
-		(t (format t "~&Error even fy ~a~2%" (list dx dy))))
-	  ;; if oddp from-y:
-	  (cond ((= dx -1) ; moving WEST on tile columns
-		 (format t "~&(~a,~a) // (~a,~a)~%"
-			 (1- from-x) (if (evenp from-x) (1- half-y) half-y)
-			 (1- from-x) half-y)
-			 
-		 (list (tile-type (tile-at (1- from-x) (if (evenp from-x) (1- half-y) half-y)))
-		       (tile-type (tile-at (1- from-x) (floor to-y 2)))))
-		((= dy 1) ; moving "downwards" on vertices to vert NW of tile below
-		 (format t "~&(~a,~a) // (~a,~a)~%" from-x half-y (1- from-x) (if (evenp from-x) half-y (1+ half-y)))
-		 (list (tile-type (tile-at from-x half-y))
-		       (tile-type (tile-at (1- from-x) (if (evenp from-x) half-y (1+ half-y))))))
-		((= dy -1) ; moving "up" on vertices to vert NW of this tile
-		 (format t "~&(~a,~a) // (~a,~a)~%" from-x half-y (1- from-x) (if (evenp from-x) (1+ half-y) half-y))
-		 (list (tile-type (tile-at from-x half-y))
-		       (tile-type (tile-at (1- from-x) (if (evenp from-x) (1+ half-y) half-y)))))
-		(t (format t "~&Error odd fy ~a~2%" (list dx dy))))
-	  )
-      
-      )))
 
 
 (defun neighbour-vertex-coords (vert-x vert-y direction &optional (world *world*))
@@ -381,7 +297,6 @@ dir being one of (N NW SW)."
 	   (up (cons vert-x (1- vert-y)))
 	   (right (cons vert-x (1+ vert-y)))
 	   (left (cons (1- vert-x) (1+ vert-y)))))
-
   ))
 
 (defun finalize-world (&optional (world *world*))
@@ -560,47 +475,6 @@ outskirt towards direction."
 	  (pull-outskirts x y world)
 	  (collect-border-graphics x y world)))))
 
-(defun OBSOLETEfinalize-tile (x y &optional (world *world*))
-  "Pulls neighbouring tiles' types as outskirts to tile at (x,y)"
-  (setf (tile-variant (tile-at x y world)) nil) ; reset variant list
-  (when (not (member 'sea (tile-type (tile-at x y world)))) ; don't do for sea tiles (for now)
-    
-    (dolist (direction +std-short-dirs+)
-      (let ((neighbour-tile (neighbour-tile-coords x y direction world)))
-	(when neighbour-tile
-	  (if (member 'sea (tile-type (aref (world-map world) (car neighbour-tile) (cdr neighbour-tile))))
-	      (push (intern (concatenate 'string "SEA-A-OUTSKIRTS-" (symbol-name direction)))
-		    (tile-variant (aref (world-map world) x y))))
-	  (if (member-if #'(lambda (x) (eq (car x) 'city))
-			 (tile-location (aref (world-map world) (car neighbour-tile) (cdr neighbour-tile))))
-	      (push (intern (concatenate 'string "CITY-A-OUTSKIRTS-" (symbol-name direction)))
-		    (tile-variant (aref (world-map world) x y))))
-	  (if (member 'field (tile-type (aref (world-map world) (car neighbour-tile) (cdr neighbour-tile))))
-	      (unless (or (eq direction 'sw) (eq direction 'nw))
-		(push (intern (concatenate 'string "FIELD-A-OUTSKIRTS-" (symbol-name direction)))
-		      (tile-variant (aref (world-map world) x y)))))
-	  (if (member 'forest (tile-type (aref (world-map world) (car neighbour-tile) (cdr neighbour-tile))))
-	      (push (intern (concatenate 'string "FOREST-A-OUTSKIRTS-" (symbol-name direction)))
-		    (tile-variant (aref (world-map world) x y))))
-	  )))
-    (if (member-if #'(lambda (x) (eq (car x) 'city)) (tile-location (tile-at x y world)))
-	(push 'city-a (tile-variant (tile-at x y world))))
-    (if (member 'field (tile-type (tile-at x y world)))
-	(push (has-variants 'field (random 10)) (tile-variant (tile-at x y world))))
-    (if (member 'forest (tile-type (tile-at x y world)))
-	(push 'forest-a (tile-variant (tile-at x y world))))
-    (if (tile-river-borders (tile-at x y world))
-	(setf (tile-variant (tile-at x y world))
-	      (append (tile-variant (tile-at x y world))
-		      (remove nil
-			      (mapcar #'random-variant
-				      (tile-river-borders (tile-at x y world)))))))
-    )
-  ;; Pushing tile's type as base element of graphics list:
-  (push (random-variant (car (tile-type (tile-at x y world))))
-	(tile-variant (tile-at x y world)))
-  )
-
 (defun has-variants (primary-symbol &optional seed)
   "If given no seed, returns list containing variant symbols, or NIL on failure.
 With seed, which the caller must generate in some way, returns (nth (rem seed length)) symbol"
@@ -652,7 +526,7 @@ NIL on failure."
 	((>= x (array-dimension (world-map world) 0)))
       (setf (aref (world-map world) x y)
 	    (make-tile :type (if (< (random 4) 1)
-				 (cons 'sea nil) ; '(sea) results in all tile types pointing to EQ type
+				 (cons 'sea nil) ; '(sea) results in all tile types pointing to same list
 				 (cons 'grass nil))))
       (and (member 'grass (tile-type (aref (world-map world) x y)))
 	   (< (random 10) 1)
@@ -675,7 +549,7 @@ NIL on failure."
     (if world
 	(progn
 	  (pushnew (list 'city new-city) (tile-location (tile-at x y world)))
-	  (pushnew (random-variant 'city) (tile-variant (tile-at x y)))
+	  (pushnew (random-variant 'city) (tile-variant (tile-at x y world)))
 	  (finalize-tile-region x y world)
 	  (pushnew new-city (world-cities world))))
     new-city))
@@ -754,7 +628,7 @@ border on the coast, end coords to a tile border inland."
 	     (breadth-first-fill-borders
 	      mouth-x mouth-y mouth-dir 1000 *world*
 	      #'(lambda (xy dir world)
-		  (let ((grass 1)
+		  (let ((grass 1) ; move costs for rivers
 			(sea 1000)
 			(field 1)
 			(mountain 10)
@@ -767,8 +641,7 @@ border on the coast, end coords to a tile border inland."
 			 (symbol-value (car (last (cadr type-lists)))))))
 
 	      #'(lambda (xy dir)
-		  (if (and (equal xy (cons end-x end-y)) (eq end-dir dir)) t))
-	      )))
+		  (if (and (equal xy (cons end-x end-y)) (eq end-dir dir)) t)))))
 
     (let ((x (caar border))
 	  (y (cdar border))
