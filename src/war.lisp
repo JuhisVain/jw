@@ -173,7 +173,8 @@
        (city :large (50 -6 -6) :small (50 0 0))
        (suburb :large (50 0 0) :small (50 0 0))
        (swamp :large (1 0 0) :small (1 0 0))
-       (mountain :large (80 -5 -8) :small (80 0 0) :overrides (:outskirts-everywhere)))
+       (mountain :large (80 -5 -8) :small (80 0 0) :overrides (:outskirts-everywhere))
+       (hill :large (80 -9 -3) :small (80 0 0) :overrides (:outskirts-everywhere)))
 
      :border '((stream
 		:large (:north (55 24 -8)
