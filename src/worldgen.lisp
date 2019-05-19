@@ -59,8 +59,8 @@
 	 (grid-res 1) ; ???
 	 (tw-width (ceiling width grid-res))
 	 (tw-height (ceiling height grid-res))
-	 (template-world (make-world :width tw-width
-				     :height tw-height
+	 (template-world (make-world :width (1- tw-width)
+				     :height (1- tw-height)
 				     :map (make-array (list tw-width tw-height))
 				     :factions nil)))
 
@@ -76,6 +76,9 @@
 	(setf (tile-at x y template-world)
 	      (make-tile :type (list (random 10))) ; This is the WEIGHT of filling the tile
 	      )))
+
+    (setf template-world (blur-number-world template-world))
+    (format t "~&width:~a height:~a~%" (world-height template-world) (world-width template-world))
 
     ;; Select a random coordinate and fire breadth-first-fill at it:
     ;; TODO: select more coordinates for other types of tiles and more land and such
@@ -106,6 +109,42 @@
       
       )
     world))
+
+;; TODO: This gaussian blur is way too heavy, just need to smooth edges a little bit
+(defun blur-number-world (world &optional (radius 1))
+  "Smooths out a world with numbers in tile-type field."
+  (let ((sig-rad (ceiling (* radius 2))) ; ???
+	(blur-world (make-world :width (world-width world)
+				:height (world-height world)
+				:map (make-array
+				      (list (1+ (world-width world))
+					    (1+ (world-height world)))))))
+    (docoords (x y world)
+      (let ((value 0)
+	    (weight-sum 0))
+	(do ((xb (- x sig-rad) (incf xb))) ; Should prolly make a macro for this too
+	    ((>= xb (+ x sig-rad 1)))
+	  (do ((yb (- y sig-rad) (incf yb)))
+	      ((>= yb (+ y sig-rad 1)))
+	    (when (coord-in-bounds (cons xb yb) world)
+	      (let ((weight
+		     (/ (exp (/ (- (+ (expt (- xb x) 2)
+				      (expt (- yb y) 2)))
+				(* 2 radius radius)))
+			(* pi 2 radius radius))))
+		(incf value (* weight
+			       (car (tile-type
+				     (tile-at
+				      (min (1- (world-width world))
+					   (max 0 xb))
+				      (min (1- (world-height world))
+					   (max 0 yb))
+				      world)))))
+		(incf weight-sum weight))
+	      (setf (aref (world-map blur-world) x y)
+		    (make-tile :type (list (round (/ value weight-sum))))))))))
+    blur-world))
+
 
 (defun list-randoms (size rand-num)
   (if (< size 1) nil
