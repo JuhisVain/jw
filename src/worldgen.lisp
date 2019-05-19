@@ -77,8 +77,8 @@
 	      (make-tile :type (list (random 10))) ; This is the WEIGHT of filling the tile
 	      )))
 
-    (setf template-world (blur-number-world template-world))
-    (format t "~&width:~a height:~a~%" (world-height template-world) (world-width template-world))
+    ;;(setf template-world (blur-number-world template-world)) ; not good
+    ;; TODO: instead of smoothing, just transform all different regions that are too small into thei neighbours ?
 
     ;; Select a random coordinate and fire breadth-first-fill at it:
     ;; TODO: select more coordinates for other types of tiles and more land and such
