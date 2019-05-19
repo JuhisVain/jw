@@ -87,6 +87,11 @@
 	 (let ((,var (tile-at ,x ,y)))
 	   ,@body)))))
 
+(defmacro docoords ((x y &optional (world *world*)) &body body)
+  `(dotimes (,x (1+ (world-width ,world)))
+     (dotimes (,y (1+ (world-height ,world)))
+       ,@body)))
+
 (defun sort-world-graphics (&optional (world *world*))
   (do-world-tiles (tile world)
     (sort-tile-graphics tile)))
