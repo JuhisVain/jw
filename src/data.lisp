@@ -4,6 +4,13 @@
   ;; Push list's length to beginning of list
   `'(,(length list) ,@list))
 
+(defun conc-syms (&rest to-concs)
+  "Produces symbol concatenation of stringified to-concs."
+  (intern
+   (string-upcase
+    (apply #'concatenate
+	   (cons 'string (mapcar #'princ-to-string to-concs))))))
+
 (defstruct world
   (width nil)     ;amount of columns
   (height nil)    ;hexes in a column
