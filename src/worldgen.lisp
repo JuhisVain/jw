@@ -45,7 +45,33 @@
 	  (make-random-world width height))
 	 ((eq algo 'testing)
 	  (make-testing-world width height faction-count mirror islands))
+	 ((eq algo 'smooth)
+	  (make-smoothed-height-world width height faction-count mirror))
 	 )))
+
+(defun make-smoothed-height-world (width height faction-count
+				   &optional (mirror nil))
+  (let* ((world (make-world :width (1- width) ; Why is this off by one?
+			    :height (1- height)
+			    :map (make-array (list width height))
+			    :factions nil))
+	 (number-world (make-array (list width height))))
+
+    (dotimes (x width)
+      (dotimes (y height)
+	(setf (aref number-world x y) (random 100))))
+
+    (setf number-world (blur-array number-world 1.1)) ; TODO: radius 1 is too sharp, 2 is too soft
+
+    (docoords (x y world)
+      (let ((gen-num (aref number-world x y)))
+	(setf (tile-at x y world) (make-tile :type (if (> gen-num 50)
+						       '(grass) '(sea))))
+	(or (when (> gen-num 65) (push 'mountain (tile-type (tile-at x y world))))
+	    (when (> gen-num 60) (push 'hill (tile-type (tile-at x y world)))))))
+
+    world
+    ))
 
 (defun make-testing-world (width height faction-count
 			   &optional
@@ -78,10 +104,8 @@
 	      )))
 
     ;;(setf template-world (blur-number-world template-world)) ; not good
-    ;; TODO: instead of smoothing, just transform all different regions that are too small into thei neighbours ?
 
     ;; Select a random coordinate and fire breadth-first-fill at it:
-    ;; TODO: select more coordinates for other types of tiles and more land and such
     (let ((fill-these-tiles
 	   (breadth-first-fill ;(cons (random width) (random height))
 	    (mapcar #'cons (list-randoms islands width)
@@ -110,10 +134,41 @@
       )
     world))
 
+(defun blur-array (array &optional (radius 1))
+  "Smooths out a 2-dimensional array."
+  (let* ((width (array-dimension array 0))
+	 (height (array-dimension array 1))
+	 (sig-rad (ceiling (* radius 2.57))) ; ???
+	 (blurred-array (make-array (list width height))))
+    (dotimes (x width)
+      (dotimes (y height)
+	(let ((value 0)
+	      (weight-sum 0))
+	  (do ((xb (- x sig-rad) (incf xb)))
+	      ((>= xb (+ x sig-rad 1)))
+	    (do ((yb (- y sig-rad) (incf yb)))
+		((>= yb (+ y sig-rad 1)))
+	      (when (and (< -1 xb width)
+			 (< -1 yb height))
+		(let ((weight
+		       (/ (exp (/ (- (+ (expt (- xb x) 2)
+					(expt (- yb y) 2)))
+				  (* 2 radius radius)))
+			  (* pi 2 radius radius))))
+		  (incf value (* weight
+				 (aref array xb yb)
+				 
+
+				 ))
+		  (incf weight-sum weight))
+		(setf (aref blurred-array x y)
+		      (round (/ value weight-sum)))))))))
+    blurred-array))
+
 ;; TODO: This gaussian blur is way too heavy, just need to smooth edges a little bit
 (defun blur-number-world (world &optional (radius 1))
   "Smooths out a world with numbers in tile-type field."
-  (let ((sig-rad (ceiling (* radius 2))) ; ???
+  (let ((sig-rad (ceiling (* radius 2.57))) ; ???
 	(blur-world (make-world :width (world-width world)
 				:height (world-height world)
 				:map (make-array

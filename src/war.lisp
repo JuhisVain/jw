@@ -96,8 +96,8 @@
   (do-world-tiles (tile world)
     (sort-tile-graphics tile)))
 
-(defun init-test (height width &key (islands 1) (mirror nil))
-  (setf *world* (init-world height width :algo 'testing :mirror mirror :islands islands))
+(defun init-test (height width &key (algo 'testing) (islands 1) (mirror nil))
+  (setf *world* (init-world height width :algo algo :mirror mirror :islands islands))
   nil)
 
 (defun cursor-coordinates-on-map (screen-x screen-y x-shift y-shift)
@@ -204,7 +204,7 @@
     (set-tile-size 'small)
     (set-tile-size 'large)
 
-    (unless *world* (init-test 40 40 :islands 20 :mirror t))
+    (unless *world* (init-test 40 40 :algo 'smooth :islands 20 :mirror t))
     ;; init-test can't be executed before variant and outskirts have been generated in grand-unified-graphics-setup
     
     (init-cgen)
