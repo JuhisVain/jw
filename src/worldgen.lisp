@@ -49,6 +49,7 @@
 	  (make-smoothed-height-world width height faction-count mirror))
 	 )))
 
+;; (init-test 40 40 :algo 'smooth :mirror t)
 (defun make-smoothed-height-world (width height faction-count
 				   &optional (mirror nil))
   (let* ((world (make-world :width (1- width) ; Why is this off by one?
@@ -57,9 +58,22 @@
 			    :factions nil))
 	 (number-world (make-array (list width height))))
 
-    (dotimes (x width)
-      (dotimes (y height)
-	(setf (aref number-world x y) (random 100))))
+    (when (null mirror)
+      (dotimes (x width)
+	(dotimes (y height)
+	  (setf (aref number-world x y) (random 100)))))
+
+    (when mirror
+      (do ((x 0)
+	   (y 0)
+	   (rand-val (random 100) (random 100)))
+	  ((= x height))
+	(setf (aref number-world x y) rand-val)
+	(setf (aref number-world (- width 1 x) (- height 1 y)) rand-val)
+	(incf y)
+	(when (= y height)
+	  (incf x)
+	  (setf y 0))))
 
     (setf number-world (blur-array number-world 1.1)) ; TODO: radius 1 is too sharp, 2 is too soft
 
