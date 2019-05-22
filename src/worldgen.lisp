@@ -241,7 +241,9 @@
 					   (neighbour-tile-coords
 					    (cadr current)
 					    (cddr current)
-					    direction world))
+					    direction
+					    (world-width world)
+					    (world-height world)))
 				       '(n ne se s sw nw)))
 	      
 	      (cond ((null neighbour) nil)
@@ -322,29 +324,41 @@ End-when-func takes 2 arguments: (cons x y) dir"
 dir being one of (N NW SW)."
   (case border ; reorganize
     (s (setf border 'n)
-       (let ((ntc (neighbour-tile-coords tile-x tile-y 's world)))
+       (let ((ntc (neighbour-tile-coords tile-x tile-y 's
+					 (world-width world)
+					 (world-height world))))
 	 (setf tile-x (car ntc)
 	       tile-y (cdr ntc))))
     (se (setf border 'nw)
-	(let ((ntc (neighbour-tile-coords tile-x tile-y 'se world)))
+	(let ((ntc (neighbour-tile-coords tile-x tile-y 'se
+					  (world-width world)
+					  (world-height world))))
 	  (setf tile-x (car ntc)
 		tile-y (cdr ntc))))
     (ne (setf border 'sw)
-	(let ((ntc (neighbour-tile-coords tile-x tile-y 'ne world)))
+	(let ((ntc (neighbour-tile-coords tile-x tile-y 'ne
+					  (world-width world)
+					  (world-height world))))
 	  (setf tile-x (car ntc)
 		tile-y (cdr ntc)))))
   (case border
-    (n (let ((ntc (neighbour-tile-coords tile-x tile-y 'ne world)))
+    (n (let ((ntc (neighbour-tile-coords tile-x tile-y 'ne
+					 (world-width world)
+					 (world-height world))))
 	 (list (list (cons tile-x (1- tile-y)) 'sw)
 	       (list ntc 'nw)
 	       (list (cons tile-x tile-y) 'nw)
 	       (list ntc 'sw))))
-    (nw (let ((ntc (neighbour-tile-coords tile-x tile-y 'nw world)))
+    (nw (let ((ntc (neighbour-tile-coords tile-x tile-y 'nw
+					  (world-width world)
+					  (world-height world))))
 	  (list (list (cons tile-x (1- tile-y)) 'sw)
 		(list (cons (car ntc) (1+ (cdr ntc))) 'n)
 		(list (cons tile-x tile-y) 'n)
 		(list (cons tile-x tile-y) 'sw))))
-    (sw (let ((ntc (neighbour-tile-coords tile-x tile-y 'sw world)))
+    (sw (let ((ntc (neighbour-tile-coords tile-x tile-y 'sw
+					  (world-width world)
+					  (world-height world))))
 	  (list (list ntc 'n)
 		(list (cons tile-x (1+ tile-y)) 'nw)
 		(list (cons tile-x (1+ tile-y)) 'n)
@@ -383,6 +397,18 @@ dir being one of (N NW SW)."
     (when neighbour-tile
       (list (tile-type (if (coord-in-bounds coord-pair)
 			   (tile-at tile-x tile-y world)
+			   neighbour-tile)) ; if not in bounds, use neighbour's typelist
+	    (tile-type neighbour-tile)))))
+
+(defun heightmap-border-adjacent-value (coord-pair dir array)
+  (let* ((x (car coord-pair))
+	 (y (cdr coord-pair))
+	 (max-x (1- (array-dimension array 0)))
+	 (max-y (1- (array-dimension array 0)))
+	 (neighbour-tile (neighbour-tile-coords x y dir max-x max-y)))
+    (when neighbour-tile
+      (list (tile-type (if (and (<= 0 x max-x) (<= 0 y max-y))
+			   (aref array x y)
 			   neighbour-tile)) ; if not in bounds, use neighbour's typelist
 	    (tile-type neighbour-tile)))))
 
@@ -576,7 +602,9 @@ outskirt towards direction."
 (defun neighbour-tiles (x y &optional (world *world*))
   "Returns list of cons coordinates to (x.y)'s neighbours, or nils to off map."
   (mapcar #'(lambda (dir)
-	      (neighbour-tile-coords x y dir world))
+	      (neighbour-tile-coords x y dir
+				     (world-width world)
+				     (world-height world)))
 	  +std-short-dirs+))
 
 ;;   TODO: might want to handle complete masks in some way (as in no field outskirts on sea tiles etc..)
@@ -623,7 +651,9 @@ NIL on failure."
   ;;    with "(setf (tile-type (tile-at x y)))"
   (finalize-tile x y world)
   (dolist (direction (list 'N 'NE 'SE 'S 'SW 'NW))
-    (let ((neighbour-tile (neighbour-tile-coords x y direction world)))
+    (let ((neighbour-tile (neighbour-tile-coords x y direction
+						 (world-width world)
+						 (world-height world))))
       (if neighbour-tile (finalize-tile (car neighbour-tile) (cdr neighbour-tile) world)))))
 
 
@@ -730,6 +760,39 @@ NIL on failure."
     (pushnew (intern (concatenate 'string (symbol-name size) "-" (symbol-name (oppdir location-on-tile))))
 	     (tile-rail-links destination))
     (finalize-tile-region x y)))
+
+
+(defun heightmap-run-river-to (heightmap mouth-x mouth-y mouth-dir length)
+  (dolist (border
+	    (border-hash-path
+	     (list (cons end-x end-y) end-dir)
+	     (breadth-first-fill-borders
+	      mouth-x mouth-y mouth-dir length *world*
+	      #'(lambda (xy dir world)
+		  (let ((grass 1) ; move costs for rivers
+			(sea length)
+			(field 1)
+			(mountain 100)
+			(forest 1)
+			(swamp 1)
+			(hill 25)
+			(type-lists (border-adjacent-tile-types xy dir world)))
+		    (declare (special grass sea field
+				      mountain forest swamp hill))
+		    (when type-lists
+			(min (highest-move-cost (car type-lists))
+			     (highest-move-cost (cadr type-lists))
+			     ))))
+
+	      #'(lambda (xy dir)
+		  (if (and (equal xy (cons end-x end-y)) (eq end-dir dir)) t)))))
+
+    (let ((x (caar border))
+	  (y (cdar border))
+	  (pos (cadr border)))
+      (add-river x y 'stream pos)
+  
+  )))
 
 
 (defun run-river-from-to (mouth-x mouth-y mouth-dir end-x end-y end-dir &optional (range 1000))

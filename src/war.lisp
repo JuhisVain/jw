@@ -397,7 +397,9 @@
 					 (neighbour-tile-coords
 					  (cadr current)
 					  (cddr current)
-					  direction *world*))
+					  direction
+					  (world-width *world*)
+					  (world-height *world*)))
 				     '(n ne se s sw nw)))
 	    
 	    (cond ((null neighbour) nil)
@@ -725,13 +727,14 @@ Creates symbol with name like STREAM-NW-A-LARGE if appropriate file is found."
   `(set-tile-at ,x ,y ,(if world world *world*) ,new-tile))
 
 (defun neighbour-tile (here-x here-y direction &optional (world *world*))
-  (let ((neighbour-coords (neighbour-tile-coords here-x here-y direction world)))
+  (let ((neighbour-coords (neighbour-tile-coords here-x here-y direction
+						 (world-width world)
+						 (world-height world))))
     (when neighbour-coords (tile-at (car neighbour-coords) (cdr neighbour-coords) world))))
 
-(defun neighbour-tile-coords (here-x here-y direction world)
-  (let* ((map-width (1- (array-dimension (world-map world) 0)))
-	 (map-height (1- (array-dimension (world-map world) 1)))
-	 (shift (if (evenp here-x) -1 0))
+(defun neighbour-tile-coords (here-x here-y direction max-x max-y)
+  "Returns coordinate cons of here's neighbour towards direction, maxes refer to index bounds."
+  (let* ((shift (if (evenp here-x) -1 0))
 	 (neighbour-x (cond ((member direction '(SW NW)) (1- here-x))
 			    ((member direction '(SE NE)) (1+ here-x))
 			    (t here-x)))
@@ -741,12 +744,11 @@ Creates symbol with name like STREAM-NW-A-LARGE if appropriate file is found."
 			    ((member direction '(SE SW)) (+ 1 here-y shift)))))
 
     (if (or (< neighbour-x 0) ; Check if out of bounds
-	    (> neighbour-x map-width)
+	    (> neighbour-x max-x)
 	    (< neighbour-y 0)
-	    (> neighbour-y map-height))
+	    (> neighbour-y max-y))
 	(return-from neighbour-tile-coords nil))
 
-    ;;(aref (world-map *world*) neighbour-x neighbour-y)
     (cons neighbour-x neighbour-y)
     ))
     
