@@ -732,24 +732,25 @@ NIL on failure."
     (finalize-tile-region x y)))
 
 
-(defun run-river-from-to (mouth-x mouth-y mouth-dir end-x end-y end-dir)
+(defun run-river-from-to (mouth-x mouth-y mouth-dir end-x end-y end-dir &optional (range 1000))
   "Runs a river from mouth xy to end xy. Mouth coordinates + dir should refer to a land tile
 border on the coast, end coords to a tile border inland."
   (dolist (border
 	    (border-hash-path
 	     (list (cons end-x end-y) end-dir)
 	     (breadth-first-fill-borders
-	      mouth-x mouth-y mouth-dir 1000 *world*
+	      mouth-x mouth-y mouth-dir range *world*
 	      #'(lambda (xy dir world)
 		  (let ((grass 1) ; move costs for rivers
-			(sea 1000)
+			(sea range)
 			(field 1)
 			(mountain 100)
 			(forest 1)
 			(swamp 1)
+			(hill 25)
 			(type-lists (border-adjacent-tile-types xy dir world)))
 		    (declare (special grass sea field
-				      mountain forest swamp))
+				      mountain forest swamp hill))
 		    (when type-lists
 			(min (highest-move-cost (car type-lists))
 			     (highest-move-cost (cadr type-lists))
@@ -766,10 +767,16 @@ border on the coast, end coords to a tile border inland."
   )))
 
 (defun highest-move-cost (type-list)
-  (apply #'max (mapcar #'symbol-value type-list)))
+  (apply #'max (mapcar #'(lambda (sym)
+			   (if (boundp sym) (symbol-value sym)
+			       (progn
+				 (format t "~&No move cost bound for ~a!~%" sym)
+				 666)))
+		       type-list)))
 
 (defun border-hash-path (start-border hashmap)
-  "Traverse a hashmap of borders shortest route."
+  "Traverse a hashmap of borders shortest route.
+Generates route as a list (((end-x . end-y) end-dir) ... ((mouth-x . mouth-y) mouth-dir))"
   (if (and (car start-border) start-border)
       (cons start-border
 	    (let ((border (gethash start-border hashmap)))
