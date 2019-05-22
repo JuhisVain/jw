@@ -79,10 +79,17 @@
 
     (docoords (x y world)
       (let ((gen-num (aref number-world x y)))
-	(setf (tile-at x y world) (make-tile :type (if (> gen-num 50)
+	(setf (tile-at x y world) (make-tile :type (if (> gen-num 46)
 						       '(grass) '(sea))))
 	(or (when (> gen-num 65) (push 'mountain (tile-type (tile-at x y world))))
-	    (when (> gen-num 60) (push 'hill (tile-type (tile-at x y world)))))))
+	    (when (> gen-num 60) (push 'hill (tile-type (tile-at x y world)))))
+
+	))
+
+    (docoords (x y world)
+      (let ((gen-num (aref number-world x y)))
+	(when (< gen-num 40)
+	  (heightmap-run-river-to number-world world x y 'n 1000))))
 
     world
     ))
@@ -297,7 +304,8 @@ End-when-func takes 2 arguments: (cons x y) dir"
 	(if (> (car current) 0)
 	    (dolist (neighbour (list-neighbour-borders (caadr current) ; x
 						       (cdadr current) ; y
-						       (caddr current))) ; dir
+						       (caddr current) ; dir
+						       world))
 	      
 	      (cond ((null neighbour) nil)
 		    ((null (car neighbour)) nil)
@@ -400,7 +408,7 @@ dir being one of (N NW SW)."
 			   neighbour-tile)) ; if not in bounds, use neighbour's typelist
 	    (tile-type neighbour-tile)))))
 
-(defun heightmap-border-adjacent-value (coord-pair dir array)
+(defun heightmap-border-adjacent-values (coord-pair dir array)
   "Returns list of two values: coord-pair and it's dir neighbour in hexagonal array."
   (let* ((x (car coord-pair))
 	 (y (cdr coord-pair))
@@ -750,9 +758,12 @@ NIL on failure."
 (defun add-river (x y size location-on-tile &optional (world *world*))
   "Adds a single piece of river of type SIZE running on border LOCATION-ON-TILE of tile X Y."
   (when (member location-on-tile +std-long-dirs+) (setf location-on-tile (short-dir location-on-tile)))
+  (format t "~&add-river with ~a ~a~%" x y)
   (let ((tile (tile-at x y world))
 	(destination (neighbour-tile x y location-on-tile world)))
-    (when (or (member 'sea (tile-type tile))
+    (when (or (null tile)
+	      (null destination)
+	      (member 'sea (tile-type tile))
 	      (member 'sea (tile-type destination)))
       (return-from add-river nil))
     
@@ -760,40 +771,41 @@ NIL on failure."
 	     (tile-rail-links tile))
     (pushnew (intern (concatenate 'string (symbol-name size) "-" (symbol-name (oppdir location-on-tile))))
 	     (tile-rail-links destination))
-    (finalize-tile-region x y)))
+    (finalize-tile-region x y world)))
 
+(defun random-hash (hash-table)
+  "Returns random key value pair from hash-table."
+  (let ((rand-num (random (hash-table-count hash-table)))
+	(counter 0))
+    (maphash #'(lambda (key value)
+		 (if (= counter rand-num)
+		     (return-from random-hash (list key value)))
+		 (incf counter))
+	     hash-table)))
 
-(defun heightmap-run-river-to (heightmap mouth-x mouth-y mouth-dir length)
-  (dolist (border
+(defun heightmap-run-river-to (heightmap world mouth-x mouth-y mouth-dir length)
+  (let ((border-fill (breadth-first-fill-borders
+		      mouth-x mouth-y mouth-dir length world
+		      #'(lambda (xy dir world)
+			  (let ((vals (heightmap-border-adjacent-values xy dir heightmap)))
+			    (when vals
+			      (min (- 100 (caadr vals)) ; invert heightmap's values
+				   (- 100 (cdadr vals))
+				   ))))
+		      
+		      #'(lambda (xy dir) ;; not too sure about this
+			  nil))))
+    (dolist (border
 	    (border-hash-path
-	     (list (cons end-x end-y) end-dir)
-	     (breadth-first-fill-borders
-	      mouth-x mouth-y mouth-dir length *world*
-	      #'(lambda (xy dir world)
-		  (let ((grass 1) ; move costs for rivers
-			(sea length)
-			(field 1)
-			(mountain 100)
-			(forest 1)
-			(swamp 1)
-			(hill 25)
-			(type-lists (border-adjacent-tile-types xy dir world)))
-		    (declare (special grass sea field
-				      mountain forest swamp hill))
-		    (when type-lists
-			(min (highest-move-cost (car type-lists))
-			     (highest-move-cost (cadr type-lists))
-			     ))))
+	     (car (random-hash border-fill))
+	     border-fill))
 
-	      #'(lambda (xy dir)
-		  (if (and (equal xy (cons end-x end-y)) (eq end-dir dir)) t)))))
-
-    (let ((x (caar border))
-	  (y (cdar border))
-	  (pos (cadr border)))
-      (add-river x y 'stream pos)
-  
-  )))
+      (format t "~&~a~%" border)
+      (let ((x (caar border))
+	    (y (cdar border))
+	    (pos (cadr border)))
+	(add-river x y 'stream pos world))
+      )))
 
 
 (defun run-river-from-to (mouth-x mouth-y mouth-dir end-x end-y end-dir &optional (range 1000))
@@ -838,7 +850,7 @@ border on the coast, end coords to a tile border inland."
 				 666)))
 		       type-list)))
 
-(defun border-hash-path (start-border hashmap)
+(defun border-hash-path (start-border hashmap) ;; borderformat = ((x . y) dir)
   "Traverse a hashmap of borders shortest route.
 Generates route as a list (((end-x . end-y) end-dir) ... ((mouth-x . mouth-y) mouth-dir))"
   (if (and (car start-border) start-border)
