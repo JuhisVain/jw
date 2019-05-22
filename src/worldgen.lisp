@@ -781,6 +781,12 @@ NIL on failure."
 	     hash-table)))
 
 (defun heightmap-run-river-to (heightmap world mouth-x mouth-y mouth-dir length)
+  ;; Not too good.
+  ;; Currently greedily tries to go upwards,
+  ;; doesn't take into account existing rivers,
+  ;; forks are wrong way around
+
+  ;; Maybe pick high points on heightmap for border filling -> random-hash those TODO TODO TODO
   (let ((border-fill (breadth-first-fill-borders
 		      mouth-x mouth-y mouth-dir length world
 		      #'(lambda (xy dir world)
