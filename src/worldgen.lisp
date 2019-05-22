@@ -453,8 +453,6 @@ dir being one of (N NW SW)."
        (y 0))
       ((>= x (array-dimension (world-map world) 0)))
 
-    ;(format t "~&~a,~a" x y)
-
     (finalize-tile x y world)
 
     ;; TODO: Whatever this was written to do it doesn't do.
@@ -758,7 +756,6 @@ NIL on failure."
 (defun add-river (x y size location-on-tile &optional (world *world*))
   "Adds a single piece of river of type SIZE running on border LOCATION-ON-TILE of tile X Y."
   (when (member location-on-tile +std-long-dirs+) (setf location-on-tile (short-dir location-on-tile)))
-  (format t "~&add-river with ~a ~a~%" x y)
   (let ((tile (tile-at x y world))
 	(destination (neighbour-tile x y location-on-tile world)))
     (when (or (null tile)
@@ -800,7 +797,6 @@ NIL on failure."
 	     (car (random-hash border-fill))
 	     border-fill))
 
-      (format t "~&~a~%" border)
       (let ((x (caar border))
 	    (y (cdar border))
 	    (pos (cadr border)))
