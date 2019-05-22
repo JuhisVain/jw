@@ -401,16 +401,17 @@ dir being one of (N NW SW)."
 	    (tile-type neighbour-tile)))))
 
 (defun heightmap-border-adjacent-value (coord-pair dir array)
+  "Returns list of two values: coord-pair and it's dir neighbour in hexagonal array."
   (let* ((x (car coord-pair))
 	 (y (cdr coord-pair))
 	 (max-x (1- (array-dimension array 0)))
 	 (max-y (1- (array-dimension array 0)))
 	 (neighbour-tile (neighbour-tile-coords x y dir max-x max-y)))
     (when neighbour-tile
-      (list (tile-type (if (and (<= 0 x max-x) (<= 0 y max-y))
-			   (aref array x y)
-			   neighbour-tile)) ; if not in bounds, use neighbour's typelist
-	    (tile-type neighbour-tile)))))
+      (list (if (and (<= 0 x max-x) (<= 0 y max-y))
+		(aref array x y)
+		neighbour-tile)
+	    neighbour-tile))))
 
 
 (defun neighbour-vertex-coords (vert-x vert-y direction &optional (world *world*))
