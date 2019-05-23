@@ -11,6 +11,9 @@
     (apply #'concatenate
 	   (cons 'string (mapcar #'princ-to-string to-concs))))))
 
+(defun chance (percent)
+  (if (< (random 100) percent) t))
+
 (defstruct world
   (width nil)     ;amount of columns
   (height nil)    ;hexes in a column
