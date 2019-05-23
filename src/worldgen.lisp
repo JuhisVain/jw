@@ -88,8 +88,11 @@
 
     (docoords (x y world)
       (let ((gen-num (aref number-world x y)))
-	(when (< gen-num 40)
-	  (heightmap-run-river-to number-world world x y 'n 1000))))
+	;;(when (< gen-num 40)
+	;;  (heightmap-run-river-to number-world world x y 'n 1000))
+	(when (and (< gen-num 59) (chance 33))
+	  (hm-gen-riv-high-low number-world world x y 'n 1000))
+	))
 
     world
     ))
@@ -322,7 +325,9 @@ End-when-func takes 2 arguments: (cons x y) dir"
 			      (heap-insert frontier neighbour move-cost)
 			      (setf (gethash neighbour came-from)
 				    (cons move-cost (cdr current))))))))
-	      (if (funcall end-when-func (car neighbour) (cadr neighbour))
+	      (if (and
+		   neighbour (car neighbour) (cadr neighbour)
+		   (funcall end-when-func (car neighbour) (cadr neighbour)))
 		  (return-from breadth-first-fill-borders came-from)))))
     came-from
     ))
@@ -809,6 +814,39 @@ NIL on failure."
 	(add-river x y 'stream pos world))
       )))
 
+;(hm-gen-riv-high-low number-world world x y 'n 1000)
+(defun hm-gen-riv-high-low (heightmap world start-x start-y start-dir length)
+  (let* ((end nil)
+	 (border-fill (breadth-first-fill-borders
+		       start-x start-y start-dir length world
+		       #'(lambda (xy dir world)
+			   (let ((vals (heightmap-border-adjacent-values xy dir heightmap)))
+			     (when vals
+			       (min (caadr vals)
+				    (cdadr vals)
+				    ))))
+		       
+		       #'(lambda (xy dir)
+			   (let ((tile (tile-at (car xy) (cdr xy) world))
+				 (neigh (neighbour-tile (car xy) (cdr xy)
+							dir world)))
+			     (when (or (null tile)
+				       (member 'sea (tile-type tile))
+				       (null neigh)
+				       (member 'sea (tile-type neigh)))
+			       ;; Ends fill:
+			       (setf end (list xy dir))))))))
+    (dolist (border
+	      (border-hash-path
+	       ;;(car (random-hash border-fill))
+	       end
+	       border-fill))
+
+      (let ((x (caar border))
+	    (y (cdar border))
+	    (pos (cadr border)))
+	(add-river x y 'stream pos world))
+      )))
 
 (defun run-river-from-to (mouth-x mouth-y mouth-dir end-x end-y end-dir &optional (range 1000))
   "Runs a river from mouth xy to end xy. Mouth coordinates + dir should refer to a land tile
