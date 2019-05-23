@@ -90,8 +90,10 @@
       (let ((gen-num (aref number-world x y)))
 	;;(when (< gen-num 40)
 	;;  (heightmap-run-river-to number-world world x y 'n 1000))
-	(when (and (< gen-num 59) (chance 33))
-	  (hm-gen-riv-high-low number-world world x y 'n 1000))
+	(when (and (> gen-num 50) (chance 50))
+	  (hm-gen-riv-high-low number-world world x y
+			       (nth (random 3) '(N NE SE))
+			       6))
 	))
 
     world
@@ -333,25 +335,30 @@ End-when-func takes 2 arguments: (cons x y) dir"
     ))
 
 (defun list-neighbour-borders (tile-x tile-y border &optional (world *world*))
-  "Returns the inout's neighbouring borders as list of four instances of ((x . y) dir),
+  "Returns the input's neighbouring borders as list of four instances of ((x . y) dir),
 dir being one of (N NW SW)."
+  (format t "~&(~a . ~a) ~a~%" tile-x tile-y border)
   (case border ; reorganize
     (s (setf border 'n)
        (let ((ntc (neighbour-tile-coords tile-x tile-y 's
-					 (world-width world)
-					 (world-height world))))
+					 ;; Forcing N NW or SW requires going out of bounds
+					 (1+ (world-width world))
+					 (1+ (world-height world))
+					 -1 -1)))
 	 (setf tile-x (car ntc)
 	       tile-y (cdr ntc))))
     (se (setf border 'nw)
 	(let ((ntc (neighbour-tile-coords tile-x tile-y 'se
-					  (world-width world)
-					  (world-height world))))
+					  (1+ (world-width world))
+					  (1+ (world-height world))
+					  -1 -1)))
 	  (setf tile-x (car ntc)
 		tile-y (cdr ntc))))
     (ne (setf border 'sw)
 	(let ((ntc (neighbour-tile-coords tile-x tile-y 'ne
-					  (world-width world)
-					  (world-height world))))
+					  (1+ (world-width world))
+					  (1+ (world-height world))
+					  -1 -1)))
 	  (setf tile-x (car ntc)
 		tile-y (cdr ntc)))))
   (case border
@@ -815,10 +822,11 @@ NIL on failure."
       )))
 
 ;(hm-gen-riv-high-low number-world world x y 'n 1000)
-(defun hm-gen-riv-high-low (heightmap world start-x start-y start-dir length)
+(defun hm-gen-riv-high-low (heightmap world start-x start-y start-dir min-length)
   (let* ((end nil)
+	 (range 1000)
 	 (border-fill (breadth-first-fill-borders
-		       start-x start-y start-dir length world
+		       start-x start-y start-dir range world
 		       #'(lambda (xy dir world)
 			   (let ((vals (heightmap-border-adjacent-values xy dir heightmap)))
 			     (when vals
@@ -835,18 +843,15 @@ NIL on failure."
 				       (null neigh)
 				       (member 'sea (tile-type neigh)))
 			       ;; Ends fill:
-			       (setf end (list xy dir))))))))
-    (dolist (border
-	      (border-hash-path
-	       ;;(car (random-hash border-fill))
-	       end
-	       border-fill))
-
-      (let ((x (caar border))
-	    (y (cdar border))
-	    (pos (cadr border)))
-	(add-river x y 'stream pos world))
-      )))
+			       (setf end (list xy dir)))))))
+	 (border-list (border-hash-path end border-fill)))
+    (when (>= (length border-list) min-length)
+      (dolist (border border-list)
+	(let ((x (caar border))
+	      (y (cdar border))
+	      (pos (cadr border)))
+	  (add-river x y 'stream pos world))
+	))))
 
 (defun run-river-from-to (mouth-x mouth-y mouth-dir end-x end-y end-dir &optional (range 1000))
   "Runs a river from mouth xy to end xy. Mouth coordinates + dir should refer to a land tile
