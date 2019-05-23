@@ -12,6 +12,7 @@
 	   (cons 'string (mapcar #'princ-to-string to-concs))))))
 
 (defun chance (percent)
+  (declare (number percent))
   (if (< (random 100) percent) t))
 
 (defstruct world
