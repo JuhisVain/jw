@@ -90,6 +90,7 @@
       (let ((gen-num (aref number-world x y)))
 	(when (and (> gen-num 50) (chance 50))
 	  (let ((start-dir (nth (random 3) '(N NE SE))))
+	    
 	    (hm-gen-riv-high-low number-world world x y start-dir 6)))
 	))
     world
@@ -333,7 +334,6 @@ End-when-func takes 2 arguments: (cons x y) dir"
 (defun list-neighbour-borders (tile-x tile-y border &optional (world *world*))
   "Returns the input's neighbouring borders as list of four instances of ((x . y) dir),
 dir being one of (N NW SW)."
-  (format t "~&(~a . ~a) ~a~%" tile-x tile-y border)
   (case border ; reorganize
     (s (setf border 'n)
        (let ((ntc (neighbour-tile-coords tile-x tile-y 's
@@ -819,6 +819,7 @@ NIL on failure."
 
 ;(hm-gen-riv-high-low number-world world x y 'n 1000)
 (defun hm-gen-riv-high-low (heightmap world start-x start-y start-dir min-length)
+  (format t "~&(~a . ~a) ~a~&" start-x start-y start-dir)
   (let* ((end nil)
 	 (range 1000)
 	 (border-fill (breadth-first-fill-borders
@@ -846,8 +847,17 @@ NIL on failure."
 	(let ((x (caar border))
 	      (y (cdar border))
 	      (pos (cadr border)))
-	  (add-river x y 'stream pos world))
-	))))
+	  ;; If there is already a river on burrent border:
+	  (if (and ; no
+	       (coord-in-bounds (cons x y) world)
+	       (intersection (tile-river-borders (tile-at x y world))
+			     (mapcar #'(lambda (river-size)
+					 (conc-syms river-size pos))
+				     '(stream)))) ; TODO: Get some list of river syms from somewhere
+	      (return-from hm-gen-riv-high-low) ; All subsequent borders SHOULD have a river,
+					;   -> if not, avoids forking downstream
+	      (add-river x y 'stream pos world))
+	  )))))
 
 (defun run-river-from-to (mouth-x mouth-y mouth-dir end-x end-y end-dir &optional (range 1000))
   "Runs a river from mouth xy to end xy. Mouth coordinates + dir should refer to a land tile
