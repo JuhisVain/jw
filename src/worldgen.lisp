@@ -88,14 +88,10 @@
 
     (docoords (x y world)
       (let ((gen-num (aref number-world x y)))
-	;;(when (< gen-num 40)
-	;;  (heightmap-run-river-to number-world world x y 'n 1000))
 	(when (and (> gen-num 50) (chance 50))
-	  (hm-gen-riv-high-low number-world world x y
-			       (nth (random 3) '(N NE SE))
-			       6))
+	  (let ((start-dir (nth (random 3) '(N NE SE))))
+	    (hm-gen-riv-high-low number-world world x y start-dir 6)))
 	))
-
     world
     ))
 
@@ -777,9 +773,9 @@ NIL on failure."
       (return-from add-river nil))
     
     (pushnew (intern (concatenate 'string (symbol-name size) "-" (symbol-name location-on-tile)))
-	     (tile-rail-links tile))
+	     (tile-river-borders tile))
     (pushnew (intern (concatenate 'string (symbol-name size) "-" (symbol-name (oppdir location-on-tile))))
-	     (tile-rail-links destination))
+	     (tile-river-borders destination))
     (finalize-tile-region x y world)))
 
 (defun random-hash (hash-table)
