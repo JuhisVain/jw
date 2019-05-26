@@ -1,6 +1,7 @@
 (in-package :war)
 
 (defvar *graphics-variants* nil) ; ((name1 name1-a name1-b) (name2 name2-a name2-b name2-c)) etc..
+(defvar *river-list* '(stream))
 (defconstant +std-short-dirs+ '(N NE SE S SW NW))
 (defconstant +std-long-dirs+ '(NORTH NORTH-EAST SOUTH-EAST SOUTH SOUTH-WEST NORTH-WEST))
 
@@ -91,10 +92,74 @@
 	(when (and (> gen-num 50) (chance 50))
 	  (let ((start-dir (nth (random 3) '(N NE SE))))
 	    
-	    (hm-gen-riv-high-low number-world world x y start-dir 6)))
+	    (lay-down-river-list
+	     (hm-gen-riv-high-low number-world world x y start-dir 6)
+	     world)))
 	))
     world
     ))
+
+(defun is-river (xy dir &optional (world *world*))
+  "Returns riversymbol of border dir of tile at xy, nil if none."
+  (if (and (not (null xy)) (coord-in-bounds xy world))
+      (let ((dir-rivers (mapcar #'(lambda (river-type)
+				    (conc-syms river-type "-" dir ))
+				*river-list*))
+	    (river-borders (tile-river-borders (tile-at (car xy) (cdr xy) world))))
+	(dolist (river dir-rivers)
+	  (if (member river river-borders)
+	      (return-from is-river river))))))
+
+(defun lay-down-river-list (border-list &optional (world *world*))
+  ;; Borderlist is ( ((x . y) dir) ...)
+
+  (if (null border-list) (return-from lay-down-river-list))
+  (setf border-list (reverse border-list))
+
+  ;;; First handle river start:
+  ;; check that there are no rivers in anything but next:
+  ;(format t "~&~a~%" (car border-list))
+  (dolist (border
+	    (cons
+	     (car border-list) ; Check that there is no river in start
+	     (remove (cadr border-list)
+		     (list-neighbour-borders (caaar border-list)
+					     (cdaar border-list)
+					     (cadar border-list)
+					     world)
+		     :test #'equal)))
+    (when (is-river (car border) (cadr border) world)
+      (return-from lay-down-river-list)))
+
+;;  (format t "~&Start at ~a~%" (car border-list))
+  (if (coord-in-bounds (caar border-list))
+      (add-river (caaar border-list)
+		 (cdaar border-list)
+		 'stream
+		 (cadar border-list)
+		 world))
+  
+  (do* ((border-head border-list (cdr border-head))
+	(previous (car border-head) (car border-head))
+	(current (cadr border-head) (cadr border-head))
+	(next (caddr border-head) (caddr border-head)))
+       ((null current))
+    (let ((c-x (caar current))
+	  (c-y (cdar current))
+	  (c-pos (cadr current))
+	  (n-x (caar next))
+	  (n-y (cdar next))
+	  (n-pos (cadr next)))
+      '(dolist (border ;; Maybe not necessary
+		(remove-if #'(lambda (b)
+			       (or (equal b previous) (equal b next)))
+			   (list-neighbour-borders c-x c-y c-pos world)))
+	(if (is-river (car border) (cadr border) world)
+	    (return-from lay-down-river-list)))
+
+      (add-river c-x c-y 'stream c-pos world)
+      (if (is-river (car next) n-pos world)
+	  (return-from lay-down-river-list)))))
 
 (defun make-testing-world (width height faction-count
 			   &optional
@@ -819,7 +884,7 @@ NIL on failure."
 
 ;(hm-gen-riv-high-low number-world world x y 'n 1000)
 (defun hm-gen-riv-high-low (heightmap world start-x start-y start-dir min-length)
-  (format t "~&(~a . ~a) ~a~&" start-x start-y start-dir)
+  ;(format t "~&(~a . ~a) ~a~&" start-x start-y start-dir)
   (let* ((end nil)
 	 (range 1000)
 	 (border-fill (breadth-first-fill-borders
@@ -843,21 +908,25 @@ NIL on failure."
 			       (setf end (list xy dir)))))))
 	 (border-list (border-hash-path end border-fill)))
     (when (>= (length border-list) min-length)
-      (dolist (border border-list)
+      '(dolist (border border-list)
 	(let ((x (caar border))
 	      (y (cdar border))
 	      (pos (cadr border)))
 	  ;; If there is already a river on burrent border:
 	  (if (and ; no
-	       (coord-in-bounds (cons x y) world)
-	       (intersection (tile-river-borders (tile-at x y world))
-			     (mapcar #'(lambda (river-size)
-					 (conc-syms river-size pos))
-				     '(stream)))) ; TODO: Get some list of river syms from somewhere
-	      (return-from hm-gen-riv-high-low) ; All subsequent borders SHOULD have a river,
+		(coord-in-bounds (cons x y) world)
+		(intersection (tile-river-borders (tile-at x y world))
+		 (mapcar #'(lambda (river-size)
+			     (conc-syms river-size pos))
+			 *river-list*))) ; TODO: Get some list of river syms from somewhere
+	    (return-from hm-gen-riv-high-low) ; All subsequent borders SHOULD have a river,
 					;   -> if not, avoids forking downstream
-	      (add-river x y 'stream pos world))
-	  )))))
+	    (add-river x y 'stream pos world))
+
+	  ;;(if (list-neighbour-borders x y pos world)) ; i need the next border for this
+	  
+	  ))
+      border-list)))
 
 (defun run-river-from-to (mouth-x mouth-y mouth-dir end-x end-y end-dir &optional (range 1000))
   "Runs a river from mouth xy to end xy. Mouth coordinates + dir should refer to a land tile
