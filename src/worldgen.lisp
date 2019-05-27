@@ -114,11 +114,14 @@
   ;; Borderlist is ( ((x . y) dir) ...)
 
   (if (null border-list) (return-from lay-down-river-list))
+
+  ;; Border-list argument should start at coast and go inland
+  ;; -> reverse it
   (setf border-list (reverse border-list))
 
   ;;; First handle river start:
   ;; check that there are no rivers in anything but next:
-  ;(format t "~&~a~%" (car border-list))
+  
   (dolist (border
 	    (cons
 	     (car border-list) ; Check that there is no river in start
@@ -127,12 +130,11 @@
 					     (cdaar border-list)
 					     (cadar border-list)
 					     world)
-		     :test #'equal)))
+		     :test #'equalp)))
     (when (is-river (car border) (cadr border) world)
       (return-from lay-down-river-list)))
 
-;;  (format t "~&Start at ~a~%" (car border-list))
-  (if (coord-in-bounds (caar border-list))
+  (if (coord-in-bounds (caar border-list) world)
       (add-river (caaar border-list)
 		 (cdaar border-list)
 		 'stream
@@ -146,20 +148,39 @@
        ((null current))
     (let ((c-x (caar current))
 	  (c-y (cdar current))
-	  (c-pos (cadr current))
-	  (n-x (caar next))
-	  (n-y (cdar next))
-	  (n-pos (cadr next)))
-      '(dolist (border ;; Maybe not necessary
-		(remove-if #'(lambda (b)
-			       (or (equal b previous) (equal b next)))
-			   (list-neighbour-borders c-x c-y c-pos world)))
-	(if (is-river (car border) (cadr border) world)
-	    (return-from lay-down-river-list)))
-
+	  (c-pos (cadr current)))
+      
       (add-river c-x c-y 'stream c-pos world)
-      (if (is-river (car next) n-pos world)
-	  (return-from lay-down-river-list)))))
+
+      (dolist (border ;; check everything except upstream for rivers
+		(remove previous
+			(list-neighbour-borders c-x c-y c-pos world)
+			:test #'border=))
+	(when (is-river (car border) (cadr border) world)
+	  (return-from lay-down-river-list)))
+
+      )))
+
+(defun border= (border1 border2)
+  (if (not (and (valid-border border1)
+		(valid-border border2)))
+      (return-from border= nil))
+  (let ((direction (cadr border1)))
+    (if (or
+	 (equalp border1 border2)
+	 (equalp
+	  (list
+	   (neighbour-tile-coords (caar border1) (cdar border1) direction
+				  999 999)
+	   (oppdir direction))
+	  border2))
+	t)))
+
+(defun valid-border (border)
+  "Check that border is of form ((cons int int) dir)"
+  (and (integerp (caar border))
+       (integerp (cdar border))
+       (symbolp (cadr border))))
 
 (defun make-testing-world (width height faction-count
 			   &optional
