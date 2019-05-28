@@ -64,17 +64,23 @@
 	(dotimes (y height)
 	  (setf (aref number-world x y) (random 100)))))
 
-    (when mirror
-      (do ((x 0)
-	   (y 0)
-	   (rand-val (random 100) (random 100)))
-	  ((= x height))
-	(setf (aref number-world x y) rand-val)
-	(setf (aref number-world (- width 1 x) (- height 1 y)) rand-val)
-	(incf y)
-	(when (= y height)
-	  (incf x)
-	  (setf y 0))))
+    (let ((random-range 100))
+      (when mirror
+	(do ((x 0)
+	     (y 0)
+	     (rand-val (random random-range) (random random-range)))
+	    ((= x height))
+	  (setf (aref number-world x y) rand-val)
+	  (setf (aref number-world (- width 1 x) (- height 1 y)) rand-val)
+	  (incf y)
+	  (when (= y height)
+	    (incf x)
+	    (setf y 0))))
+
+      (when (null mirror)
+	(docoords (x y world)
+	  (setf (aref number-world x y) (random random-range)))
+	))
 
     (setf number-world (blur-array number-world 1.1)) ; TODO: radius 1 is too sharp, 2 is too soft
 
