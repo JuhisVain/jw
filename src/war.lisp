@@ -188,6 +188,13 @@
 		:small (:north (10 20 30) ;; DUMMY data
 			:north-west (40 50 60)
 			:south-west (70 80 90)))
+	       (river
+		:large (:north (55 26 -6)
+			:north-west (55 -2 -2)
+			:south-west (55 -2 50))
+		:small (:north (10 20 30) ;; DUMMY data
+			:north-west (40 50 60)
+			:south-west (70 80 90)))
 	       (rail
 		:large (:north (60 44 -53)
 			:north-west (60 -40 -1)
