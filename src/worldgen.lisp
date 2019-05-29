@@ -1,7 +1,7 @@
 (in-package :war)
 
 (defvar *graphics-variants* nil) ; ((name1 name1-a name1-b) (name2 name2-a name2-b name2-c)) etc..
-(defvar *river-list* '(stream))
+(defvar *river-list* '(stream river))
 (defconstant +std-short-dirs+ '(N NE SE S SW NW))
 (defconstant +std-long-dirs+ '(NORTH NORTH-EAST SOUTH-EAST SOUTH SOUTH-WEST NORTH-WEST))
 
@@ -106,15 +106,13 @@
     ))
 
 (defun is-river (xy dir &optional (world *world*))
-  "Returns riversymbol of border dir of tile at xy, nil if none."
+  "Returns riversymbol without direction of border dir of tile at xy, nil if none."
   (if (and (not (null xy)) (coord-in-bounds xy world))
-      (let ((dir-rivers (mapcar #'(lambda (river-type)
-				    (conc-syms river-type "-" dir ))
-				*river-list*))
-	    (river-borders (tile-river-borders (tile-at (car xy) (cdr xy) world))))
-	(dolist (river dir-rivers)
-	  (if (member river river-borders)
-	      (return-from is-river river))))))
+      (dolist (river-type *river-list*)
+	(if (member (conc-syms river-type "-" dir )
+		    (tile-river-borders (tile-at (car xy) (cdr xy) world)))
+	    (return-from is-river river-type)))))
+
 
 (defun lay-down-river-list (border-list &optional (world *world*))
   ;; Borderlist is ( ((x . y) dir) ...)
@@ -143,7 +141,7 @@
   (if (coord-in-bounds (caar border-list) world)
       (add-river (caaar border-list)
 		 (cdaar border-list)
-		 'stream
+		 'stream ;; start with a small river
 		 (cadar border-list)
 		 world))
   
@@ -155,8 +153,10 @@
     (let ((c-x (caar current))
 	  (c-y (cdar current))
 	  (c-pos (cadr current)))
-      
-      (add-river c-x c-y 'stream c-pos world)
+
+      (add-river c-x c-y
+		 'river
+		 c-pos world);)
 
       (dolist (border ;; check everything except upstream for rivers
 		(remove previous
@@ -166,6 +166,18 @@
 	  (return-from lay-down-river-list)))
 
       )))
+
+(defun enlarge-river (river-symbol)
+  "Return river symbol increased by one order,
+input nil -> smallest river type,
+input largest river type -> nil"
+  (labels ((locate-next-river (river-list)
+	     (if (eq river-symbol (car river-list))
+		 (cadr river-list)
+		 (locate-next-river (cdr river-list)))))
+    (cond ((null river-symbol)
+	   (car *river-list*))
+	  (t (locate-next-river *river-list*)))))
 
 (defun border= (border1 border2)
   (if (not (and (valid-border border1)
