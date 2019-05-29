@@ -935,24 +935,6 @@ NIL on failure."
 			       (setf end (list xy dir)))))))
 	 (border-list (border-hash-path end border-fill)))
     (when (>= (length border-list) min-length)
-      '(dolist (border border-list)
-	(let ((x (caar border))
-	      (y (cdar border))
-	      (pos (cadr border)))
-	  ;; If there is already a river on burrent border:
-	  (if (and ; no
-		(coord-in-bounds (cons x y) world)
-		(intersection (tile-river-borders (tile-at x y world))
-		 (mapcar #'(lambda (river-size)
-			     (conc-syms river-size pos))
-			 *river-list*))) ; TODO: Get some list of river syms from somewhere
-	    (return-from hm-gen-riv-from-coast) ; All subsequent borders SHOULD have a river,
-					;   -> if not, avoids forking downstream
-	    (add-river x y 'stream pos world))
-
-	  ;;(if (list-neighbour-borders x y pos world)) ; i need the next border for this
-	  
-	  ))
       border-list)))
 
 (defun run-river-from-to (mouth-x mouth-y mouth-dir end-x end-y end-dir &optional (range 1000))
