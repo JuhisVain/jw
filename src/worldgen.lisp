@@ -99,7 +99,7 @@
 	  (let ((start-dir (nth (random 3) '(N NE SE))))
 	    
 	    (lay-down-river-list
-	     (hm-gen-riv-from-coast number-world world x y start-dir 6)
+	     (hm-gen-riv-from-high number-world world x y start-dir 6)
 	     world)))
 	))
     world
@@ -909,8 +909,9 @@ NIL on failure."
 	(add-river x y 'stream pos world))
       )))
 
-;(hm-gen-riv-from-coast number-world world x y 'n 1000)
-(defun hm-gen-riv-from-coast (heightmap world start-x start-y start-dir min-length)
+
+;(hm-gen-riv-from-high number-world world x y 'n 1000)
+(defun hm-gen-riv-from-high (heightmap world start-x start-y start-dir min-length)
   ;(format t "~&(~a . ~a) ~a~&" start-x start-y start-dir)
   (let* ((end nil)
 	 (range 1000)
