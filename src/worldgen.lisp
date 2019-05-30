@@ -93,17 +93,21 @@
 
 	))
 
-    (docoords (x y world)
-      (let ((gen-num (aref number-world x y)))
-	(when (and (> gen-num 50) (chance 50))
-	  (let ((start-dir (nth (random 3) '(N NE SE))))
-	    
-	    (lay-down-river-list
-	     (hm-gen-riv-from-high number-world world x y start-dir 6)
-	     world)))
-	))
-    world
-    ))
+    (let ((river-lists))
+      (docoords (x y world)
+	(let ((gen-num (aref number-world x y)))
+	  (when (and (> gen-num 50) (chance 50))
+	    (let ((start-dir (nth (random 3) '(N NE SE))))
+	      (let ((river
+		     (hm-gen-riv-from-high number-world world x y start-dir 6)))
+		(when river
+		  (push river river-lists)))))))
+
+	  (dolist (river-piece (compile-rivers river-lists))
+	    (apply #'add-river (append river-piece (list world)))))
+
+    world))
+
 
 (defun is-river (xy dir &optional (world *world*))
   "Returns riversymbol without direction of border dir of tile at xy, nil if none."
@@ -112,6 +116,31 @@
 	(if (member (conc-syms river-type "-" dir )
 		    (tile-river-borders (tile-at (car xy) (cdr xy) world)))
 	    (return-from is-river river-type)))))
+
+
+(defun compile-rivers (river-lists)
+  "Collect hm-gen-riv-from-high border-lists into a list and feed to this thing."
+  (let ((border-size-ht (make-hash-table :test 'equal)))
+    (dolist (river river-lists)
+      (dolist (border river)
+	(let* ((prime-border (prime-border-synonym border))
+	       (old-size (gethash prime-border border-size-ht))
+	       (new-size (enlarge-river old-size)))
+	  (when new-size
+	    (setf (gethash prime-border border-size-ht) new-size)
+	    ))))
+
+    (let ((compiled-borders))
+      (maphash #'(lambda (key value)
+		   (push (list
+			  (caar key)   ; x
+			  (cdar key)   ; y
+			  value        ; size
+			  (cadr key))  ; border
+			 compiled-borders))
+	       border-size-ht)
+      
+      compiled-borders)))
 
 
 (defun lay-down-river-list (border-list &optional (world *world*))
@@ -202,6 +231,21 @@ input largest river type -> nil"
 	   (oppdir direction))
 	  border2))
 	t)))
+
+(defun prime-border-synonym (border)
+  "Returns the N or NW or SW border that is border= with argument."
+  (when (not (valid-border border))
+    (return-from prime-border-synonym))
+  (let ((x (caar border))
+	(y (cdar border))
+	(direction (cadr border)))
+    (case direction
+      ((ne se s)
+       (list
+	(neighbour-tile-coords x y direction 999 999)
+	(oppdir direction)))
+      (otherwise border)
+    )))
 
 (defun valid-border (border)
   "Check that border is of form ((cons int int) dir)"
