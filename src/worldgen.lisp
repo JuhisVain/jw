@@ -144,7 +144,7 @@
 		 'stream ;; start with a small river
 		 (cadar border-list)
 		 world))
-  
+
   (do* ((border-head border-list (cdr border-head))
 	(previous (car border-head) (car border-head))
 	(current (cadr border-head) (cadr border-head))
@@ -159,15 +159,19 @@
 	    (add-river c-x c-y
 		       river-to-place
 		       c-pos world)
-	    (return-from lay-down-river-list)))
+	    (progn (format t "~&~a~%" (list 'rivertoolarge c-x c-y c-pos river-to-place))
+	    (return-from lay-down-river-list))))
 
-      (dolist (border ;; check everything except upstream for rivers
+      ;;; If this is not done river will fork incorrectly
+      ;; if this is done river won't grow when uniting...
+      '(dolist (border ;; check everything except upstream for rivers
 		(remove next
 			(remove previous
 				(list-neighbour-borders c-x c-y c-pos world)
 				:test #'border=)
 		:test #'border=))
 	(when (is-river (car border) (cadr border) world)
+	  (progn (format t "~&~a~%" (list 'somerthing c-x c-y c-pos (car border) (cadr border))))
 	  (return-from lay-down-river-list)))
 
       )))
