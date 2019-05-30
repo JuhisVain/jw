@@ -129,7 +129,7 @@
   (dolist (border
 	    (cons
 	     (car border-list) ; Check that there is no river in start
-	     (remove (cadr border-list)
+	     (remove (cadr border-list) ; remove next
 		     (list-neighbour-borders (caaar border-list)
 					     (cdaar border-list)
 					     (cadar border-list)
@@ -154,14 +154,19 @@
 	  (c-y (cdar current))
 	  (c-pos (cadr current)))
 
-      (add-river c-x c-y
-		 'river
-		 c-pos world);)
+      (let ((river-to-place (enlarge-river (is-river (cons c-x c-y) c-pos world))))
+	(if river-to-place
+	    (add-river c-x c-y
+		       river-to-place
+		       c-pos world)
+	    (return-from lay-down-river-list)))
 
       (dolist (border ;; check everything except upstream for rivers
-		(remove previous
-			(list-neighbour-borders c-x c-y c-pos world)
-			:test #'border=))
+		(remove next
+			(remove previous
+				(list-neighbour-borders c-x c-y c-pos world)
+				:test #'border=)
+		:test #'border=))
 	(when (is-river (car border) (cadr border) world)
 	  (return-from lay-down-river-list)))
 
@@ -875,12 +880,22 @@ NIL on failure."
 	      (member 'sea (tile-type tile))
 	      (member 'sea (tile-type destination)))
       (return-from add-river nil))
+
+    (mapcar #'(lambda (river-type)
+		(setf (tile-river-borders tile)
+		      (remove (conc-syms river-type "-" location-on-tile)
+			      (tile-river-borders tile))
+		      (tile-river-borders destination)
+		      (remove (conc-syms river-type "-" (oppdir location-on-tile))
+			      (tile-river-borders destination))))
+	    (remove size *river-list*)) ; There can be only one
     
     (pushnew (intern (concatenate 'string (symbol-name size) "-" (symbol-name location-on-tile)))
 	     (tile-river-borders tile))
     (pushnew (intern (concatenate 'string (symbol-name size) "-" (symbol-name (oppdir location-on-tile))))
 	     (tile-river-borders destination))
-    (finalize-tile-region x y world)))
+    ;(finalize-tile-region x y world)
+    ))
 
 (defun random-hash (hash-table)
   "Returns random key value pair from hash-table."
