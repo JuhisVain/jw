@@ -86,7 +86,7 @@
 
     (docoords (x y world)
       (let ((gen-num (aref number-world x y)))
-	(setf (tile-at x y world) (make-tile :type (if (> gen-num 46)
+	(setf (tile-at x y world) (make-tile :type (if (> gen-num 44)
 						       '(grass) '(sea))))
 	(or (when (> gen-num 65) (push 'mountain (tile-type (tile-at x y world))))
 	    (when (> gen-num 60) (push 'hill (tile-type (tile-at x y world)))))
@@ -101,7 +101,7 @@
 	      (let ((river
 		     (hm-gen-riv-from-high number-world world x y start-dir 6)))
 		(when river
-		  (push river river-lists)))))))
+		  (push (reverse river) river-lists)))))))
 
 	  (dolist (river-piece (compile-rivers river-lists))
 	    (apply #'add-river (append river-piece (list world)))))
@@ -122,13 +122,43 @@
   "Collect hm-gen-riv-from-high border-lists into a list and feed to this thing."
   (let ((border-size-ht (make-hash-table :test 'equal)))
     (dolist (river river-lists)
-      (dolist (border river)
-	(let* ((prime-border (prime-border-synonym border))
-	       (old-size (gethash prime-border border-size-ht))
-	       (new-size (enlarge-river old-size)))
-	  (when new-size
+      (when (null
+	     (dolist (neighbour-border ; Check that there is no river already near start location
+			 (set-difference 
+			(cons
+			 (car river) ; Check that there is no river on start already
+			 (list-neighbour-borders (caaar river) ; Check start's neighbours for rivers
+						 (cdaar river)
+						 (cadar river)))
+			(list (cadr river)) ; Ignore possible river on start's next
+			:test #'border=))
+	       (when (gethash (prime-border-synonym neighbour-border) border-size-ht)
+		 (return t)))) ; if found: abort this river
+
+	(format t "~&~a~%" river)
+
+					;(dolist (border river)
+	
+	(do ((border-head river (cdr border-head)))
+	    ((null border-head))
+
+	  (let* ((prime-border (prime-border-synonym (car border-head)))
+		 (prime-next (prime-border-synonym (cadr border-head)))
+		 (old-size (gethash prime-border border-size-ht))
+		 (new-size (enlarge-river old-size)))
+
+	    ;; If there is river already here but not in next we've got a problem:
+	    ;; TODO: just do what's done for starting border
+	    (when (and (gethash prime-border border-size-ht)
+		       (null (gethash prime-next border-size-ht)))
+	      (return))
+
 	    (setf (gethash prime-border border-size-ht) new-size)
-	    ))))
+
+	    ))
+	
+
+	))
 
     (let ((compiled-borders))
       (maphash #'(lambda (key value)
@@ -162,7 +192,8 @@
 		     (list-neighbour-borders (caaar border-list)
 					     (cdaar border-list)
 					     (cadar border-list)
-					     world)
+					     (world-width world)
+					     (world-height world))
 		     :test #'equalp)))
     (when (is-river (car border) (cadr border) world)
       (return-from lay-down-river-list)))
@@ -196,7 +227,9 @@
       '(dolist (border ;; check everything except upstream for rivers
 		(remove next
 			(remove previous
-				(list-neighbour-borders c-x c-y c-pos world)
+				(list-neighbour-borders c-x c-y c-pos
+							(world-width world)
+							(world-height world))
 				:test #'border=)
 		:test #'border=))
 	(when (is-river (car border) (cadr border) world)
@@ -208,11 +241,16 @@
 (defun enlarge-river (river-symbol)
   "Return river symbol increased by one order,
 input nil -> smallest river type,
-input largest river type -> nil"
+input largest river type -> largest river type,
+input wrong river type -> nil"
   (labels ((locate-next-river (river-list)
 	     (if (eq river-symbol (car river-list))
-		 (cadr river-list)
-		 (locate-next-river (cdr river-list)))))
+		 (if (cadr river-list)
+		     (cadr river-list)
+		     (car river-list))
+		 (if (cdr river-list)
+		     (locate-next-river (cdr river-list))
+		     nil))))
     (cond ((null river-symbol)
 	   (car *river-list*))
 	  (t (locate-next-river *river-list*)))))
@@ -464,7 +502,8 @@ End-when-func takes 2 arguments: (cons x y) dir"
 	    (dolist (neighbour (list-neighbour-borders (caadr current) ; x
 						       (cdadr current) ; y
 						       (caddr current) ; dir
-						       world))
+						       (world-width world)
+						       (world-height world)))
 	      
 	      (cond ((null neighbour) nil)
 		    ((null (car neighbour)) nil)
@@ -488,50 +527,52 @@ End-when-func takes 2 arguments: (cons x y) dir"
     came-from
     ))
 
-(defun list-neighbour-borders (tile-x tile-y border &optional (world *world*))
+(defun list-neighbour-borders (tile-x tile-y border &optional
+						      (world-width (1- most-positive-fixnum))
+						      (world-height (1- most-positive-fixnum)));(world *world*))
   "Returns the input's neighbouring borders as list of four instances of ((x . y) dir),
 dir being one of (N NW SW)."
   (case border ; reorganize
     (s (setf border 'n)
        (let ((ntc (neighbour-tile-coords tile-x tile-y 's
 					 ;; Forcing N NW or SW requires going out of bounds
-					 (1+ (world-width world))
-					 (1+ (world-height world))
+					 (1+ world-width)
+					 (1+ world-height)
 					 -1 -1)))
 	 (setf tile-x (car ntc)
 	       tile-y (cdr ntc))))
     (se (setf border 'nw)
 	(let ((ntc (neighbour-tile-coords tile-x tile-y 'se
-					  (1+ (world-width world))
-					  (1+ (world-height world))
+					  (1+ world-width)
+					  (1+ world-height)
 					  -1 -1)))
 	  (setf tile-x (car ntc)
 		tile-y (cdr ntc))))
     (ne (setf border 'sw)
 	(let ((ntc (neighbour-tile-coords tile-x tile-y 'ne
-					  (1+ (world-width world))
-					  (1+ (world-height world))
+					  (1+ world-width)
+					  (1+ world-height)
 					  -1 -1)))
 	  (setf tile-x (car ntc)
 		tile-y (cdr ntc)))))
   (case border
     (n (let ((ntc (neighbour-tile-coords tile-x tile-y 'ne
-					 (world-width world)
-					 (world-height world))))
+					 world-width
+					 world-height)))
 	 (list (list (cons tile-x (1- tile-y)) 'sw)
 	       (list ntc 'nw)
 	       (list (cons tile-x tile-y) 'nw)
 	       (list ntc 'sw))))
     (nw (let ((ntc (neighbour-tile-coords tile-x tile-y 'nw
-					  (world-width world)
-					  (world-height world))))
+					  world-width
+					  world-height)))
 	  (list (list (cons tile-x (1- tile-y)) 'sw)
 		(list (cons (car ntc) (1+ (cdr ntc))) 'n)
 		(list (cons tile-x tile-y) 'n)
 		(list (cons tile-x tile-y) 'sw))))
     (sw (let ((ntc (neighbour-tile-coords tile-x tile-y 'sw
-					  (world-width world)
-					  (world-height world))))
+					  world-width
+					  world-height)))
 	  (list (list ntc 'n)
 		(list (cons tile-x (1+ tile-y)) 'nw)
 		(list (cons tile-x (1+ tile-y)) 'n)
