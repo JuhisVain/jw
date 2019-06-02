@@ -84,9 +84,11 @@
 
     (setf number-world (blur-array number-world 1.1)) ; TODO: radius 1 is too sharp, 2 is too soft
 
+    (let ((sea-threshold 44))
+    
     (docoords (x y world)
       (let ((gen-num (aref number-world x y)))
-	(setf (tile-at x y world) (make-tile :type (if (> gen-num 44)
+	(setf (tile-at x y world) (make-tile :type (if (> gen-num sea-threshold)
 						       '(grass) '(sea))))
 	(or (when (> gen-num 65) (push 'mountain (tile-type (tile-at x y world))))
 	    (when (> gen-num 60) (push 'hill (tile-type (tile-at x y world)))))
@@ -99,12 +101,14 @@
 	  (when (and (> gen-num 50) (chance 50))
 	    (let ((start-dir (nth (random 3) '(N NE SE))))
 	      (let ((river
-		     (hm-gen-riv-from-high number-world world x y start-dir 6)))
+		     (hm-gen-riv-from-high number-world world x y start-dir 6 sea-threshold)))
 		(when river
-		  (push (reverse river) river-lists)))))))
+		  (push (reverse (cdr river)) river-lists)))))))
 
-	  (dolist (river-piece (compile-rivers river-lists))
+	  (dolist (river-piece (compile-downstream-rivers river-lists))
 	    (apply #'add-river (append river-piece (list world)))))
+
+    )
 
     world))
 
@@ -118,41 +122,124 @@
 	    (return-from is-river river-type)))))
 
 
+(defun border-and-neighbours (border)
+  (mapcar #'prime-border-synonym
+	  (cons
+	   border
+	   (list-neighbour-borders (caar border)
+				   (cdar border)
+				   (cadr border)))))
+
+
+(defun compile-downstream-rivers (river-lists)
+  ;;I'm beginning to think that it would be simpler to do simulated precipitation...
+  (let ((border-size-ht (make-hash-table :test 'equal)))
+    (format t "~&Received ~a rivers~%" (length river-lists))
+    (dolist (river river-lists)
+      (block river
+
+	;; If there is already a river here or in adjacent borders:
+	(when (find-if #'(lambda (x)
+			   (gethash (prime-border-synonym x) border-size-ht))
+		       (border-and-neighbours (car river)))
+	  ;(format t "~&Found in ht:: ~a~%" (car river))
+	  (return-from river)) ; Abort this river
+
+	(let ((river-name (prime-border-synonym (car river))))
+	  (setf (gethash river-name border-size-ht)
+		(enlarge-river (gethash river-name border-size-ht))))
+
+	;(Format t "~&RIVER  ~a~%" river)
+	
+	(do ((border-head (mapcar #'prime-border-synonym river) (cdr border-head))
+	     (rest-checked nil))
+	    ((null border-head))
+	  (let ((previous (car border-head))
+		(current (cadr border-head))
+		(next (caddr border-head)))
+	    
+	    (when (null current) (return-from river))
+	    
+	    ;; If there is a river at current but a not at a subsequent
+	    (and (not rest-checked)
+		 (gethash current border-size-ht)
+		 (setf rest-checked t)
+		 (dolist (sub (cddr border-head))
+		   (when (not (gethash (car sub) border-size-ht))
+		     ;(format t "->->->Aborting ~a~%" (car sub))
+		     (return t)))
+		 (return-from river))
+
+	    
+	    (let ((current-size (gethash current border-size-ht)))
+	      (setf (gethash current border-size-ht) (enlarge-river current-size)))
+
+	    '(dolist (neigh (set-difference (list-neighbour-borders (caar current)
+								   (cdar current)
+								   (cadr current))
+					   (list previous next)
+					   :test #'border=))
+	      (when (gethash neigh border-size-ht)
+		(format t "~&False fork at: ~a~%" neigh)
+		(return-from river)))
+	    ))))
+    
+    (let ((compiled-borders))
+      (maphash #'(lambda (key value)
+		   (push (list
+			  (caar key)   ; x
+			  (cdar key)   ; y
+			  value        ; size
+			  (cadr key))  ; border
+			 compiled-borders))
+	       border-size-ht)
+      compiled-borders)))
+
+
+
 (defun compile-rivers (river-lists)
   "Collect hm-gen-riv-from-high border-lists into a list and feed to this thing."
-  (let ((border-size-ht (make-hash-table :test 'equal)))
+  (let ((border-size-ht (make-hash-table :test 'equal))
+	(potential-river nil))
     (dolist (river river-lists)
       (when (null
-	     (dolist (neighbour-border ; Check that there is no river already near start location
-			 (set-difference 
-			(cons
-			 (car river) ; Check that there is no river on start already
-			 (list-neighbour-borders (caaar river) ; Check start's neighbours for rivers
-						 (cdaar river)
-						 (cadar river)))
-			(list (cadr river)) ; Ignore possible river on start's next
-			:test #'border=))
-	       (when (gethash (prime-border-synonym neighbour-border) border-size-ht)
-		 (return t)))) ; if found: abort this river
+
+	     (dolist (border river)
+	       
+	       (if (dolist (neighbour-border ; Check that there is no river already near start location
+					;(set-difference
+			     (border-and-neighbours border);(car river))
+
+			    
+					;(list (prime-border-synonym (cadr river))) ; Ignore possible river on start's next
+			    
+					;:test #'border=)
+			    )
+		     (when (gethash (prime-border-synonym neighbour-border) border-size-ht)
+		       (return t))) ; if found: abort this river
+
+		   (return t))))
 
 	(format t "~&~a~%" river)
 
-					;(dolist (border river)
+	;(dolist (border river)
+	 ; )
+	
 	
 	(do ((border-head river (cdr border-head)))
 	    ((null border-head))
 
 	  (let* ((prime-border (prime-border-synonym (car border-head)))
-		 (prime-next (prime-border-synonym (cadr border-head)))
 		 (old-size (gethash prime-border border-size-ht))
 		 (new-size (enlarge-river old-size)))
 
-	    ;; If there is river already here but not in next we've got a problem:
-	    ;; TODO: just do what's done for starting border
+	    ;; If there is river already here but not in a subsequent one we've got a problem:
 	    (when (and (gethash prime-border border-size-ht)
-		       (null (gethash prime-next border-size-ht)))
-	      (return))
-
+		       (dolist (sub (cdr border-head))
+			 (unless (gethash (prime-border-synonym sub) border-size-ht)
+			   (return t))))
+	      (return)) ; Results in smallest type of river joining but not growing another river
+	    
 	    (setf (gethash prime-border border-size-ht) new-size)
 
 	    ))
@@ -1027,7 +1114,7 @@ NIL on failure."
 
 
 ;(hm-gen-riv-from-high number-world world x y 'n 1000)
-(defun hm-gen-riv-from-high (heightmap world start-x start-y start-dir min-length)
+(defun hm-gen-riv-from-high (heightmap world start-x start-y start-dir min-length sea-threshold)
   ;(format t "~&(~a . ~a) ~a~&" start-x start-y start-dir)
   (let* ((end nil)
 	 (range 1000)
@@ -1036,9 +1123,12 @@ NIL on failure."
 		       #'(lambda (xy dir world)
 			   (let ((vals (heightmap-border-adjacent-values xy dir heightmap)))
 			     (when vals
-			       (min (caadr vals)
-				    (cdadr vals)
-				    ))))
+			       (if (find sea-threshold (list (caadr vals)
+							     (cdadr vals)))
+				   most-positive-fixnum
+				   (min (caadr vals)
+					(cdadr vals)
+					)))))
 		       
 		       #'(lambda (xy dir)
 			   (let ((tile (tile-at (car xy) (cdr xy) world))
