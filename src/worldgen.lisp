@@ -132,7 +132,7 @@
 
 
 (defun compile-downstream-rivers (river-lists)
-  ;;I'm beginning to think that it would be simpler to do simulated precipitation...
+  "Transforms high to low rivers into list of (x y border size)s."
   (let ((border-size-ht (make-hash-table :test 'equal)))
     (format t "~&Received ~a rivers~%" (length river-lists))
     (dolist (river river-lists)
@@ -142,15 +142,12 @@
 	(when (find-if #'(lambda (x)
 			   (gethash (prime-border-synonym x) border-size-ht))
 		       (border-and-neighbours (car river)))
-	  ;(format t "~&Found in ht:: ~a~%" (car river))
 	  (return-from river)) ; Abort this river
 
 	(let ((river-name (prime-border-synonym (car river))))
 	  (setf (gethash river-name border-size-ht)
 		(enlarge-river (gethash river-name border-size-ht))))
 
-	;(Format t "~&RIVER  ~a~%" river)
-	
 	(do ((border-head (mapcar #'prime-border-synonym river) (cdr border-head))
 	     (rest-checked nil))
 	    ((null border-head))
@@ -166,7 +163,6 @@
 		 (setf rest-checked t)
 		 (dolist (sub (cddr border-head))
 		   (when (not (gethash (car sub) border-size-ht))
-		     ;(format t "->->->Aborting ~a~%" (car sub))
 		     (return t)))
 		 (return-from river))
 
@@ -174,15 +170,16 @@
 	    (let ((current-size (gethash current border-size-ht)))
 	      (setf (gethash current border-size-ht) (enlarge-river current-size)))
 
-	    '(dolist (neigh (set-difference (list-neighbour-borders (caar current)
-								   (cdar current)
-								   (cadr current))
-					   (list previous next)
-					   :test #'border=))
-	      (when (gethash neigh border-size-ht)
-		(format t "~&False fork at: ~a~%" neigh)
-		(return-from river)))
-	    ))))
+	    ;; when a river is generated that touches a river generated earlier, join with older
+	    (when (find-if #'(lambda (x)
+			       (gethash (prime-border-synonym x) border-size-ht))
+			   (set-difference
+			    (list-neighbour-borders (caar current)
+						    (cdar current)
+						    (cadr current))
+			    (list previous next)
+			    :test #'border=))
+	      (return-from river))))))
     
     (let ((compiled-borders))
       (maphash #'(lambda (key value)
