@@ -115,11 +115,8 @@
 
 (defun is-river (xy dir &optional (world *world*))
   "Returns riversymbol without direction of border dir of tile at xy, nil if none."
-  (if (and (not (null xy)) (coord-in-bounds xy world))
-      (dolist (river-type *river-list*)
-	(if (member (conc-syms river-type "-" dir )
-		    (tile-river-borders (tile-at (car xy) (cdr xy) world)))
-	    (return-from is-river river-type)))))
+  (when (and (not (null xy)) (coord-in-bounds xy world))
+    (cdr (assoc dir (tile-river-borders (tile-at (car xy) (cdr xy) world))))))
 
 
 (defun border-and-neighbours (border)
@@ -763,13 +760,18 @@ dir being one of (N NW SW)."
 			    (has-variants sym variant-seed))
 			sym-list))))
 
+;; Might be temporary:
+(defun border-symbol (border)
+  "Transform a border cons to a symbol"
+  (conc-syms (cdr border) "-" (car border)))
+
 (defun collect-graphics (tile)
   "Collect symbols from tile's logical fields."
   (when tile
     (remove nil
 	    (append (tile-type tile)
 		    (mapcar #'car (tile-location tile))
-		    (tile-river-borders tile)
+		    (mapcar #'border-symbol (tile-river-borders tile))
 		    (tile-road-links tile)
 		    (tile-rail-links tile)))))
 
@@ -787,7 +789,7 @@ be drawn 'between' tiles."
   (let ((tile (tile-at x y world)))
     (when tile
       (pointers-to-variants
-       (append (tile-river-borders tile)
+       (append (mapcar #'border-symbol (tile-river-borders tile))
 	       (tile-road-links tile)
 	       (tile-rail-links tile))
        (+ x y)))))
@@ -1047,28 +1049,23 @@ NIL on failure."
   "Adds a single piece of river of type SIZE running on border LOCATION-ON-TILE of tile X Y."
   (when (member location-on-tile +std-long-dirs+) (setf location-on-tile (short-dir location-on-tile)))
   (let ((tile (tile-at x y world))
-	(destination (neighbour-tile x y location-on-tile world)))
+	(opp-tile (neighbour-tile x y location-on-tile world)))
     (when (or (null tile)
-	      (null destination)
+	      (null opp-tile)
 	      (member 'sea (tile-type tile))
-	      (member 'sea (tile-type destination)))
+	      (member 'sea (tile-type opp-tile)))
       (return-from add-river nil))
 
-    (mapcar #'(lambda (river-type)
-		(setf (tile-river-borders tile)
-		      (remove (conc-syms river-type "-" location-on-tile)
-			      (tile-river-borders tile))
-		      (tile-river-borders destination)
-		      (remove (conc-syms river-type "-" (oppdir location-on-tile))
-			      (tile-river-borders destination))))
-	    (remove size *river-list*)) ; There can be only one
-    
-    (pushnew (intern (concatenate 'string (symbol-name size) "-" (symbol-name location-on-tile)))
-	     (tile-river-borders tile))
-    (pushnew (intern (concatenate 'string (symbol-name size) "-" (symbol-name (oppdir location-on-tile))))
-	     (tile-river-borders destination))
-    ;(finalize-tile-region x y world)
-    ))
+    (let ((found (assoc location-on-tile (tile-river-borders tile))) ; Tile already has river here?
+	  (opp-dir (oppdir location-on-tile)))
+      (if found
+	  (progn
+	    (rplacd found size)
+	    (rplacd (assoc opp-dir (tile-river-borders opp-tile))
+		    size))
+	  (progn ; if not found
+	    (push (cons location-on-tile size) (tile-river-borders tile))
+	    (push (cons opp-dir size) (tile-river-borders opp-tile)))))))
 
 (defun random-hash (hash-table)
   "Returns random key value pair from hash-table."
