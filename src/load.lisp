@@ -9,3 +9,4 @@
 (load "tilechopper.lisp")
 (load "cgen.lisp")
 (load "graphicssetup.lisp")
+(load "army.lisp")
