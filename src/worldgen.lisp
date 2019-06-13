@@ -406,7 +406,7 @@ input wrong river type -> nil"
 
     ;; Select a random coordinate and fire breadth-first-fill at it:
     (let ((fill-these-tiles
-	   (breadth-first-fill ;(cons (random width) (random height))
+	   (breadth-first-fill-list ;(cons (random width) (random height))
 	    (mapcar #'cons (list-randoms islands width)
 		    (list-randoms islands height))
 	    island-size
@@ -505,9 +505,10 @@ input wrong river type -> nil"
       (cons (random rand-num) (list-randoms (1- size) rand-num))))
 
 
+;; Todo: if this is going to get used -> rewrite using (breadth-first-fill)
 ;;; To use this: various types of tile symbols need to be bound AND be declared special.
 ;; Unless apparently if you abuse tile structs and push numbers where they don't belong...
-(defun breadth-first-fill (start-list range world move-cost-func)
+(defun breadth-first-fill-list (start-list range world move-cost-func)
   ;;move-cost-func takes x and y coord and world of tile to move to
   (let ((frontier (make-heap))
 	(came-from (make-hash-table :test 'equal)))

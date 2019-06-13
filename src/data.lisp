@@ -1,4 +1,4 @@
-(in-package #:war)
+(in-package :war)
 
 (defmacro count+list (&body list)
   ;; Push list's length to beginning of list
@@ -70,3 +70,40 @@
 (defun coord-in-bounds (coord-pair &optional (world *world*))
   (and (<= 0 (car coord-pair) (world-width world))
        (<= 0 (cdr coord-pair) (world-height world))))
+
+(defun breadth-first-fill (x0 y0 &key (range most-positive-fixnum) (world *world*) costfunc)
+  "Costfunc takes x y world arguments and returns a number"
+  (let ((frontier (make-heap))
+	(came-from (make-hash-table :test 'equal))
+	(xy0 (cons x0 y0)))
+    (heap-insert frontier xy0 range)
+    (setf (gethash xy0 came-from) (list range nil))
+
+    (do ()
+	((heap-empty frontier))
+
+      (let* ((current (heap-remove-max frontier)) ; -> (range x . y)
+	     (range-left (car current))
+	     (current-x (cadr current))
+	     (current-y (cddr current)))
+      
+	(when (> range-left 0)
+	  (dolist
+	      (neighbour
+		(mapcar #'(lambda (dir)
+			    (neighbour-tile-coords
+			     current-x current-y dir
+			     (world-width world) (world-height world)))
+			+std-short-dirs+))
+
+	    (cond ((null neighbour) nil)
+		  ((null (gethash neighbour came-from))
+		   (let ((move-cost
+			  (- range-left
+			     (funcall costfunc (car neighbour) (cdr neighbour) world))))
+		     (when (>= move-cost 0)
+		       (heap-insert frontier neighbour move-cost)
+		       (setf (gethash neighbour came-from)
+			     (cons move-cost (cdr current)))))))))))
+
+    came-from))

@@ -344,8 +344,10 @@
 	     y-shift))))
 
 
-(defun draw-move-area (start move-range x-shift y-shift end)
-  (let ((move-area (move-area start move-range)))
+(defun draw-move-area (army x-shift y-shift end)
+  (let* ((start (cons (army-x army) (army-y army)))
+	 (move-range (army-movement army))
+	 (move-area (move-area army)))
     (labels ((draw-path (current)
 	       (let* ((next (cdr (gethash current move-area)))
 		     (current-g (tc-gc current
@@ -371,7 +373,7 @@
 
 
 
-(defun move-area (start move-range)
+(defun OBSOLETEmove-area (start move-range)
   ;; return currently the came-from hash table with (cons x1 y1) as key
   ;;   value is (movement-left-after-this-move (cons x0 y0))
   
@@ -482,11 +484,11 @@
 		 x-shift y-shift selector)
 	(draw-coords (car selector-tile) (cdr selector-tile) x-shift y-shift)))
   
-  (if selected-unit (draw-move-area (cons (army-x selected-unit)
-					  (army-y selected-unit))
-				    (army-movement selected-unit)
-				    x-shift y-shift
-				    selector-tile)))
+  (if selected-unit (draw-move-area
+		     ;;(cons (army-x selected-unit)(army-y selected-unit))(army-movement selected-unit)
+		     selected-unit
+		     x-shift y-shift
+		     selector-tile)))
 
 
 (defun draw-at (x y x-shift y-shift graphics &optional (destination sdl:*default-surface*))
