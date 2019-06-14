@@ -72,7 +72,7 @@
        (<= 0 (cdr coord-pair) (world-height world))))
 
 (defun breadth-first-fill (x0 y0 &key (range most-positive-fixnum) (world *world*) costfunc)
-  "Costfunc takes x y world arguments and returns a number"
+  "Costfunc takes x y direction world arguments and returns a number"
   (let ((frontier (make-heap))
 	(came-from (make-hash-table :test 'equal))
 	(xy0 (cons x0 y0)))
@@ -89,21 +89,29 @@
       
 	(when (> range-left 0)
 	  (dolist
-	      (neighbour
+	      (neighbour-entry
 		(mapcar #'(lambda (dir)
-			    (neighbour-tile-coords
-			     current-x current-y dir
-			     (world-width world) (world-height world)))
+			    (list
+			     (neighbour-tile-coords
+			      current-x current-y dir
+			      (world-width world) (world-height world))
+			     (oppdir dir))) ; This is the direction of entry to tile
 			+std-short-dirs+))
 
+	    (let ((neighbour (car neighbour-entry))
+		  (entry (cadr neighbour-entry)))
+	    
 	    (cond ((null neighbour) nil)
 		  ((null (gethash neighbour came-from))
 		   (let ((move-cost
 			  (- range-left
-			     (funcall costfunc (car neighbour) (cdr neighbour) world))))
+			     (funcall costfunc
+				      (car neighbour) (cdr neighbour)
+				      entry world))))
 		     (when (>= move-cost 0)
 		       (heap-insert frontier neighbour move-cost)
 		       (setf (gethash neighbour came-from)
-			     (cons move-cost (cdr current)))))))))))
-
+			     (cons move-cost (cdr current))))))))))))
+      
     came-from))
+  
