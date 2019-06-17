@@ -23,15 +23,11 @@
 
 
 (defun move-area (army &optional (world *world*))
-  (let (;(frontier (make-heap))
-	;(came-from (make-hash-table :test 'equal))
-	(start-x (army-x army))
+  (let ((start-x (army-x army))
 	(start-y (army-y army))
 	(slow-moves (slowest-movecosts (army-troops army)))
 	(move-range (army-movement army)))
 
-    ;;TODO:something is broken. Move costs appear on map correctly but pathfinding ignores them
-    
     (setf *current-move-area*  ;; aww shit
 	  (breadth-first-fill
 	   start-x start-y :range move-range

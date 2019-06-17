@@ -100,18 +100,26 @@
 
 	    (let ((neighbour (car neighbour-entry))
 		  (entry (cadr neighbour-entry)))
-	    
-	    (cond ((null neighbour) nil)
-		  ((null (gethash neighbour came-from))
-		   (let ((move-cost
-			  (- range-left
-			     (funcall costfunc
-				      (car neighbour) (cdr neighbour)
-				      entry world))))
-		     (when (>= move-cost 0)
-		       (heap-insert frontier neighbour move-cost)
-		       (setf (gethash neighbour came-from)
-			     (cons move-cost (cdr current))))))))))))
-      
+
+	      ;; TODO: fix this spaghetti
+	      (if (null neighbour)
+		  nil
+		  (let ((move-cost
+			 (- range-left
+			    (funcall costfunc
+				     (car neighbour) (cdr neighbour)
+				     entry world))))
+		    
+		    (if (or (null (gethash neighbour came-from))
+			    (>= move-cost
+			       (car (gethash neighbour came-from)))) ; move left when moving to neigh
+			       
+			
+			(when (>= move-cost 0)
+			  (heap-insert frontier neighbour move-cost)
+			  (setf (gethash neighbour came-from)
+				(cons move-cost (cdr current))))))
+		  ))))))
+
     came-from))
   
