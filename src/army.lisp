@@ -82,6 +82,14 @@ First element will be cons of road and river."
   (slowest-movecosts '((commando . 10) (dragoon . 50) (jeep . 10) (flak88 . 10)))
   )
 
+(defun test-movecosts ()
+  (test-slowest-movecosts) ; setup dummy movetype data
+  ;; can't set *testunit*s here since sdl needs to be initalized -> do it manually
+  (when (>= (length *testunit*) 2)
+    (setf (army-troops (car *testunit*)) '((jeep . 10) (flak88 . 2)))
+    (setf (army-troops (cadr *testunit*)) '((dragoon . 20) (commando . 20)))
+  ))
+
 (defun slowest-movecosts (unit-list)
   "Returns list containing highest move costs on different tiles for units in unit-list.
 In form: ( (tile-type move-cost ..rest-slowest-units..) ...)"
