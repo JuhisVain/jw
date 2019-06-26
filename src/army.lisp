@@ -38,17 +38,20 @@
 				(road-river (car tile-move-types)))
 			   
 			   ;; Todo: figure out how to handle roads
-			   
-			   (when (cdr road-river) ; Add river crossing cost
-			     (incf final-cost (cadr (assoc (cdr road-river) slow-moves))))
-			   
-			   (dolist (tile-type (cdr tile-move-types)) ; find highest type entry cost
-			     (let ((current-cost (cadr (assoc tile-type slow-moves))))
-			       (when (>= current-cost cost)
-				 (setf cost current-cost))))
+			   (if (car road-river)
+			       (setf final-cost (cadr (assoc (car road-river) slow-moves))) ; Road override
+			       (progn
+				 
+				 (when (cdr road-river) ; Add river crossing cost
+				   (incf final-cost (cadr (assoc (cdr road-river) slow-moves))))
+				 
+				 (dolist (tile-type (cdr tile-move-types)) ; find highest type entry cost
+				   (let ((current-cost (cadr (assoc tile-type slow-moves))))
+				     (when (>= current-cost cost)
+				       (setf cost current-cost))))
 
-			   (incf final-cost cost) ; add highest type entry
-			   
+				 (incf final-cost cost) ; add highest type entry
+				 ))
 			   final-cost)))) ; return total
     ))
 
@@ -57,7 +60,8 @@
 First element will be cons of road and river."
   (let* ((to (tile-at x y world))
 	 (river (cdr (assoc entry-direction (tile-river-borders to))))
-	 (road (cdr (assoc entry-direction (tile-road-links to))))
+	 (road (cdr (or (assoc entry-direction (tile-road-links to))
+			(assoc entry-direction (tile-rail-links to)))))
 	 ;; road and rail should be one field
 	 ;;(rail (cdr (assoc entry-direction (tile-rail-links to))))
 	 )
@@ -71,13 +75,13 @@ First element will be cons of road and river."
   (setf (gethash 'jeep *unit-types*) 'wheeled)
   (setf (gethash 'flak88 *unit-types*) 'towed)
   (setf (gethash 'infantry *unit-type-movecosts*)
-	'((grass 3) (hill 5) (mountain 10) (forest 4) (sea 10000) (city 3) (stream 3)))
+	'((grass 3) (hill 5) (mountain 10) (forest 4) (sea 10000) (city 3) (stream 3) (rail 3)))
   (setf (gethash 'cavalry *unit-type-movecosts*)
-	'((grass 2) (hill 5) (mountain 12) (forest 5)(sea 10000) (city 3)(stream 3)))
+	'((grass 2) (hill 5) (mountain 12) (forest 5)(sea 10000) (city 3)(stream 3) (rail 2)))
   (setf (gethash 'wheeled *unit-type-movecosts*)
-	'((grass 2) (hill 5) (mountain 20) (forest 10)(sea 10000) (city 2)(stream 10)))
+	'((grass 2) (hill 5) (mountain 20) (forest 10)(sea 10000) (city 2)(stream 10) (rail 2)))
   (setf (gethash 'towed *unit-type-movecosts*)
-	'((grass 4) (hill 10) (mountain 14) (forest 7)(sea 10000) (city 3)(stream 10)))
+	'((grass 4) (hill 10) (mountain 14) (forest 7)(sea 10000) (city 3)(stream 10) (rail 4)))
   
   (slowest-movecosts '((commando . 10) (dragoon . 50) (jeep . 10) (flak88 . 10)))
   )
