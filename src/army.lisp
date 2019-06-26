@@ -37,7 +37,6 @@
 				(tile-move-types (list-tile-move-types x y dir world))
 				(road-river (car tile-move-types)))
 			   
-			   ;; Todo: figure out how to handle roads
 			   (if (car road-river)
 			       (setf final-cost (cadr (assoc (car road-river) slow-moves))) ; Road override
 			       (progn
