@@ -791,8 +791,8 @@ be drawn 'between' tiles."
     (when tile
       (pointers-to-variants
        (append (mapcar #'border-symbol (tile-river-borders tile))
-	       (tile-road-links tile)
-	       (tile-rail-links tile))
+	       (mapcar #'border-symbol (tile-road-links tile))
+	       (mapcar #'border-symbol (tile-rail-links tile)))
        (+ x y)))))
 
 (defun finalize-tile-variant-list (x y &optional (world *world*))
@@ -1039,9 +1039,9 @@ NIL on failure."
 	      (member 'sea (tile-type destination)))
       (return-from add-rail nil))
 
-    (pushnew (intern (concatenate 'string "RAIL-" (symbol-name direction)))
+    (pushnew (cons direction 'rail)
 	     (tile-rail-links tile))
-    (pushnew (intern (concatenate 'string "RAIL-" (symbol-name (oppdir direction))))
+    (pushnew (cons (oppdir direction) 'rail)
 	     (tile-rail-links destination))
     (finalize-tile-region x y))) ; Not efficient to form variant lists here but way easier to test
 
