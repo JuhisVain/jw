@@ -59,11 +59,7 @@
 First element will be cons of road and river."
   (let* ((to (tile-at x y world))
 	 (river (cdr (assoc entry-direction (tile-river-borders to))))
-	 (road (cdr (or (assoc entry-direction (tile-road-links to))
-			(assoc entry-direction (tile-rail-links to)))))
-	 ;; road and rail should be one field
-	 ;;(rail (cdr (assoc entry-direction (tile-rail-links to))))
-	 )
+	 (road (cdr (assoc entry-direction (tile-road-links to)))))
     (list*
      (cons road river)
      (tile-type to))))

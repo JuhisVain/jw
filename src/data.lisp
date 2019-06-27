@@ -48,7 +48,6 @@
   (location nil) ;city/resource/airfield etc.. -> things of importance
   (river-borders nil)
   (road-links nil)
-  (rail-links nil)
   (units nil))
 
 (defstruct army

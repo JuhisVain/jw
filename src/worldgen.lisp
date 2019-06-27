@@ -773,8 +773,7 @@ dir being one of (N NW SW)."
 	    (append (tile-type tile)
 		    (mapcar #'car (tile-location tile))
 		    (mapcar #'border-symbol (tile-river-borders tile))
-		    (tile-road-links tile)
-		    (tile-rail-links tile)))))
+		    (mapcar #'border-symbol (tile-road-links tile))))))
 
 (defun collect-overflowing-graphics (x y &optional (world *world*))
   "Collect symbols from (x,y)tile's fields containing graphics that might overflow."
@@ -791,8 +790,7 @@ be drawn 'between' tiles."
     (when tile
       (pointers-to-variants
        (append (mapcar #'border-symbol (tile-river-borders tile))
-	       (mapcar #'border-symbol (tile-road-links tile))
-	       (mapcar #'border-symbol (tile-rail-links tile)))
+	       (mapcar #'border-symbol (tile-road-links tile)))
        (+ x y)))))
 
 (defun finalize-tile-variant-list (x y &optional (world *world*))
@@ -1039,10 +1037,12 @@ NIL on failure."
 	      (member 'sea (tile-type destination)))
       (return-from add-rail nil))
 
+    ;; Todo: check that tile is free of other roads
+    
     (pushnew (cons direction 'rail)
-	     (tile-rail-links tile))
+	     (tile-road-links tile))
     (pushnew (cons (oppdir direction) 'rail)
-	     (tile-rail-links destination))
+	     (tile-road-links destination))
     (finalize-tile-region x y))) ; Not efficient to form variant lists here but way easier to test
 
 
