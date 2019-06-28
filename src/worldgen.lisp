@@ -1028,22 +1028,24 @@ NIL on failure."
   (tile-type (tile-at x y world)))
 
 
-(defun add-rail (x y direction &optional (world *world*))
-  "Adds a single piece of rail running from tile X Y to tile towards DIRECTION."
+(defun add-road (x y type direction &optional (world *world*))
+  "Adds a single piece of roadway of type TYPE running from tile X Y to tile towards DIRECTION."
   (when (member direction +std-long-dirs+) (setf direction (short-dir direction)))
-  (let ((tile (tile-at x y world))
-	(destination (neighbour-tile x y direction world)))
+  (let* ((tile (tile-at x y world))
+	 (destination (neighbour-tile x y direction world))
+	 (old-type (cdr (assoc direction (tile-road-links tile)))))
     (when (or (member 'sea (tile-type tile))
 	      (member 'sea (tile-type destination)))
-      (return-from add-rail nil))
+      (return-from add-road nil))
 
-    ;; Todo: check that tile is free of other roads
-    
-    (pushnew (cons direction 'rail)
-	     (tile-road-links tile))
-    (pushnew (cons (oppdir direction) 'rail)
-	     (tile-road-links destination))
-    (finalize-tile-region x y))) ; Not efficient to form variant lists here but way easier to test
+    (if old-type
+	nil ; Some type of roadway found at direction , do nothing for now TODO something
+	(progn
+	  (pushnew (cons direction type)
+		   (tile-road-links tile))
+	  (pushnew (cons (oppdir direction) type)
+		   (tile-road-links destination))
+	  (finalize-tile-region x y))))) ; Not efficient to form variant lists here but way easier to test
 
 
 (defun add-river (x y size location-on-tile &optional (world *world*))
