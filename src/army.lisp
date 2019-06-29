@@ -36,11 +36,18 @@
 				(final-cost 0)
 				(tile-move-types (list-tile-move-types x y dir world))
 				(road-river (car tile-move-types)))
-			   
-			   (if (car road-river)
-			       (setf final-cost (cadr (assoc (car road-river) slow-moves))) ; Road override
-			       (progn
-				 
+
+			   (if (car road-river) ; if road
+			       (progn ; road override
+				 (setf final-cost 10000)
+				 ;; TODO: think this through later.. I'm not sure if this logical
+				 (dolist (road-type (car road-river)) ; find lowest road moves
+				   (let ((current-cost (cadr (assoc road-type slow-moves))))
+				     (when (< current-cost final-cost)
+				       (setf final-cost current-cost)))
+				   ))
+			       
+			       (progn ; if river
 				 (when (cdr road-river) ; Add river crossing cost
 				   (incf final-cost (cadr (assoc (cdr road-river) slow-moves))))
 				 
@@ -56,7 +63,7 @@
 
 (defun list-tile-move-types (x y entry-direction &optional (world *world*))
   "Lists all symbols that affect armies' movement to tile X Y from DIRECTION.
-First element will be cons of road and river."
+First element will be cons of roadtypeslist and river."
   (let* ((to (tile-at x y world))
 	 (river (cdr (assoc entry-direction (tile-river-borders to))))
 	 (road (cdr (assoc entry-direction (tile-road-links to)))))

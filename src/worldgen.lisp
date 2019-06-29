@@ -761,10 +761,19 @@ dir being one of (N NW SW)."
 			    (has-variants sym variant-seed))
 			sym-list))))
 
-;; Might be temporary:
 (defun border-symbol (border)
   "Transform a border cons to a symbol"
   (conc-syms (cdr border) "-" (car border)))
+
+(defun border-list-to-symbols (border-list)
+  "Transform a ((direction types..) ..) list into flat list of primary graphics names"
+  (let ((name-list nil))
+    (dolist (border-elements border-list)
+      (let ((dir (car border-elements))
+	    (types (cdr border-elements)))
+	(dolist (type types)
+	  (push (conc-syms type "-" dir) name-list))))
+    name-list))
 
 (defun collect-graphics (tile)
   "Collect symbols from tile's logical fields."
@@ -773,7 +782,8 @@ dir being one of (N NW SW)."
 	    (append (tile-type tile)
 		    (mapcar #'car (tile-location tile))
 		    (mapcar #'border-symbol (tile-river-borders tile))
-		    (mapcar #'border-symbol (tile-road-links tile))))))
+		    (border-list-to-symbols (tile-road-links tile))
+		    ))))
 
 (defun collect-overflowing-graphics (x y &optional (world *world*))
   "Collect symbols from (x,y)tile's fields containing graphics that might overflow."
@@ -790,7 +800,7 @@ be drawn 'between' tiles."
     (when tile
       (pointers-to-variants
        (append (mapcar #'border-symbol (tile-river-borders tile))
-	       (mapcar #'border-symbol (tile-road-links tile)))
+	       (border-list-to-symbols (tile-road-links tile)))
        (+ x y)))))
 
 (defun finalize-tile-variant-list (x y &optional (world *world*))
@@ -1033,17 +1043,22 @@ NIL on failure."
   (when (member direction +std-long-dirs+) (setf direction (short-dir direction)))
   (let* ((tile (tile-at x y world))
 	 (destination (neighbour-tile x y direction world))
-	 (old-type (cdr (assoc direction (tile-road-links tile)))))
+	 (old-road-list (assoc direction (tile-road-links tile))))
     (when (or (member 'sea (tile-type tile))
 	      (member 'sea (tile-type destination)))
       (return-from add-road nil))
 
-    (if old-type
-	nil ; Some type of roadway found at direction , do nothing for now TODO something
+    (if old-road-list ; Has this direction has already been created?
+	(let* ((tail (cdr old-road-list)) ; store cdr to avoid crazy looping
+	       (destination-roads (assoc (oppdir direction) (tile-road-links destination)))
+	       (dest-tail (cdr destination-roads)))
+	  (rplacd old-road-list (cons type tail))
+	  (rplacd destination-roads (cons type dest-tail))
+	  )
 	(progn
-	  (pushnew (cons direction type)
+	  (pushnew (list direction type)
 		   (tile-road-links tile))
-	  (pushnew (cons (oppdir direction) type)
+	  (pushnew (list (oppdir direction) type) 
 		   (tile-road-links destination))
 	  (finalize-tile-region x y))))) ; Not efficient to form variant lists here but way easier to test
 
