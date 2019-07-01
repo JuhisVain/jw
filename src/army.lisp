@@ -53,12 +53,17 @@
 				 ;; if only train -> movecost is 2
 				 ;;; meaning we want the lowest movecost of the unittype whose lowest cost for roadtypes
 				 ;; is highest of all unittypes' lowest movecosts on roadtypes... ffs
-				 
-				 (dolist (road-type (car road-river)) ; find highest move cost by road
+
+
+
+				 ;; TODO: does not work. multiroad movement cannot be calculated with (slowest-movecosts)
+				 ;; the types of roads available will influence the minimal costs required.
+				 ;; write new func
+				 '(dolist (road-type (car road-river)) ; find highest move cost by road
 				   (let ((current-cost (cadr (assoc road-type slow-moves))))
 				     (when (>= current-cost cost)
 				       (setf cost current-cost))))
-				 (setf final-cost cost))
+				 (setf final-cost 2))
 			       
 			       (progn ; if river
 				 (when (cdr road-river) ; Add river crossing cost
@@ -127,21 +132,24 @@ In form: ( (tile-type move-cost ..rest-slowest-units..) ...)"
 			  (cons unit-type
 				(gethash unit-type *unit-type-movecosts*)))
 		      unit-type-list))
-      (let ((unit-type (car type-costs))) ; cavalry
+      (let ((unit-type (car type-costs)) ; cavalry
+	    (unit-road-costs))
+	
 	(dolist (costs (cdr type-costs)) ; ( (tile-type move-cost) ...)
 	  (let* ((type (car costs)) ; grass
 		 (is-road (member type *road-types*))
 		 (cost (cadr costs)) ; integer
 		 (old (assoc type slowest))) ; (grass integer unit-types..)
-	    (cond ((null old)
+	    (cond (is-road
+		   nil) ; can't be done here
+		  ((null old)
 		   (push (append costs (list unit-type)) slowest))
-		  ((and (> cost (cadr old))
-			(not is-road))
+		  ((> cost (cadr old))
 		   (rplacd old (list cost unit-type)))
 		  ((= cost (cadr old))
-		   (rplacd old (append (cdr old) (list unit-type))))
-		  ((and is-road
-			(< cost (cadr old)))
-		   (rplacd old (list cost unit-type))))
-	    ))))
+		   (rplacd old (append (cdr old) (list unit-type)))))
+	    ))
+
+	(push (list unit-type unit-road-costs) slow-roads)
+	))
     slowest))
