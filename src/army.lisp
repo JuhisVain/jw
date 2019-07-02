@@ -10,12 +10,12 @@
 
 ;; Army-troops should hold alist ((unit-name . amount) etc...)
 
-;; Using a struct for *unit-type-movecosts* might be smarter,
+;; Using a struct or array for *unit-type-(road-)movecosts* might be smarter,
 ;; but will have to be defined procedurally
 (defvar *unit-types* (make-hash-table :test 'eq)) ; dragoon # cavalry
 (defvar *unit-type-movecosts* (make-hash-table :test 'eq)) ; cavalry # ((grass 2) (hill 3) ...)
+(defvar *unit-type-road-movecosts* (make-hash-table :test 'eq))
 
-;; Used in (slowest-movecosts) to choose low values instead:
 (defvar *road-types* nil) ; (road rail maglev teslavacuumtube footpath etc..)
 
 (defun setup-unit-type-movecosts (type-name tile-cost-alist)
@@ -23,7 +23,6 @@
 
 (defun setup-unit-type (unit-name move-type)
   )
-
 
 (defun move-area (army &optional (world *world*))
   (let ((start-x (army-x army))
@@ -88,6 +87,19 @@ First element will be cons of roadtypeslist and river."
     (list*
      (cons road river)
      (tile-type to))))
+
+(defmacro defmovecosts (movement-type &rest terrain-costs)
+  "*Road-types* needs to be set up before using this. Defines terrain specific entry costs
+for movement-type."
+  (let ((movecosts nil)
+	(roadcosts nil))
+    (dolist (tc terrain-costs)
+      (if (member (car tc) *road-types*)
+	  (push tc roadcosts)
+	  (push tc movecosts)))
+    `(setf (gethash ,movement-type *unit-type-movecosts*) ',movecosts
+	   (gethash ,movement-type *unit-type-road-movecosts*) ',roadcosts)
+      ))
 
 (defun test-slowest-movecosts ()
   ;; This is dumb dumb dumb dummy data only for testing
