@@ -149,7 +149,5 @@ In form: ( (tile-type move-cost ..rest-slowest-units..) ...)"
 		  ((= cost (cadr old))
 		   (rplacd old (append (cdr old) (list unit-type)))))
 	    ))
-
-	(push (list unit-type unit-road-costs) slow-roads)
 	))
     slowest))
