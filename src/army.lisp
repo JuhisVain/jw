@@ -97,9 +97,8 @@ for movement-type."
       (if (member (car tc) *road-types*)
 	  (push tc roadcosts)
 	  (push tc movecosts)))
-    `(setf (gethash ,movement-type *unit-type-movecosts*) ',movecosts
-	   (gethash ,movement-type *unit-type-road-movecosts*) ',roadcosts)
-      ))
+    `(setf (gethash ',movement-type *unit-type-movecosts*) ',movecosts
+	   (gethash ',movement-type *unit-type-road-movecosts*) ',roadcosts)))
 
 (defun test-slowest-movecosts ()
   ;; This is dumb dumb dumb dummy data only for testing
