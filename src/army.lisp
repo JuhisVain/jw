@@ -52,18 +52,19 @@
 				 ;; if only train -> movecost is 2
 				 ;;; meaning we want the lowest movecost of the unittype whose lowest cost for roadtypes
 				 ;; is highest of all unittypes' lowest movecosts on roadtypes... ffs
-
-
-
-				 ;; TODO: does not work. multiroad movement cannot be calculated with (slowest-movecosts)
-				 ;; the types of roads available will influence the minimal costs required.
-				 ;; write new func
-				 '(dolist (road-type (car road-river)) ; find highest move cost by road
-				   (let ((current-cost (cadr (assoc road-type slow-moves))))
-				     (when (>= current-cost cost)
-				       (setf cost current-cost))))
-				 (setf final-cost 2))
-			       
+				 (setf final-cost
+				       (apply #'max
+					      (mapcar #'(lambda (movetype) ; for all movetypes in army
+							  (apply #'min ; choose smallest
+								 (mapcar #'cadr ; from the costs
+									 (intersection ; out of list of road-costs for current movetype
+									  ;; This works ONLY IF result is picked from LIST1 argument
+									  (gethash movetype *unit-type-road-movecosts*)
+									  (car road-river)
+									  :test #'(lambda (road-cost road)
+										    (eq road (car road-cost)))))))
+						      (troops-to-movetypes (army-troops army))))
+				       ))
 			       (progn ; if river
 				 (when (cdr road-river) ; Add river crossing cost
 				   (incf final-cost (cadr (assoc (cdr road-river) slow-moves))))
@@ -112,7 +113,7 @@ for movement-type."
   (defmovecosts cavalry (grass 2) (hill 5) (mountain 12) (forest 5) (sea 10000) (city 3) (stream 3) (rail 2) (road 2))
   (defmovecosts wheeled (grass 2) (hill 5) (mountain 20) (forest 10)(sea 10000) (city 2)(stream 10) (rail 3) (road 1))
   (defmovecosts towed (grass 4) (hill 10) (mountain 14) (forest 7)(sea 10000) (city 3)(stream 10) (rail 5) (road 3))
-  (defmovecosts rail (grass 4) (hill 5) (mountain 20) (forest 10)(sea 10000) (city 2)(stream 10) (rail 3) (road 4))
+  (defmovecosts rail (grass 4) (hill 5) (mountain 20) (forest 10)(sea 10000) (city 2)(stream 10) (rail 1) (road 5))
   
   (slowest-movecosts '((commando . 10) (dragoon . 50) (jeep . 10) (flak88 . 10)))
   )
@@ -123,16 +124,20 @@ for movement-type."
   (when (>= (length *testunit*) 2)
     (setf (army-troops (car *testunit*)) '((jeep . 10) (pendolino . 2)))
     (setf (army-troops (cadr *testunit*)) '((dragoon . 20) (commando . 20)))
-  ))
+    ))
+
+(defun troops-to-movetypes (unit-list)
+  "Convert list of units to their movement-types."
+  (let ((move-types))
+    (dolist (unit unit-list)
+      (pushnew (gethash (car unit) *unit-types*) move-types))
+    move-types))
 
 (defun slowest-movecosts (unit-list)
   "Returns list containing highest move costs on different tiles for units in unit-list.
 In form: ( (tile-type move-cost ..rest-slowest-units..) ...)"
-  (let ((unit-type-list)
+  (let ((unit-type-list (troops-to-movetypes unit-list))
 	(slowest))
-    (dolist (unit unit-list)
-      (pushnew (gethash (car unit) *unit-types*) unit-type-list))
-
     (dolist (type-costs
 	      (mapcar #'(lambda (unit-type) ; ( (unit-type ((tile-type move-cost) ...)) ...)
 			  (cons unit-type
