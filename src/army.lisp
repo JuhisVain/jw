@@ -16,7 +16,7 @@
 (defvar *unit-type-movecosts* (make-hash-table :test 'eq)) ; cavalry # ((grass 2) (hill 3) ...)
 (defvar *unit-type-road-movecosts* (make-hash-table :test 'eq))
 
-(defvar *road-types* nil) ; (road rail maglev teslavacuumtube footpath etc..)
+(defvar *road-types* '(rail road)) ; (road rail maglev teslavacuumtube footpath etc..)
 
 (defun setup-unit-type-movecosts (type-name tile-cost-alist)
   (gethash type-name *unit-type-movecosts*))
@@ -34,51 +34,43 @@
 	  (breadth-first-fill
 	   start-x start-y :range move-range
 	   :costfunc #'(lambda (x y dir world)
-			 (let* ((cost 0)
-				(final-cost 0)
-				(tile-move-types (list-tile-move-types x y dir world))
-				(road-river (car tile-move-types)))
+			 (let* ((roads (coord-border-roads x y dir world))
+				(river (coord-border-rivers x y dir world))
+				(terrain (coord-types x y world))
+				(locations (coord-locations x y world)))
 
-			   ;; TODO: Tile-location should also most likely override any tile type
-
-			   (if (car road-river) ; if road
-			       (progn ; road override
-
-				 ;; truck's roadmove is 1 and railmove is 3
-				 ;; train's roadmove is 4 and railmove is 2
-				 ;; If (truck train) moves on (road rail) as one unit
-				 ;; -> movecost should be 2
-				 ;; if only truck moves there -> movecost is 1
-				 ;; if only train -> movecost is 2
-				 ;;; meaning we want the lowest movecost of the unittype whose lowest cost for roadtypes
-				 ;; is highest of all unittypes' lowest movecosts on roadtypes... ffs
-				 (setf final-cost
-				       (apply #'max
-					      (mapcar #'(lambda (movetype) ; for all movetypes in army
-							  (apply #'min ; choose smallest
-								 (mapcar #'cadr ; from the costs
-									 (intersection ; out of list of road-costs for current movetype
-									  ;; This works ONLY IF result is picked from LIST1 argument
-									  (gethash movetype *unit-type-road-movecosts*)
-									  (car road-river)
-									  :test #'(lambda (road-cost road)
-										    (eq road (car road-cost)))))))
-						      (troops-to-movetypes (army-troops army))))
-				       ))
-			       (progn ; if river
-				 (when (cdr road-river) ; Add river crossing cost
-				   (incf final-cost (cadr (assoc (cdr road-river) slow-moves))))
+			   (cond (roads
+				  (apply #'max
+					 (mapcar
+					  #'(lambda (movetype) ; for all movetypes in army
+					      (apply #'min ; choose smallest
+						     (mapcar
+						      #'cadr ; from the costs
+						      (intersection ; out of list of road-costs for current movetype
+						       ;; This works ONLY IF result is picked from LIST1 argument
+						       (gethash movetype *unit-type-road-movecosts*)
+						       roads
+						       :test #'(lambda (road-cost road)
+								 (eq road (car road-cost)))))))
+					  (troops-to-movetypes (army-troops army)))))
 				 
-				 (dolist (tile-type (cdr tile-move-types)) ; find highest type entry cost
-				   (let ((current-cost (cadr (assoc tile-type slow-moves))))
-				     (when (>= current-cost cost)
-				       (setf cost current-cost))))
+				 (locations
+				  (+ (if river
+					 (cadr (assoc river slow-moves))
+					 0)
+				     (apply #'max (mapcar #'(lambda (location)
+							      (cadr (assoc location slow-moves)))
+							  (mapcar #'car locations)))))
+				 
+				 (t
+				  (+ (if river
+					 (cadr (assoc river slow-moves))
+					 0)
+				     (apply #'max (mapcar #'(lambda (terrain-type)
+							      (cadr (assoc terrain-type slow-moves)))
+							  terrain)))))))))))
 
-				 (incf final-cost cost) ; add highest type entry
-				 ))
-			   final-cost)))) ; return total
-    ))
-
+;; These would probably work better as macros so they could be set.
 (defun coord-types (x y &optional (world *world*))
   "Returns tile-type field f tile at X Y."
   (tile-type (tile-at x y world)))
@@ -90,6 +82,10 @@
 (defun coord-border-roads (x y dir &optional (world *world*))
   "Returns list of roadtype symbols traversing border DIR of tile at X Y."
   (cdr (assoc dir (tile-road-links (tile-at x y world)))))
+
+(defun coord-locations (x y &optional (world *world*))
+  "Returns list of locations for tile at X Y."
+  (tile-location (tile-at x y world)))
 
 (defun list-tile-move-types (x y entry-direction &optional (world *world*))
   "Lists all symbols that affect armies' movement to tile X Y from DIRECTION.
@@ -115,7 +111,7 @@ for movement-type."
 
 (defun test-slowest-movecosts ()
   ;; This is dumb dumb dumb dummy data only for testing
-  (setf *road-types* '(rail road))
+  ;;(setf *road-types* '(rail road)) ; Too late to set here
   (setf (gethash 'commando *unit-types*) 'infantry)
   (setf (gethash 'dragoon *unit-types*) 'cavalry)
   (setf (gethash 'jeep *unit-types*) 'wheeled)
