@@ -79,6 +79,18 @@
 			   final-cost)))) ; return total
     ))
 
+(defun coord-types (x y &optional (world *world*))
+  "Returns tile-type field f tile at X Y."
+  (tile-type (tile-at x y world)))
+
+(defun coord-border-rivers (x y dir &optional (world *world*))
+  "Returns symbol representing type of river at DIR border of tile at X Y."
+  (cdr (assoc dir (tile-river-borders (tile-at x y world)))))
+
+(defun coord-border-roads (x y dir &optional (world *world*))
+  "Returns list of roadtype symbols traversing border DIR of tile at X Y."
+  (cdr (assoc dir (tile-road-links (tile-at x y world)))))
+
 (defun list-tile-move-types (x y entry-direction &optional (world *world*))
   "Lists all symbols that affect armies' movement to tile X Y from DIRECTION.
 First element will be cons of roadtypeslist and river."
