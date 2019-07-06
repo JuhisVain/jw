@@ -71,9 +71,10 @@
        (<= 0 (cdr coord-pair) (world-height world))))
 
 ;; Using a symbol rather than an integer for default range would be smart -> also should be usable in costfunc
-(defun breadth-first-fill (x0 y0 &key (range most-positive-fixnum) (world *world*) costfunc)
+(defun breadth-first-fill (x0 y0 &key (range most-positive-fixnum) (world *world*) costfunc (endfunc nil end-p))
   "Flood fills RANGE area starting at x0 y0 in world according to COSTFUNC.
-Costfunc takes x y direction world arguments and returns a number"
+Costfunc takes x y direction world arguments and returns a number.
+Optional endfunc takes x y, if returns true this function returns before fill is complete."
   (let ((frontier (make-heap))
 	(came-from (make-hash-table :test 'equal))
 	(xy0 (cons x0 y0)))
@@ -115,6 +116,10 @@ Costfunc takes x y direction world arguments and returns a number"
 
 			   (heap-insert frontier neighbour move-cost)
 			   (setf (gethash neighbour came-from)
-				 (cons move-cost (cdr current))))))))))))
+				 (cons move-cost (cdr current))))))))))
+	(and end-p
+	     (funcall endfunc current-x current-y)
+	     (return-from breadth-first-fill came-from))
+	))
     came-from))
   
