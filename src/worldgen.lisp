@@ -1125,6 +1125,30 @@ NIL on failure."
       )))
 
 
+(defun road-from-to (type x0 y0 x1 y1 max-range &optional (world *world*))
+  (dolist (coord (hash-path
+		  (cons x1 y1)
+		  (breadth-first-fill
+		   x0 y0 :range max-range :world world
+		   :costfunc #'(lambda (x y dir world)
+				 (let ((terrain (tile-type (tile-at x y world))))
+				   (cond ((member 'sea terrain)
+					  max-range)
+					 ((member 'mountain terrain)
+					  2)
+					 (t 1))))
+		   :endfunc #'(lambda (x y world)
+				(and (= x x1)
+				     (= y y1)
+				     (prog1 t (format t "~&~a,~a found!~%" x y)))))))
+    ;; TODO: Needs a version of breadth-first-fill that has DIRECTIONS
+    ;;(add-road (car coord) (cdr coord) 'type )
+    ))
+
+(defun hash-path (xy hashmap)
+  (when (car xy)
+    (cons xy (hash-path (cdr (gethash xy hashmap)) hashmap))))
+
 ;(hm-gen-riv-from-high number-world world x y 'n 1000)
 (defun hm-gen-riv-from-high (heightmap world start-x start-y start-dir min-length sea-threshold)
   ;(format t "~&(~a . ~a) ~a~&" start-x start-y start-dir)
