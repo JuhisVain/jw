@@ -74,7 +74,7 @@
 (defun breadth-first-fill (x0 y0 &key (range most-positive-fixnum) (world *world*) costfunc (endfunc nil end-p))
   "Flood fills RANGE area starting at x0 y0 in world according to COSTFUNC.
 Costfunc takes x y direction world arguments and returns a number.
-Optional endfunc takes x y, if returns true this function returns before fill is complete."
+Optional endfunc takes x y world, if returns true this function returns before fill is complete."
   (let ((frontier (make-heap))
 	(came-from (make-hash-table :test 'equal))
 	(xy0 (cons x0 y0)))
@@ -118,7 +118,7 @@ Optional endfunc takes x y, if returns true this function returns before fill is
 			   (setf (gethash neighbour came-from)
 				 (cons move-cost (cdr current))))))))))
 	(and end-p
-	     (funcall endfunc current-x current-y)
+	     (funcall endfunc current-x current-y world)
 	     (return-from breadth-first-fill came-from))
 	))
     came-from))
