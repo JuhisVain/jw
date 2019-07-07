@@ -122,4 +122,83 @@ Optional endfunc takes x y world, if returns true this function returns before f
 	     (return-from breadth-first-fill came-from))
 	))
     came-from))
+
+(defun distance (x1 y1 x2 y2)
+  "Returns distance in tiles from (x1 y1) to (x2 y2)"
+  (let ((c1 (cube-crd x1 y1))
+	(c2 (cube-crd x2 y2)))
+    (max (abs (- (car c1)
+		 (car c2)))
+	 (abs (- (cadr c1)
+		 (cadr c2)))
+	 (abs (- (caddr c1)
+		 (caddr c2))))))
+
+(defun cube-crd (x y)
+  (let ((z (cube-z-crd x y)))
+    (list x (- (- x) z) z)))
+
+(defun cube-z-crd (x y)
+  (- y (/ (- x (rem x 2))
+	  2)))
+
+(defun test-a* ()
+  ;; TODO: with current values moves to hill from (1 12) instead of smarter grass tile???
+  (defparameter a*test
+    (a* 1 12 11 8
+	:costfunc
+	#'(lambda (xy0 xy1)
+	    (let ((xy1-terrain (tile-type (tile-at (car xy1) (cdr xy1)))))
+	      (cond ((member 'sea xy1-terrain) 1000000)
+		    ((member 'mountain xy1-terrain) 3)
+		    ((member 'hill xy1-terrain) 2)
+		    (t 1))))
+	:heuristic
+	#'(lambda (current end)
+	    (distance (car current) (cdr current)
+		      (car end) (cdr end))))))
+
+
+(defun a* (x0 y0 x1 y1 &key (max-range 1000000) (world *world*) costfunc endfunc heuristic)
+  (let ((xy0 (cons x0 y0))
+	(xy1 (cons x1 y1))
+	(frontier (make-heap))
+	(came-from (make-hash-table :test 'equal))
+	;;(cost-so-far (make-hash-table :test 'equal))
+	)
+    (heap-insert frontier (list (cons x0 y0) nil) max-range)
+    ;;                   location^            ^direction taken to get here
+    
+    (setf (gethash xy0 came-from) (list 0 nil))
+    
+    (do ((current))
+	((heap-empty frontier))
+      (setf current (heap-remove-max frontier)) ; (prio (x . y) dir)
+      (let ((xyc (cadr current))
+	    (dirc (caddr current)))
+	
+	(when (equal xyc xy1)
+	  (return-from a* came-from))
+	
+	(dolist (neighbour (mapcar #'(lambda (direction) ; ((xn . yn) dir)
+				       (list
+					(neighbour-tile-coords
+					 (caadr current)
+					 (cdadr current)
+					 direction
+					 (world-width world)
+					 (world-height world))
+					direction))
+				   '(n ne se s sw nw)))
+	  (when (car neighbour)
+	    (let* ((xyn (car neighbour))
+		   (dirn (cadr neighbour))
+		   (new-cost (+ (car (gethash xyc came-from))
+				(funcall costfunc xyc xyn))))
+	      (when (and (not (gethash xyn came-from))
+			 (<= new-cost max-range))
+		(heap-insert frontier (list xyn dirn) (- max-range (+ new-cost
+								      (funcall heuristic xyn xy1))))
+		(setf (gethash xyn came-from) (list new-cost xyc dirn))
+		))))))))
   
