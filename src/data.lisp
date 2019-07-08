@@ -143,15 +143,15 @@ Optional endfunc takes x y world, if returns true this function returns before f
 	  2)))
 
 (defun test-a* ()
-  ;; TODO: with current values moves to hill from (1 12) instead of smarter grass tile???
+  ;; Not guaranteed to produce sensible results
   (defparameter a*test
     (a* 1 12 11 8
 	:costfunc
 	#'(lambda (xy0 xy1)
 	    (let ((xy1-terrain (tile-type (tile-at (car xy1) (cdr xy1)))))
 	      (cond ((member 'sea xy1-terrain) 1000000)
-		    ((member 'mountain xy1-terrain) 3)
-		    ((member 'hill xy1-terrain) 2)
+		    ((member 'mountain xy1-terrain) 5)
+		    ((member 'hill xy1-terrain) 3)
 		    (t 1))))
 	:heuristic
 	#'(lambda (current end)
