@@ -1045,10 +1045,11 @@ NIL on failure."
 	 (destination (neighbour-tile x y direction world))
 	 (old-road-list (assoc direction (tile-road-links tile))))
     (when (or (member 'sea (tile-type tile))
-	      (member 'sea (tile-type destination)))
+	      (member 'sea (tile-type destination))
+	      (member type old-road-list)) ; Abort if type already here
       (return-from add-road nil))
 
-    (if old-road-list ; Has this direction has already been created?
+    (if old-road-list ; Has this direction already been created?
 	(let* ((tail (cdr old-road-list)) ; store cdr to avoid crazy looping
 	       (destination-roads (assoc (oppdir direction) (tile-road-links destination)))
 	       (dest-tail (cdr destination-roads)))
@@ -1125,27 +1126,29 @@ NIL on failure."
       )))
 
 
-(defun road-from-to (type x0 y0 x1 y1 max-range &optional (world *world*))
-  ;(dolist (coord
-	    (hash-path
-		  (cons x1 y1)
-		  (breadth-first-fill ;; Using fill for this is WRONG, gotta check out astar finally
-		   x0 y0 :range max-range :world world
-		   :costfunc #'(lambda (x y dir world)
-				 (let ((terrain (tile-type (tile-at x y world))))
-				   (cond ((member 'sea terrain)
-					  max-range)
-					 ((member 'mountain terrain)
-					  2)
-					 (t 1))))
-		   :endfunc #'(lambda (x y world)
-				(and (= x x1)
-				     (= y y1)
-				     (prog1 t (format t "~&~a,~a found!~%" x y))))))
-	   ;)
-    ;; TODO: Needs a version of breadth-first-fill that has DIRECTIONS
-    ;;(add-road (car coord) (cdr coord) 'type )
-    );)
+(defun road-from-to (type x0 y0 x1 y1 &optional (world *world*))
+  "Run road of type TYPE from (x0 y0) to (x1 y1)"
+  (mapcar #'(lambda (crossing)
+	      (when (cadr crossing) ; xy0 has no entry dir
+		(add-road (caar crossing) (cdar crossing)
+			  type (cadr crossing) world)))
+	  (hash-path
+	   (cons x1 y1)
+	   (a* x0 y0 x1 y1
+	       :costfunc
+	       #'(lambda (xy0 xy1)
+		   (let ((xy1-terrain (tile-type (tile-at (car xy1) (cdr xy1)))))
+		     (cond ((member 'sea xy1-terrain) 1000000)
+			   ((member 'mountain xy1-terrain) 5)
+			   ((member 'hill xy1-terrain) 3)
+			   (t 1))))
+	       :heuristic
+	       #'(lambda (current end)
+		   (distance (car current) (cdr current)
+			     (car end) (cdr end))))))
+
+  ;; TODO: return something if success/failure
+  )
 
 (defun hash-path (xy hashmap)
   (when (car xy)
