@@ -744,7 +744,9 @@ Creates symbol with name like STREAM-NW-A-LARGE if appropriate file is found."
 						 (world-height world))))
     (when neighbour-coords (tile-at (car neighbour-coords) (cdr neighbour-coords) world))))
 
-(defun neighbour-tile-coords (here-x here-y direction max-x max-y &optional (min-x 0) (min-y 0))
+(defun neighbour-tile-coords (here-x here-y direction
+			      &optional (max-x (world-width *world*)) (max-y (world-height *world*))
+				(min-x 0) (min-y 0))
   "Returns coordinate cons of here's neighbour towards direction, maxes refer to index bounds."
   (let* ((shift (if (evenp here-x) -1 0))
 	 (neighbour-x (cond ((member direction '(SW NW)) (1- here-x))
