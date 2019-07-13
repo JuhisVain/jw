@@ -24,6 +24,68 @@
 (defun setup-unit-type (unit-name move-type)
   )
 
+
+;;TODO: Will need to check for nils
+;; with range of 5 :
+;; (defparameter xxx (visual-area (car *testunit*)))
+;; produces a hashmap of 91 elements, which is correct -> "triangluar number"
+;; 
+(defun visual-area (army &optional (world *world*))
+  (let ((x0 (army-x army))
+	(y0 (army-y army))
+	(visibles (make-hash-table :test 'eq))
+	(frontier nil)
+	(range 5) ; TODO: generate from troop types or something
+	)
+    
+    (setf (gethash (cons x0 y0) visibles) 100) ; Set visibility of origin to 100%
+    
+    (dolist (sec-dirs '((n . ne) (ne . se) (se . s) ; 6 sectors to check
+			(s . sw) (sw . nw) (nw . n)))
+
+      (let ((dir1 (car sec-dirs))
+	    (dir2 (cdr sec-dirs))
+	    (column-origin (cons x0 y0)) ; Coord of position from which we move DIR1 until range
+	    (column-origin-distance 0)) ; The distance to column-origin from (x0,y0)
+
+	;; Get a list with coordinates from column's origin to RANGE in direction DIR1:
+	(do ((neigh-coords
+	      (neighbour-tile-coords (car column-origin)
+				     (cdr column-origin)
+				     dir1)
+	      (neighbour-tile-coords (car neigh-coords)
+				     (cdr neigh-coords)
+				     dir1))
+	     (total-distance column-origin-distance (incf total-distance)))
+	    ((= total-distance range))
+	  (push neigh-coords frontier)); Populate frontier
+	
+	(do ((x))
+	    ((= column-origin-distance range))
+	  
+	  ;; Pop & process coordinates into VISIBLES, generate DIR2 neighbour into list:
+	  (do* ((new-frontier nil)
+		(total-distance range (decf total-distance))
+		(frontier-head frontier (cdr frontier-head))
+		(coord (car frontier-head) (car frontier-head)))
+	       ((= total-distance column-origin-distance) (setf frontier (reverse new-frontier)))
+	    (format t "~&~a : ~a~%" total-distance coord)
+	    (setf (gethash coord visibles) 100) ; TODO: funcall some fun arg to get visibility
+	    (when (< total-distance range)
+	      (push (neighbour-tile-coords (car coord) (cdr coord) dir2) new-frontier))
+	    )
+	  
+	  (setf column-origin (neighbour-tile-coords (car column-origin)
+						     (cdr column-origin)
+						     dir2))
+	  (incf column-origin-distance)
+	  )
+	
+
+      )
+      )
+    visibles))
+
 (defun move-area (army &optional (world *world*))
   (let ((start-x (army-x army))
 	(start-y (army-y army))
