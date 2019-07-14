@@ -25,15 +25,42 @@
   )
 
 
-;;TODO: Will need to check for nils
+;;TODO: Will need to check for nils + redo everything
 ;; with range of 5 :
 ;; (defparameter xxx (visual-area (car *testunit*)))
-;; produces a hashmap of 91 elements, which is correct -> "triangluar number"
-;; 
-(defun visual-area (army &optional (world *world*))
+;; produces a hashmap of 91 elements, which is correct
+;;
+
+
+;;no 
+'(defparameter
+    xxx
+  (visual-area
+   (car *testunit*)
+   #'(lambda (crd dir1 dir1-dist dir2 dir2-dist od1vis od2vis)
+       (let ((entry (tile-type (tile-at (car crd) (cdr crd))))
+	     (total-weight (+ dir1-dist dir2-dist)))
+
+	 (* (let ((grass 0.95)
+		  (hill 0.67)
+		  (mountain 0.25)
+		  (sea 1)
+		  ;;etc..
+		  )
+	      (declare (special grass hill mountain sea))
+	      (apply #'* (mapcar #'symbol-value entry)))
+	    (+
+	     (* od1vis (/ dir1-dist total-weight))
+	     (if od2vis
+		 (* od2vis (/ dir2-dist total-weight))
+		 0)))
+	 
+	 ))))
+
+(defun visual-area (army vis-cost &optional (world *world*))
   (let ((x0 (army-x army))
 	(y0 (army-y army))
-	(visibles (make-hash-table :test 'eq))
+	(visibles (make-hash-table :test 'equalp))
 	(frontier nil)
 	(range 5) ; TODO: generate from troop types or something
 	)
@@ -59,26 +86,40 @@
 	     (total-distance column-origin-distance (incf total-distance)))
 	    ((= total-distance range))
 	  (push neigh-coords frontier)); Populate frontier
+
+	(setf frontier (nreverse frontier))
 	
-	(do ((x))
+	(do ((from (cons x0 y0)))
 	    ((= column-origin-distance range))
 	  
 	  ;; Pop & process coordinates into VISIBLES, generate DIR2 neighbour into list:
 	  (do* ((new-frontier nil)
-		(total-distance range (decf total-distance))
+		(total-distance column-origin-distance (incf total-distance))
 		(frontier-head frontier (cdr frontier-head))
 		(coord (car frontier-head) (car frontier-head)))
-	       ((= total-distance column-origin-distance) (setf frontier (reverse new-frontier)))
-	    (format t "~&~a : ~a~%" total-distance coord)
-	    (setf (gethash coord visibles) 100) ; TODO: funcall some fun arg to get visibility
+	       ((= total-distance range) (setf frontier (nreverse new-frontier)))
+	    '(format t "~& (funcall #'vis-cost ~a ~a ~a ~a ~a)~%"
+	      coord dir1 (- total-distance column-origin-distance) dir2 column-origin-distance)
+	    (format t "~&~a~%" from)
+	    (setf (gethash coord visibles)
+		  ;; current coordinate, direction1, distance in direction1, dir2, dir2 distance,
+		  ;;   visibility of previous in dir1's opposite, visibilty in dir2's opp
+		  
+		  (funcall vis-cost 
+			   coord dir1 (- total-distance column-origin-distance -1) dir2 column-origin-distance
+			   (gethash from visibles)
+			   (gethash (neighbour-tile-coords (car coord) (cdr coord) (oppdir dir2)) visibles))
+		  ) ; TODO: funcall some fun arg to get visibility
 	    (when (< total-distance range)
 	      (push (neighbour-tile-coords (car coord) (cdr coord) dir2) new-frontier))
+	    (setf from coord)
 	    )
 	  
 	  (setf column-origin (neighbour-tile-coords (car column-origin)
 						     (cdr column-origin)
 						     dir2))
 	  (incf column-origin-distance)
+	  
 	  )
 	
 
