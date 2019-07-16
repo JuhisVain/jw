@@ -57,6 +57,45 @@
 	 
 	 ))))
 
+'(va
+ (car *testunit*)
+ #'(lambda (prev1 weight1 prev2 weight2 target distance)
+     (let (
+	   
+	   (grass 0.95)
+	   (hill 0.67)
+	   (mountain 0.25)
+	   (sea 1))
+       (declare (special grass hill mountain sea))
+       (list prev1 weight1 prev2 weight2 target distance)
+       )))
+
+;;; Notes:
+;; units should have a stat to determine how well they can see through various terrain types.
+;; Infantry on grass won't see "through" a city, but a hot air balloon might etc... 
+
+(defun va (army vis-cost-func)
+;;??
+  "Vis-cost-func will take coordinate of previous1, it's weight as x/1, crd of previous2,
+it's weight, coordinate of actual target, distance to target. Will return a number between 0 and 1."
+  (let ((x0 (army-x army))
+	(y0 (army-y army))
+	(max-range 5)
+	(visibles (make-hash-table :test 'equal)))
+
+    (setf (gethash (cons x0 y0) visibles) 1) ; 100% visibility on army's location
+
+    ;; Populate hashtable with "cardinal" columns
+    (dolist (direction '(n ne se s sw nw))
+      (do* ((previous (cons x0 y0) current)
+	    (current (neighbour-tile-coords x0 y0 direction)
+		     (neighbour-tile-coords (car current) (cdr current) direction))
+	    (dist 1 (1+ dist)))
+	   ((> dist max-range))
+	(setf (gethash current visibles)
+	      (funcall vis-cost-func previous 1 nil 0 current dist))))
+    visibles))
+
 (defun visual-area (army vis-cost &optional (world *world*))
   (let ((x0 (army-x army))
 	(y0 (army-y army))
