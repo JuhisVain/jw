@@ -31,6 +31,9 @@
 ;; produces a hashmap of 91 elements, which is correct
 ;;
 
+;;; !!!!!!!!!!!!!!!!!!!!!!! redo all
+;;; All visibles need to be placed in the same hashtable, as a unit's vision will affect
+;; the results of other units' visions
 
 ;;no 
 '(defparameter
@@ -57,18 +60,19 @@
 	 
 	 ))))
 
-'(va
- (car *testunit*)
- #'(lambda (prev1 weight1 prev2 weight2 target distance)
-     (let (
-	   
-	   (grass 0.95)
-	   (hill 0.67)
-	   (mountain 0.25)
-	   (sea 1))
-       (declare (special grass hill mountain sea))
-       (list prev1 weight1 prev2 weight2 target distance)
-       )))
+'(maphash #'(lambda (x y) (format t "~&~a : ~a~%" x y))
+  (va
+   (car *testunit*)
+   #'(lambda (prev1 weight1 prev2 weight2 target distance)
+       (let ((vis-per-distance 0.9) ; Using a rational for these would avoid floats
+	     (grass 0.95)
+	     (hill 0.67)
+	     (mountain 0.25)
+	     (sea 1))
+	 (declare (special grass hill mountain sea))
+	 ;;(list prev1 weight1 prev2 weight2 target distance)
+	 (expt vis-per-distance distance)
+	 ))))
 
 ;;; Notes:
 ;; units should have a stat to determine how well they can see through various terrain types.
@@ -76,13 +80,30 @@
 
 (defun va (army vis-cost-func)
 ;;??
-  "Vis-cost-func will take coordinate of previous1, it's weight as x/1, crd of previous2,
+  "Vis-cost-func will take coordinate of previous1, it's weight, crd of previous2,
 it's weight, coordinate of actual target, distance to target. Will return a number between 0 and 1."
   (let ((x0 (army-x army))
 	(y0 (army-y army))
 	(max-range 5)
 	(visibles (make-hash-table :test 'equal)))
 
+    (labels ((vac (coord dir1 dir2 range shift)
+	       (let ((parent1 ;; Has parent at opposite to dir1
+		      (gethash (neighbour-tile-coords (car coord)
+						      (cdr coord)
+						      (oppdir dir1))
+			       visibles))
+		     (parent2 ;; Has parent at opposite to dir2
+		      (gethash (neighbour-tile-coords (car coord)
+						      (cdr coord)
+						      (oppdir dir2))
+			       visibles)))
+		 (when (and parent1 parent2 (> (+ range shift) 0))
+		   (cons (list coord (funcall vis-cost-func parent1 range parent2 shift coord (+ range shift)))
+			 
+	       
+	       )))
+      )
     (setf (gethash (cons x0 y0) visibles) 1) ; 100% visibility on army's location
 
     ;; Populate hashtable with "cardinal" columns
@@ -94,7 +115,24 @@ it's weight, coordinate of actual target, distance to target. Will return a numb
 	   ((> dist max-range))
 	(setf (gethash current visibles)
 	      (funcall vis-cost-func previous 1 nil 0 current dist))))
+
+    (dolist (sector '((n . ne) (ne . se) (se . s)
+		      (s . sw) (sw . nw) (nw . n)))
+      (let* ((dir-prim (car sector))
+	     (oppdir-prim (oppdir dir-prim))
+	     (dir-sec (cdr sector))
+	     (oppdir-sec (oppdir dir-sec))
+	     (prim-from-army (neighbour-tile-coords x0 y0 dir-prim))
+	     (sector-origin (neighbour-tile-coords (car prim-from-army)
+							(cdr prim-from-army)
+							dir-sec)))
+
+	;; This is a tree, do it with recursion
+	
+	))
+    
     visibles))
+
 
 (defun visual-area (army vis-cost &optional (world *world*))
   (let ((x0 (army-x army))
