@@ -131,7 +131,7 @@ it's weight, coordinate of actual target, distance to target. Will return a numb
 	
 	))
     
-    visibles))
+    visibles))))
 
 
 (defun visual-area (army vis-cost &optional (world *world*))
