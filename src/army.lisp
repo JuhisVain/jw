@@ -35,174 +35,27 @@
 ;;; All visibles need to be placed in the same hashtable, as a unit's vision will affect
 ;; the results of other units' visions
 
-;;no 
-'(defparameter
-    xxx
-  (visual-area
-   (car *testunit*)
-   #'(lambda (crd dir1 dir1-dist dir2 dir2-dist od1vis od2vis)
-       (let ((entry (tile-type (tile-at (car crd) (cdr crd))))
-	     (total-weight (+ dir1-dist dir2-dist)))
-
-	 (* (let ((grass 0.95)
-		  (hill 0.67)
-		  (mountain 0.25)
-		  (sea 1)
-		  ;;etc..
-		  )
-	      (declare (special grass hill mountain sea))
-	      (apply #'* (mapcar #'symbol-value entry)))
-	    (+
-	     (* od1vis (/ dir1-dist total-weight))
-	     (if od2vis
-		 (* od2vis (/ dir2-dist total-weight))
-		 0)))
-	 
-	 ))))
-
-'(maphash #'(lambda (x y) (format t "~&~a : ~a~%" x y))
-  (va
-   (car *testunit*)
-   #'(lambda (prev1 weight1 prev2 weight2 target distance)
-       (let ((vis-per-distance 0.9) ; Using a rational for these would avoid floats
-	     (grass 0.95)
-	     (hill 0.67)
-	     (mountain 0.25)
-	     (sea 1))
-	 (declare (special grass hill mountain sea))
-	 ;;(list prev1 weight1 prev2 weight2 target distance)
-	 (expt vis-per-distance distance)
-	 ))))
-
 ;;; Notes:
 ;; units should have a stat to determine how well they can see through various terrain types.
-;; Infantry on grass won't see "through" a city, but a hot air balloon might etc... 
+;; Infantry on grass won't see "through" a city, but a hot air balloon might etc...
+;; Multiple units with vision -> all seen tiles must be placed in same hash-table
+;; Moving units ???
 
-(defun va (army vis-cost-func)
-;;??
-  "Vis-cost-func will take coordinate of previous1, it's weight, crd of previous2,
-it's weight, coordinate of actual target, distance to target. Will return a number between 0 and 1."
-  (let ((x0 (army-x army))
-	(y0 (army-y army))
-	(max-range 5)
-	(visibles (make-hash-table :test 'equal)))
+(defun list-ring (xy radius)
+  "Returns list of coordinate conses around XY at distance radius."
+  (let ((current xy)
+	(ring nil))
+    (dotimes (count radius) ;; Move current pointer from center to SW corner of ring
+      (setf current (neighbour-tile-coords (car current) (cdr current) 'sw)))
+    (dolist (dir +std-short-dirs+) ;; Travel the edge of the ring and store coords
+      (dotimes (count radius)
+	(push current ring)
+	(setf current (neighbour-tile-coords (car current) (cdr current) dir))))
+    ring))
 
-    (labels ((vac (coord dir1 dir2 range shift)
-	       (let ((parent1 ;; Has parent at opposite to dir1
-		      (gethash (neighbour-tile-coords (car coord)
-						      (cdr coord)
-						      (oppdir dir1))
-			       visibles))
-		     (parent2 ;; Has parent at opposite to dir2
-		      (gethash (neighbour-tile-coords (car coord)
-						      (cdr coord)
-						      (oppdir dir2))
-			       visibles)))
-		 (when (and parent1 parent2 (> (+ range shift) 0))
-		   (cons (list coord (funcall vis-cost-func parent1 range parent2 shift coord (+ range shift)))
-			 
-	       
-	       )))
-      )
-    (setf (gethash (cons x0 y0) visibles) 1) ; 100% visibility on army's location
+(defun visible-area (army &optional (world *world*))
+  )
 
-    ;; Populate hashtable with "cardinal" columns
-    (dolist (direction '(n ne se s sw nw))
-      (do* ((previous (cons x0 y0) current)
-	    (current (neighbour-tile-coords x0 y0 direction)
-		     (neighbour-tile-coords (car current) (cdr current) direction))
-	    (dist 1 (1+ dist)))
-	   ((> dist max-range))
-	(setf (gethash current visibles)
-	      (funcall vis-cost-func previous 1 nil 0 current dist))))
-
-    (dolist (sector '((n . ne) (ne . se) (se . s)
-		      (s . sw) (sw . nw) (nw . n)))
-      (let* ((dir-prim (car sector))
-	     (oppdir-prim (oppdir dir-prim))
-	     (dir-sec (cdr sector))
-	     (oppdir-sec (oppdir dir-sec))
-	     (prim-from-army (neighbour-tile-coords x0 y0 dir-prim))
-	     (sector-origin (neighbour-tile-coords (car prim-from-army)
-							(cdr prim-from-army)
-							dir-sec)))
-
-	;; This is a tree, do it with recursion
-	
-	))
-    
-    visibles))))
-
-
-(defun visual-area (army vis-cost &optional (world *world*))
-  (let ((x0 (army-x army))
-	(y0 (army-y army))
-	(visibles (make-hash-table :test 'equalp))
-	(frontier nil)
-	(range 5) ; TODO: generate from troop types or something
-	)
-    
-    (setf (gethash (cons x0 y0) visibles) 100) ; Set visibility of origin to 100%
-    
-    (dolist (sec-dirs '((n . ne) (ne . se) (se . s) ; 6 sectors to check
-			(s . sw) (sw . nw) (nw . n)))
-
-      (let ((dir1 (car sec-dirs))
-	    (dir2 (cdr sec-dirs))
-	    (column-origin (cons x0 y0)) ; Coord of position from which we move DIR1 until range
-	    (column-origin-distance 0)) ; The distance to column-origin from (x0,y0)
-
-	;; Get a list with coordinates from column's origin to RANGE in direction DIR1:
-	(do ((neigh-coords
-	      (neighbour-tile-coords (car column-origin)
-				     (cdr column-origin)
-				     dir1)
-	      (neighbour-tile-coords (car neigh-coords)
-				     (cdr neigh-coords)
-				     dir1))
-	     (total-distance column-origin-distance (incf total-distance)))
-	    ((= total-distance range))
-	  (push neigh-coords frontier)); Populate frontier
-
-	(setf frontier (nreverse frontier))
-	
-	(do ((from (cons x0 y0)))
-	    ((= column-origin-distance range))
-	  
-	  ;; Pop & process coordinates into VISIBLES, generate DIR2 neighbour into list:
-	  (do* ((new-frontier nil)
-		(total-distance column-origin-distance (incf total-distance))
-		(frontier-head frontier (cdr frontier-head))
-		(coord (car frontier-head) (car frontier-head)))
-	       ((= total-distance range) (setf frontier (nreverse new-frontier)))
-	    '(format t "~& (funcall #'vis-cost ~a ~a ~a ~a ~a)~%"
-	      coord dir1 (- total-distance column-origin-distance) dir2 column-origin-distance)
-	    (format t "~&~a~%" from)
-	    (setf (gethash coord visibles)
-		  ;; current coordinate, direction1, distance in direction1, dir2, dir2 distance,
-		  ;;   visibility of previous in dir1's opposite, visibilty in dir2's opp
-		  
-		  (funcall vis-cost 
-			   coord dir1 (- total-distance column-origin-distance -1) dir2 column-origin-distance
-			   (gethash from visibles)
-			   (gethash (neighbour-tile-coords (car coord) (cdr coord) (oppdir dir2)) visibles))
-		  ) ; TODO: funcall some fun arg to get visibility
-	    (when (< total-distance range)
-	      (push (neighbour-tile-coords (car coord) (cdr coord) dir2) new-frontier))
-	    (setf from coord)
-	    )
-	  
-	  (setf column-origin (neighbour-tile-coords (car column-origin)
-						     (cdr column-origin)
-						     dir2))
-	  (incf column-origin-distance)
-	  
-	  )
-	
-
-      )
-      )
-    visibles))
 
 (defun move-area (army &optional (world *world*))
   (let ((start-x (army-x army))
