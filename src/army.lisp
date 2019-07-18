@@ -49,10 +49,33 @@
 	(setf current (neighbour-tile-coords (car current) (cdr current) dir))))
     ring))
 
-(defun visible-area (army max-range &optional (world *world*))
+;; Not a good visibilty func but does it's job for now
+'(progn (defparameter xxx
+	  (visible-area (car *testunit*)
+			5
+			#'(lambda (target parent-1 p1-weight parent-2 p2-weight visibles)
+			    (let ((total-weight (+ p1-weight p2-weight))
+				  (grass 0.95)
+				  (hill 0.75)
+				  (mountain 0.5)
+				  (sea 1))
+			      (declare (special grass hill mountain sea))
+			      (*
+			       (apply #'min
+				      (mapcar #'symbol-value
+					      (tile-type (tile-at (car target) (cdr target)))))
+			       (+ (* (or (gethash parent-1 visibles) 0) (/ p1-weight total-weight))
+				  (* (gethash parent-2 visibles) (/ p2-weight total-weight)))
+			       )))))
+  (maphash #'(lambda (x y) (format t "~&~a : ~a ~%" x y)) xxx))
+
+
+(defun visible-area (army max-range vis-cost-func &optional (world *world*))
+  "VIS-COST-FUNC should take target coord, parent coord 1, parcoord1's weight,
+parcoord2 ,parcoord2's weight and returns float between 0 and 1."
   (let ((visibles (make-hash-table :test 'equal))
 	(army-xy (cons (army-x army) (army-y army))))
-    (setf (gethash army-xy visibles) 0)
+    (setf (gethash army-xy visibles) 1)
     ;; Populate hashtable with cardinal columns:
     (dolist (dir +std-short-dirs+)
       (do ((distance 1 (1+ distance))
@@ -60,19 +83,25 @@
 		    (neighbour-tile-coords (car current) (cdr current) dir)))
 	  ((> distance max-range))
 	(setf (gethash current visibles)
-	      distance) ;; TODO: funcall here
+	      (funcall vis-cost-func current
+		       nil 0
+		       (neighbour-tile-coords (car current) (cdr current) (oppdir dir))
+		       1
+		       visibles))
 	))
     
     (dolist (sector '((n . ne) (ne . se) (se . s)
 		      (s . sw) (sw . nw) (nw . n)))
-      (let ((dir1 (car sector))
-	    (dir2 (cdr sector))
-	    (sector-head (neighbour-tile-coords (car army-xy) (cdr army-xy) (car sector))))
+      (let* ((dir1 (car sector))
+	     (odir1 (oppdir dir1))
+	     (dir2 (cdr sector))
+	     (odir2 (oppdir dir2))
+	     (sector-head (neighbour-tile-coords (car army-xy) (cdr army-xy) (car sector))))
 	(format t "~&Sector ~a, with head of ~a~%" sector sector-head)
 	(do ((column-head (neighbour-tile-coords (car sector-head) (cdr sector-head) dir2)
 			  (neighbour-tile-coords (car column-head) (cdr column-head) dir2))
 	     (column-index 1 (1+ column-index)))
-	    ((> column-index max-range))
+	    ((= column-index max-range))
 	  (format t "~&  Column ~a, index: ~a~%" column-head column-index)
 	  (do ((current column-head
 			(neighbour-tile-coords (car current) (cdr current) dir1))
@@ -80,7 +109,12 @@
 	      ((> (+ column-index count) max-range))
 	    (format t "~&    ~a, ~a~%" count current)
 	    (setf (gethash current visibles)
-		  (+ column-index count) ;; TODO: funcall
+		  (funcall vis-cost-func current
+			   (neighbour-tile-coords (car current) (cdr current) odir2)
+			   column-index
+			   (neighbour-tile-coords (car current) (cdr current) odir1)
+			   count
+			   visibles)
 		  ))))
       )
     visibles))
