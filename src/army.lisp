@@ -25,12 +25,6 @@
   )
 
 
-;;TODO: Will need to check for nils + redo everything
-;; with range of 5 :
-;; (defparameter xxx (visual-area (car *testunit*)))
-;; produces a hashmap of 91 elements, which is correct
-;;
-
 ;;; !!!!!!!!!!!!!!!!!!!!!!! redo all
 ;;; All visibles need to be placed in the same hashtable, as a unit's vision will affect
 ;; the results of other units' visions
@@ -45,6 +39,8 @@
   "Returns list of coordinate conses around XY at distance radius."
   (let ((current xy)
 	(ring nil))
+    ;; Might Just wanto to use a custom list instead of +std-short-dirs+
+    ;; -> coordinate could be set with + or -
     (dotimes (count radius) ;; Move current pointer from center to SW corner of ring
       (setf current (neighbour-tile-coords (car current) (cdr current) 'sw)))
     (dolist (dir +std-short-dirs+) ;; Travel the edge of the ring and store coords
@@ -53,8 +49,41 @@
 	(setf current (neighbour-tile-coords (car current) (cdr current) dir))))
     ring))
 
-(defun visible-area (army &optional (world *world*))
-  )
+(defun visible-area (army max-range &optional (world *world*))
+  (let ((visibles (make-hash-table :test 'equal))
+	(army-xy (cons (army-x army) (army-y army))))
+    (setf (gethash army-xy visibles) 0)
+    ;; Populate hashtable with cardinal columns:
+    (dolist (dir +std-short-dirs+)
+      (do ((distance 1 (1+ distance))
+	   (current (neighbour-tile-coords (car army-xy) (cdr army-xy) dir)
+		    (neighbour-tile-coords (car current) (cdr current) dir)))
+	  ((> distance max-range))
+	(setf (gethash current visibles)
+	      distance) ;; TODO: funcall here
+	))
+    
+    (dolist (sector '((n . ne) (ne . se) (se . s)
+		      (s . sw) (sw . nw) (nw . n)))
+      (let ((dir1 (car sector))
+	    (dir2 (cdr sector))
+	    (sector-head (neighbour-tile-coords (car army-xy) (cdr army-xy) (car sector))))
+	(format t "~&Sector ~a, with head of ~a~%" sector sector-head)
+	(do ((column-head (neighbour-tile-coords (car sector-head) (cdr sector-head) dir2)
+			  (neighbour-tile-coords (car column-head) (cdr column-head) dir2))
+	     (column-index 1 (1+ column-index)))
+	    ((> column-index max-range))
+	  (format t "~&  Column ~a, index: ~a~%" column-head column-index)
+	  (do ((current column-head
+			(neighbour-tile-coords (car current) (cdr current) dir1))
+	       (count 1 (1+ count)))
+	      ((> (+ column-index count) max-range))
+	    (format t "~&    ~a, ~a~%" count current)
+	    (setf (gethash current visibles)
+		  (+ column-index count) ;; TODO: funcall
+		  ))))
+      )
+    visibles))
 
 
 (defun move-area (army &optional (world *world*))
