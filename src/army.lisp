@@ -230,6 +230,13 @@ for movement-type."
     (setf (army-troops (cadr *testunit*)) '((dragoon . 20) (commando . 20)))
     ))
 
+(defun dumb-tiles-within (range)
+  "How many hexes within RANGE from a hex."
+  (+ 1 ; Center
+     (* 6 ; Sectors
+	(/ (* range (+ range 1)) ; triangular number formula
+	   2))))
+
 (defun troops-to-movetypes (unit-list)
   "Convert list of units to their movement-types."
   (let ((move-types))
