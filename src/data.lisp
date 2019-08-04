@@ -52,6 +52,7 @@
 
 (defstruct army
   (id)
+  ;(owner) ; owning faction
   (x) (y)
   (troops)
   (movement)

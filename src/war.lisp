@@ -7,6 +7,7 @@
 (ql:quickload :lispbuilder-sdl-gfx)
 
 (defvar *current-pov-faction* (make-instance 'faction))
+(defvar *cpf-vision* (make-hash-table :test 'equal))
 
 (defvar *testunit* nil)
 (defvar *current-move-area* nil)
@@ -42,6 +43,7 @@
 	       (cons (make-army
 		      :x 0 :y 0
 		      :id 666
+		      ;:owner *current-pov-faction*
 		      :movement 25
 		      :counter
 		      (make-graphics
@@ -68,6 +70,7 @@
 					     ((eq seed 5) 'broadcast-transmitter-antenna))))))
 		       :x-at 24 :y-at 7))
 		     *testunit*))
+	 (push (car *testunit*) (faction-armies *current-pov-faction*))
 	 (place-unit (car *testunit*) 10 8))))
 
 (defstruct graphics
@@ -273,7 +276,36 @@
 				 ((gethash selected-tile *current-move-area*)
 				  (place-unit selected-unit
 					      (car selected-tile)
-					      (cdr selected-tile)))))
+					      (cdr selected-tile))
+				  ;; TODO: I'd say think more on this & make some kind of superfunction
+				  ;; that takes everything into account
+				  ;; clear pov-faction's vision hashtable and recompute:
+				  (clrhash *cpf-vision*)
+				  (dolist (army (faction-armies *current-pov-faction*))
+				    ;; Currently just choose the highest vision percentage generated
+				    (maphash #'(lambda (coord percentage)
+						 (let ((old-vision (gethash coord *cpf-vision*)))
+						   (cond ((and old-vision (< old-vision percentage))
+							  (setf (gethash coord *cpf-vision*) percentage))
+							 (t (setf (gethash coord *cpf-vision*) percentage)))))
+					     (visible-area ; Work in progress
+					      army
+					      5
+					      #'(lambda (target parent-1 p1-weight parent-2 p2-weight visibles)
+						  (let ((total-weight (+ p1-weight p2-weight))
+							(grass 0.95)
+							(hill 0.75)
+							(mountain 0.5)
+							(sea 1))
+						    (declare (special grass hill mountain sea))
+						    (*
+						     (apply #'min
+							    (mapcar #'symbol-value
+								    (tile-type (tile-at (car target) (cdr target)))))
+						     (+ (* (or (gethash parent-1 visibles) 0) (/ p1-weight total-weight))
+							(* (gethash parent-2 visibles) (/ p2-weight total-weight)))
+						     )))))
+				    ))))
 
 			  ((equal button sdl:sdl-button-wheel-up)
 			   (set-tile-size 'large)
@@ -433,6 +465,18 @@
 				  (cons move-cost (cdr current)))))))))))
     (setf *current-move-area* came-from)))
 
+;;TODO: very WIP. Doesn't do aynthing useful yet.
+;; Vision precentage writing should depend on some option somewhere, also change color?
+(defun draw-vision (x0 y0 xn yn x-shift y-shift)
+  (maphash
+   #'(lambda (coord vision)
+       (let ((cx (car coord))
+	     (cy (cdr coord)))
+	 (when (and (< x0 cx xn) ; Currently only draw vision percentage
+		    (< y0 cy yn))
+	   (draw-string-at cx cy x-shift (+ y-shift 10) (write-to-string (round (* vision 100)))))))
+   *cpf-vision*))
+
 (defun draw-world (x-shift y-shift selector-graphics selector-tile selected-tile selected-unit)
 
   (let* (;;(draw-count 0)
@@ -476,7 +520,9 @@
 
       ;;(draw-tiles-by-slot tile-type) ; types moved to variants list
       (draw-tiles-by-slot tile-variant)
-      (draw-tiles-by-slot tile-units army-counter)))
+      (draw-tiles-by-slot tile-units army-counter)
+      (draw-vision x-start y-start x-end y-end x-shift y-shift)
+      ))
 
   (if (coord-in-bounds selector-tile) ; Avoid drawing selector & coords if mouse pointer outside world
       (progn
