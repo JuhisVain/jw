@@ -97,17 +97,14 @@ parcoord2 ,parcoord2's weight and returns float between 0 and 1."
 	     (dir2 (cdr sector))
 	     (odir2 (oppdir dir2))
 	     (sector-head (neighbour-tile-coords (car army-xy) (cdr army-xy) (car sector))))
-	(format t "~&Sector ~a, with head of ~a~%" sector sector-head)
 	(do ((column-head (neighbour-tile-coords (car sector-head) (cdr sector-head) dir2)
 			  (neighbour-tile-coords (car column-head) (cdr column-head) dir2))
 	     (column-index 1 (1+ column-index)))
 	    ((= column-index max-range))
-	  (format t "~&  Column ~a, index: ~a~%" column-head column-index)
 	  (do ((current column-head
 			(neighbour-tile-coords (car current) (cdr current) dir1))
 	       (count 1 (1+ count)))
 	      ((> (+ column-index count) max-range))
-	    (format t "~&    ~a, ~a~%" count current)
 	    (setf (gethash current visibles)
 		  (funcall vis-cost-func current
 			   (neighbour-tile-coords (car current) (cdr current) odir2)
