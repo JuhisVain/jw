@@ -70,6 +70,7 @@
   (maphash #'(lambda (x y) (format t "~&~a : ~a ~%" x y)) xxx))
 
 
+;;;; TODO: refuses to see tiles at world borders
 (defun visible-area (army max-range vis-cost-func &optional (world *world*))
   "VIS-COST-FUNC should take target coord, parent coord 1, parcoord1's weight,
 parcoord2 ,parcoord2's weight and returns float between 0 and 1."
@@ -81,7 +82,7 @@ parcoord2 ,parcoord2's weight and returns float between 0 and 1."
       (do ((distance 1 (1+ distance))
 	   (current (neighbour-tile-coords (car army-xy) (cdr army-xy) dir)
 		    (neighbour-tile-coords (car current) (cdr current) dir)))
-	  ((> distance max-range))
+	  ((or (> distance max-range) (null current)))
 	(setf (gethash current visibles)
 	      (funcall vis-cost-func current
 		       nil 0
@@ -97,22 +98,24 @@ parcoord2 ,parcoord2's weight and returns float between 0 and 1."
 	     (dir2 (cdr sector))
 	     (odir2 (oppdir dir2))
 	     (sector-head (neighbour-tile-coords (car army-xy) (cdr army-xy) (car sector))))
-	(do ((column-head (neighbour-tile-coords (car sector-head) (cdr sector-head) dir2)
-			  (neighbour-tile-coords (car column-head) (cdr column-head) dir2))
-	     (column-index 1 (1+ column-index)))
-	    ((= column-index max-range))
-	  (do ((current column-head
-			(neighbour-tile-coords (car current) (cdr current) dir1))
-	       (count 1 (1+ count)))
-	      ((> (+ column-index count) max-range))
-	    (setf (gethash current visibles)
-		  (funcall vis-cost-func current
-			   (neighbour-tile-coords (car current) (cdr current) odir2)
-			   column-index
-			   (neighbour-tile-coords (car current) (cdr current) odir1)
-			   count
-			   visibles)
-		  ))))
+	(when sector-head
+	  (do ((column-head (neighbour-tile-coords (car sector-head) (cdr sector-head) dir2)
+			    (neighbour-tile-coords (car column-head) (cdr column-head) dir2))
+	       (column-index 1 (1+ column-index)))
+	      ((or (= column-index max-range) (null column-head)))
+	    (do ((current column-head
+			  (neighbour-tile-coords (car current) (cdr current) dir1))
+		 (count 1 (1+ count)))
+		((or (> (+ column-index count) max-range) (null current)))
+	      (setf (gethash current visibles)
+		    (funcall vis-cost-func current
+			     (neighbour-tile-coords (car current) (cdr current) odir2)
+			     column-index
+			     (neighbour-tile-coords (car current) (cdr current) odir1)
+			     count
+			     visibles)
+		    ))))
+	)
       )
     visibles))
 

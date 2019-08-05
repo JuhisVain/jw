@@ -309,7 +309,7 @@
 							    (mapcar #'symbol-value
 								    (tile-type (tile-at (car target) (cdr target)))))
 						     (+ (* (or (gethash parent-1 visibles) 0) (/ p1-weight total-weight))
-							(* (gethash parent-2 visibles) (/ p2-weight total-weight)))
+							(* (or (gethash parent-2 visibles) 0) (/ p2-weight total-weight)))
 						     )))))
 				    ))))
 
