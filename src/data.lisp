@@ -16,13 +16,13 @@
   (if (< (random 100) percent) t))
 
 (defstruct log-turn
-  (index :type integer)
-  (log-list))
+  (index nil :type integer)
+  (log-list nil))
 
 (defstruct log-event
-  (index :type integer)
-  (source :type faction)
-  (data-type :type symbol)
+  (index nil :type integer)
+  (source nil :type faction)
+  (data-type nil :type symbol)
   (data))
 
 (defstruct world
