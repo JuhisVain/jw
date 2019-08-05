@@ -15,6 +15,16 @@
   (declare (number percent))
   (if (< (random 100) percent) t))
 
+(defstruct log-turn
+  (index :type integer)
+  (log-list))
+
+(defstruct log-event
+  (index :type integer)
+  (source :type faction)
+  (data-type :type symbol)
+  (data))
+
 (defstruct world
   (width nil)     ;amount of columns
   (height nil)    ;hexes in a column
@@ -27,7 +37,10 @@
 	       (count+list "Paris" "Lyon" "Montpellier" "Toulouse"
 			   "Marseille" "Nantes" "Nice" "Bordeaux"
 			   "Le Havre" "Brest" "Caen"
-			   "Sainte-Geneviève-des-Bois"))))
+			   "Sainte-Geneviève-des-Bois")))
+  (current-round 0)
+  (log)           ;list of log-turns
+  )
 
 (defstruct city
   (name)
