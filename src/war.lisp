@@ -6,8 +6,14 @@
 (ql:quickload :lispbuilder-sdl-ttf)
 (ql:quickload :lispbuilder-sdl-gfx)
 
-(defvar *current-pov-faction* (make-instance 'faction))
+(defvar *current-pov-faction* (make-instance 'faction)) ;; wip
 (defvar *cpf-vision* (make-hash-table :test 'equal))
+;;; Should be initialized later with size eq to tiles in worldmap
+;;; In case of enemy passing through a faction's vision
+;; -> After initial computing of vision at turn beginning
+;; check logs for movement datas, compare with *cpf-vision*
+;;; Note: that would mean enemy movement can't be shown in real time
+;; which would be easier for multiplayer if I'll ever do that
 
 (defvar *testunit* nil)
 (defvar *current-move-area* nil)
