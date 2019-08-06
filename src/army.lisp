@@ -70,7 +70,6 @@
   (maphash #'(lambda (x y) (format t "~&~a : ~a ~%" x y)) xxx))
 
 
-;;;; TODO: refuses to see tiles at world borders
 (defun visible-area (army max-range vis-cost-func &optional (world *world*))
   "VIS-COST-FUNC should take target coord, parent coord 1, parcoord1's weight,
 parcoord2 ,parcoord2's weight and returns float between 0 and 1."

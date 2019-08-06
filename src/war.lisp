@@ -309,8 +309,8 @@
 							    (mapcar #'symbol-value
 								    (tile-type (tile-at (car target) (cdr target)))))
 						     (+ (* (or (gethash parent-1 visibles) 0) (/ p1-weight total-weight))
-							(* (or (gethash parent-2 visibles) 0) (/ p2-weight total-weight)))
-						     )))))
+							(* (or (gethash parent-2 visibles) 0) (/ p2-weight total-weight))))
+						    ))))
 				    ))))
 
 			  ((equal button sdl:sdl-button-wheel-up)
@@ -478,8 +478,8 @@
    #'(lambda (coord vision)
        (let ((cx (car coord))
 	     (cy (cdr coord)))
-	 (when (and (< x0 cx xn) ; Currently only draw vision percentage
-		    (< y0 cy yn))
+	 (when (and (<= x0 cx xn) ; Currently only draw vision percentage
+		    (<= y0 cy yn))
 	   (draw-string-at cx cy x-shift (+ y-shift 10) (write-to-string (round (* vision 100)))))))
    *cpf-vision*))
 
