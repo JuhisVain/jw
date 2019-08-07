@@ -480,7 +480,8 @@
 	     (cy (cdr coord)))
 	 (when (and (<= x0 cx xn) ; Currently only draw vision percentage
 		    (<= y0 cy yn))
-	   (draw-string-at cx cy x-shift (+ y-shift 10) (write-to-string (round (* vision 100)))))))
+	   (draw-string-at cx cy x-shift (+ y-shift 10) (write-to-string (round (* vision 100)))
+			   :color sdl:*blue*))))
    *cpf-vision*))
 
 (defun draw-world (x-shift y-shift selector-graphics selector-tile selected-tile selected-unit)
@@ -558,7 +559,7 @@
 			    y-shift (graphics-y-at graphics))
 			 :surface destination)))
 
-(defun draw-string-at (x y x-shift y-shift string)
+(defun draw-string-at (x y x-shift y-shift string &key (color sdl:*black*))
   (let* ((tile-width tile-size-x)
 	 (tile-height tile-size-y)
 	 (gx-location (* x tile-width))
@@ -570,7 +571,8 @@
 			     (+ (if (evenp x) gy-location
 				    (+ gy-location (/ tile-size-y 2)))
 				y-shift
-				(floor tile-size-y 2)))))
+				(floor tile-size-y 2))
+			     :color color)))
 
 (defun draw-coords (x y x-shift y-shift)
   ;;Add this to end of draw-tile to write map coords as text on tiles
