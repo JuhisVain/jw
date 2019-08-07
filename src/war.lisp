@@ -293,7 +293,8 @@
 						 (let ((old-vision (gethash coord *cpf-vision*)))
 						   (cond ((and old-vision (< old-vision percentage))
 							  (setf (gethash coord *cpf-vision*) percentage))
-							 (t (setf (gethash coord *cpf-vision*) percentage)))))
+							 ((null old-vision)
+							  (setf (gethash coord *cpf-vision*) percentage)))))
 					     (visible-area ; Work in progress
 					      army
 					      5
