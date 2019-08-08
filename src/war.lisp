@@ -528,7 +528,7 @@
 
       ;;(draw-tiles-by-slot tile-type) ; types moved to variants list
       (draw-tiles-by-slot tile-variant)
-      (draw-tiles-by-slot tile-units army-counter)
+      (draw-tiles-by-slot tile-units army-counter) ; TODO: this macro won't cut it anymore. use fun SEEN to pick
       (draw-vision x-start y-start x-end y-end x-shift y-shift)
       ))
 

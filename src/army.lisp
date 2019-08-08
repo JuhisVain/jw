@@ -49,6 +49,9 @@
 	(setf current (neighbour-tile-coords (car current) (cdr current) dir))))
     ring))
 
+(defun seen (coord vision-hash-table)
+  (gethash coord vision-hash-table 0))
+
 ;; Not a good visibilty func but does it's job for now
 '(progn (defparameter xxx
 	  (visible-area (car *testunit*)
