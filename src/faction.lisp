@@ -30,7 +30,7 @@
   (if (eq pov-faction other-faction)
       (return-from faction-relationship-with 'friendly))
   (dolist (relation (faction-relationships pov-faction))
-    (if (string= (faction-name other-faction) (car relation))
+    (if (eq other-faction (car relation))
 	(return-from faction-relationship-with (cdr relation))))
   (format t "~&ERROR : Faction ~a does not know faction ~a!~%"
 	  (faction-name pov-faction) (faction-name other-faction))
@@ -45,5 +45,5 @@
     "A")))
 
 ;; faction name needs to be available to pair relationships with already existing factions
-(defun faction-relationships-init (faction world)
+'(defun faction-relationships-init (faction world)
   (dolist (faction (world-faction))))
