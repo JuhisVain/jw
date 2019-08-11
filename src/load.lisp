@@ -1,3 +1,4 @@
+(setf *print-circle* t) ;; Faction & army structs reference each other
 (load "packages.lisp")
 (load "data.lisp")
 (load "logicsetup.lisp")

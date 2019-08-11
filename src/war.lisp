@@ -6,7 +6,7 @@
 (ql:quickload :lispbuilder-sdl-ttf)
 (ql:quickload :lispbuilder-sdl-gfx)
 
-(defvar *current-pov-faction* (make-instance 'faction)) ;; wip
+(defvar *current-pov-faction* nil) ;; needs world to exist
 (defvar *cpf-vision* (make-hash-table :test 'equal))
 ;;; Should be initialized later with size eq to tiles in worldmap
 ;;; In case of enemy passing through a faction's vision
@@ -41,6 +41,43 @@
 (defparameter tile-size-y (cdr tile-large-size))
 (defparameter tile-size-hor-x tile-large-size-full-hor-x) ; these should be set in the init func
 
+(defun set-test-enemy-unit ()
+  (defvar *enemy-units* nil)
+  (let ((x (random (1+ (world-width *world*))))
+	(y (random (1+ (world-height *world*))))
+	(faction (car (member-if-not
+		       #'(lambda (faction) (string= (faction-name faction) "Free France"))
+		       (world-factions *world*)))))
+    (push (make-army :x x :y y :id 123 ;; TODO: make function (give-army faction blabla)
+		     :owner faction
+		     :movement 10
+		     :troops '((commando . 5))
+		     :counter (make-graphics
+			       :surface
+			       (description-to-counter
+				faction
+				40
+				(let ((seed (random 8)))
+				  (list (prog1 (cond ((eq seed 0) 'air)
+						     ((eq seed 1) 'space)
+						     ((eq seed 2) 'land)
+						     ((eq seed 3) 'surface)
+						     ((eq seed 4) 'subsurface)
+						     ((eq seed 5) 'equipment)
+						     ((eq seed 6) 'installation)
+						     ((eq seed 7) 'activity))
+					  (setf seed (random 6)))
+					(prog1 (cond ((eq seed 0) 'air-assault-with-organic-lift)
+						     ((eq seed 1) 'air-defense)
+						     ((eq seed 2) 'amphibious)
+						     ((eq seed 3) 'analysis)
+						     ((eq seed 4) 'antitank)
+						     ((eq seed 5) 'broadcast-transmitter-antenna))))))
+			       :x-at 24 :y-at 7))
+	  (faction-armies faction))
+    (place-unit (car (faction-armies faction)) x y)
+    ))
+
 (defun set-test-unit ()
   (format t "~%Setting up testunit~&")
   (cond (t ;;if t -> set to create new armies at (10,8) everytime (test) runs
@@ -49,7 +86,7 @@
 	       (cons (make-army
 		      :x 0 :y 0
 		      :id 666
-		      ;:owner *current-pov-faction*
+		      :owner *current-pov-faction*
 		      :movement 25
 		      :counter
 		      (make-graphics
@@ -220,9 +257,13 @@
     (set-tile-size 'small)
     (set-tile-size 'large)
 
-    (unless *world* (init-test 40 40 :algo 'smooth :islands 20 :mirror t))
+    (unless *world*
+      (init-test 40 40 :algo 'smooth :islands 20 :mirror t)
+      (setf *current-pov-faction* (create-faction "Free France" :controller 'local :world *world*))
+      (create-faction "Martians" :controller 'none :world *world*)
+      )
     ;; init-test can't be executed before variant and outskirts have been generated in grand-unified-graphics-setup
-    
+
     (init-cgen)
 
     (sort-world-graphics) ;; Put graphics in order to render correctly. NOTE: This is a pretty heavy operation

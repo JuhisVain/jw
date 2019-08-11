@@ -153,6 +153,11 @@
 				      :width 48 :height 48
 				      :icon (sdl-image:load-image "graphics/PANEL_BUTTON_TEST.png")
 				      :action #'(lambda () (set-test-unit)))
+		       (make-instance 'panel-button
+				      :x 156 :y 4
+				      :width 48 :height 48
+				      :icon (sdl-image:load-image "graphics/PANEL_BUTTON_TEST.png")
+				      :action #'(lambda () (set-test-enemy-unit)))
   		       (make-instance 'panel-list
 				      :x 4 :y 56
 				      :width 150 :height 300
