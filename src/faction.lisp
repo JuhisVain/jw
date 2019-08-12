@@ -44,6 +44,12 @@
 	 (faction-name (car (world-factions world))))
     "A")))
 
-;; faction name needs to be available to pair relationships with already existing factions
-'(defun faction-relationships-init (faction world)
-  (dolist (faction (world-faction))))
+(defun new-army (faction x y)
+  (let ((new-army (make-army :x x :y y
+			     :owner faction
+			     :counter
+			     (make-graphics
+			      :surface (description-to-counter faction 40 '(land))
+			      :x-at 24 :y-at 7))))
+    (push new-army (faction-armies faction))
+    (place-unit new-army x y)))

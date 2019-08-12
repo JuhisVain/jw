@@ -48,7 +48,7 @@
 	(faction (car (member-if-not
 		       #'(lambda (faction) (string= (faction-name faction) "Free France"))
 		       (world-factions *world*)))))
-    (push (make-army :x x :y y :id 123 ;; TODO: make function (give-army faction blabla)
+    (push (make-army :x x :y y :id 123
 		     :owner faction
 		     :movement 10
 		     :troops '((commando . 5))
