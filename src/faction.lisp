@@ -44,12 +44,15 @@
 	 (faction-name (car (world-factions world))))
     "A")))
 
-(defun new-army (faction x y)
+(defun new-army (faction x y &optional counter-desc)
   (let ((new-army (make-army :x x :y y
 			     :owner faction
+			     :troops '((commando . 0)) ;; WIP
+			     :movement 25 ;; should be generated base on ???something???
 			     :counter
 			     (make-graphics
-			      :surface (description-to-counter faction 40 '(land))
+			      :surface (description-to-counter faction 40 (or counter-desc '(land analysis)))
 			      :x-at 24 :y-at 7))))
     (push new-army (faction-armies faction))
-    (place-unit new-army x y)))
+    (place-unit new-army x y)
+    new-army))
