@@ -48,73 +48,46 @@
 	(faction (car (member-if-not
 		       #'(lambda (faction) (string= (faction-name faction) "Free France"))
 		       (world-factions *world*)))))
-    (push (make-army :x x :y y :id 123
-		     :owner faction
-		     :movement 10
-		     :troops '((commando . 5))
-		     :counter (make-graphics
-			       :surface
-			       (description-to-counter
-				faction
-				40
-				(let ((seed (random 8)))
-				  (list (prog1 (cond ((eq seed 0) 'air)
-						     ((eq seed 1) 'space)
-						     ((eq seed 2) 'land)
-						     ((eq seed 3) 'surface)
-						     ((eq seed 4) 'subsurface)
-						     ((eq seed 5) 'equipment)
-						     ((eq seed 6) 'installation)
-						     ((eq seed 7) 'activity))
-					  (setf seed (random 6)))
-					(prog1 (cond ((eq seed 0) 'air-assault-with-organic-lift)
-						     ((eq seed 1) 'air-defense)
-						     ((eq seed 2) 'amphibious)
-						     ((eq seed 3) 'analysis)
-						     ((eq seed 4) 'antitank)
-						     ((eq seed 5) 'broadcast-transmitter-antenna))))))
-			       :x-at 24 :y-at 7))
-	  (faction-armies faction))
-    (place-unit (car (faction-armies faction)) x y)
-    ))
+    (new-army faction x y (let ((seed (random 8)))
+			    (list (prog1 (cond ((eq seed 0) 'air)
+					       ((eq seed 1) 'space)
+					       ((eq seed 2) 'land)
+					       ((eq seed 3) 'surface)
+					       ((eq seed 4) 'subsurface)
+					       ((eq seed 5) 'equipment)
+					       ((eq seed 6) 'installation)
+					       ((eq seed 7) 'activity))
+				    (setf seed (random 6)))
+				  (prog1 (cond ((eq seed 0) 'air-assault-with-organic-lift)
+					       ((eq seed 1) 'air-defense)
+					       ((eq seed 2) 'amphibious)
+					       ((eq seed 3) 'analysis)
+					       ((eq seed 4) 'antitank)
+					       ((eq seed 5) 'broadcast-transmitter-antenna))))))))
 
 (defun set-test-unit ()
   (format t "~%Setting up testunit~&")
   (cond (t ;;if t -> set to create new armies at (10,8) everytime (test) runs
 	 ;;(null *testunit*) ;; no more units created
 	 (setf *testunit*
-	       (cons (make-army
-		      :x 0 :y 0
-		      :id 666
-		      :owner *current-pov-faction*
-		      :movement 25
-		      :counter
-		      (make-graphics
-		       :surface
-		       (description-to-counter
-			*current-pov-faction*
-			40
-			;;'(hostile space air-defense)
-			(let ((seed (random 8)))
-			  (list (prog1 (cond ((eq seed 0) 'air)
-					     ((eq seed 1) 'space)
-					     ((eq seed 2) 'land)
-					     ((eq seed 3) 'surface)
-					     ((eq seed 4) 'subsurface)
-					     ((eq seed 5) 'equipment)
-					     ((eq seed 6) 'installation)
-					     ((eq seed 7) 'activity))
-				  (setf seed (random 6)))
-				(prog1 (cond ((eq seed 0) 'air-assault-with-organic-lift)
-					     ((eq seed 1) 'air-defense)
-					     ((eq seed 2) 'amphibious)
-					     ((eq seed 3) 'analysis)
-					     ((eq seed 4) 'antitank)
-					     ((eq seed 5) 'broadcast-transmitter-antenna))))))
-		       :x-at 24 :y-at 7))
-		     *testunit*))
-	 (push (car *testunit*) (faction-armies *current-pov-faction*))
-	 (place-unit (car *testunit*) 10 8))))
+	       (cons (new-army *current-pov-faction* 10 8
+			       (let ((seed (random 8)))
+				 (list (prog1 (cond ((eq seed 0) 'air)
+						    ((eq seed 1) 'space)
+						    ((eq seed 2) 'land)
+						    ((eq seed 3) 'surface)
+						    ((eq seed 4) 'subsurface)
+						    ((eq seed 5) 'equipment)
+						    ((eq seed 6) 'installation)
+						    ((eq seed 7) 'activity))
+					 (setf seed (random 6)))
+				       (prog1 (cond ((eq seed 0) 'air-assault-with-organic-lift)
+						    ((eq seed 1) 'air-defense)
+						    ((eq seed 2) 'amphibious)
+						    ((eq seed 3) 'analysis)
+						    ((eq seed 4) 'antitank)
+						    ((eq seed 5) 'broadcast-transmitter-antenna))))))
+		     *testunit*)))))
 
 (defstruct graphics
   (surface nil)
