@@ -18,12 +18,6 @@
 
 (defvar *road-types* '(rail road)) ; (road rail maglev teslavacuumtube footpath etc..)
 
-(defun setup-unit-type-movecosts (type-name tile-cost-alist)
-  (gethash type-name *unit-type-movecosts*))
-
-(defun setup-unit-type (unit-name move-type)
-  )
-
 
 ;;; !!!!!!!!!!!!!!!!!!!!!!! redo all
 ;;; All visibles need to be placed in the same hashtable, as a unit's vision will affect
@@ -207,20 +201,31 @@ for movement-type."
     `(setf (gethash ',movement-type *unit-type-movecosts*) ',movecosts
 	   (gethash ',movement-type *unit-type-road-movecosts*) ',roadcosts)))
 
+;; Maybe rename:
+(defmacro defmovetypeunits (move-type &rest unit-names)
+  "Associate each UNIT-NAME with MOVE-TYPE."
+  `(progn
+     ,@(mapcar
+	#'(lambda (unit)
+	    `(setf (gethash ',unit *unit-types*) ',move-type))
+       unit-names)))
+
+
 (defun test-slowest-movecosts ()
   ;; This is dumb dumb dumb dummy data only for testing
   ;;(setf *road-types* '(rail road)) ; Too late to set here
-  (setf (gethash 'commando *unit-types*) 'infantry)
-  (setf (gethash 'dragoon *unit-types*) 'cavalry)
-  (setf (gethash 'jeep *unit-types*) 'wheeled)
-  (setf (gethash 'flak88 *unit-types*) 'towed)
-  (setf (gethash 'pendolino *unit-types*) 'rail)
+  (defmovetypeunits infantry commando ranger light-machinegun)
+  (defmovetypeunits cavalry dragoon haccapelite knight)
+  (defmovetypeunits wheeled jeep truck formula1)
+  (defmovetypeunits towed flak88 8-pounder)
+  (defmovetypeunits rail pendolino steam-locomotive)
   (defmovecosts infantry (grass 3) (hill 5) (mountain 10) (forest 4) (sea 10000) (city 3) (stream 3) (rail 3) (road 3))
   (defmovecosts cavalry (grass 2) (hill 5) (mountain 12) (forest 5) (sea 10000) (city 3) (stream 3) (rail 2) (road 2))
   (defmovecosts wheeled (grass 2) (hill 5) (mountain 20) (forest 10)(sea 10000) (city 2)(stream 10) (rail 3) (road 1))
   (defmovecosts towed (grass 4) (hill 10) (mountain 14) (forest 7)(sea 10000) (city 3)(stream 10) (rail 5) (road 3))
   (defmovecosts rail (grass 4) (hill 5) (mountain 20) (forest 10)(sea 10000) (city 2)(stream 10) (rail 1) (road 5))
-  
+
+  ;;this is a test and may be removed:
   (slowest-movecosts '((commando . 10) (dragoon . 50) (jeep . 10) (flak88 . 10)))
   )
 
