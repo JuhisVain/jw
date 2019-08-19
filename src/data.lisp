@@ -72,6 +72,7 @@
   (counter))
 
 (defun place-unit (unit x y)
+  "Removes army from (army-x,army-y) and places at (x,y) in *world*."
   (setf (tile-units (aref (world-map *world*) (army-x unit) (army-y unit)))
 	(delete unit
 		(tile-units (aref (world-map *world*) (army-x unit) (army-y unit)))
