@@ -71,15 +71,16 @@
   (movement)
   (counter))
 
-(defun place-unit (unit x y)
+(defun place-unit (unit x y &optional (world *world*))
   "Removes army from (army-x,army-y) and places at (x,y) in *world*."
-  (setf (tile-units (aref (world-map *world*) (army-x unit) (army-y unit)))
-	(delete unit
-		(tile-units (aref (world-map *world*) (army-x unit) (army-y unit)))
-		:test #'eq))
+  (when (tile-at x y *world*) ; Check that army has been initialized with coordinates
+    (setf (tile-units (tile-at (army-x unit) (army-y unit) world))
+	  (delete unit
+		  (tile-units (tile-at (army-x unit) (army-y unit) world))
+		  :test #'eq)))
   (setf (army-x unit) x)
   (setf (army-y unit) y)
-  (pushnew unit (tile-units (aref (world-map *world*) x y))))
+  (pushnew unit (tile-units (tile-at x y world))))
 
 (defun coord-in-bounds (coord-pair &optional (world *world*))
   (and (<= 0 (car coord-pair) (world-width world))
