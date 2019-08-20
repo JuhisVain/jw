@@ -287,13 +287,25 @@
 			   (setf selected-tile selector-tile)
 			   (setf selected-graphics selector-graphics)
 			   (format t "~&Selected ~a~%" selected-tile)
-			   (cond ((null selected-unit)
+			   
+			   (cond ((null selected-unit) ; Nothing selected -> try to select unit from tile:
 				  (setf selected-unit (car (tile-units ;; take the first unit from list
 							    (aref (world-map *world*)
 								  (car selected-tile)
 								  (cdr selected-tile))))))
 				 
-				 ((gethash selected-tile *current-move-area*)
+				 ((member selected-unit ; Previously selected unit in tile -> select next (or first) unit
+					  (tile-units (tile-at (car selected-tile)
+							       (cdr selected-tile))))
+				  (setf selected-unit
+					(or (cadr
+					     (member selected-unit ; Should be LETted but whatcha gonna do
+						     (tile-units (tile-at (car selected-tile)
+									  (cdr selected-tile)))))
+					    (car (tile-units (tile-at (car selected-tile)
+								      (cdr selected-tile)))))))
+				 
+				 ((gethash selected-tile *current-move-area*) ; Clicked tile inside current unit's move area
 				  (place-unit selected-unit
 					      (car selected-tile)
 					      (cdr selected-tile))
