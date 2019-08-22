@@ -179,6 +179,35 @@
     (cons adj-screen-x adj-screen-y)))
 
 
+(defun move-unit (unit target &optional (move-area *current-move-area*) (max-vision-range 5))
+  "Move unit UNIT towards TARGET. Compute vision on every step of the way."
+  (unless (gethash target move-area) (return-from move-unit)) ; Target not in range
+  (dolist (step (reverse (path-move-table target move-area)))
+    (place-unit unit (car step) (cdr step))
+    (maphash #'(lambda (coord percentage)
+		 (let ((old-vision (gethash coord *cpf-vision*)))
+		   (cond ((and old-vision (< old-vision percentage))
+			  (setf (gethash coord *cpf-vision*) percentage))
+			 ((null old-vision)
+			  (setf (gethash coord *cpf-vision*) percentage)))))
+	     (visible-area ; Work in progress
+	      unit
+	      max-vision-range
+	      #'(lambda (target parent-1 p1-weight parent-2 p2-weight visibles)
+		  (let ((total-weight (+ p1-weight p2-weight))
+			(grass 0.95)
+			(hill 0.75)
+			(mountain 0.5)
+			(sea 1))
+		    (declare (special grass hill mountain sea))
+		    (*
+		     (apply #'min
+			    (mapcar #'symbol-value
+				    (tile-type (tile-at (car target) (cdr target)))))
+		     (+ (* (or (gethash parent-1 visibles) 0) (/ p1-weight total-weight))
+			(* (or (gethash parent-2 visibles) 0) (/ p2-weight total-weight))))
+		    ))))
+    ))
 
 
 (defun test ()
@@ -305,39 +334,8 @@
 								      (cdr selected-tile)))))))
 				 
 				 ((gethash selected-tile *current-move-area*) ; Clicked tile inside current unit's move area
-				  (place-unit selected-unit
-					      (car selected-tile)
-					      (cdr selected-tile))
-				  ;; TODO: I'd say think more on this & make some kind of superfunction
-				  ;; that takes everything into account
-				  ;; clear pov-faction's vision hashtable and recompute:
-				  (clrhash *cpf-vision*)
-				  (dolist (army (faction-armies *current-pov-faction*))
-				    ;; Currently just choose the highest vision percentage generated
-				    (maphash #'(lambda (coord percentage)
-						 (let ((old-vision (gethash coord *cpf-vision*)))
-						   (cond ((and old-vision (< old-vision percentage))
-							  (setf (gethash coord *cpf-vision*) percentage))
-							 ((null old-vision)
-							  (setf (gethash coord *cpf-vision*) percentage)))))
-					     (visible-area ; Work in progress
-					      army
-					      5
-					      #'(lambda (target parent-1 p1-weight parent-2 p2-weight visibles)
-						  (let ((total-weight (+ p1-weight p2-weight))
-							(grass 0.95)
-							(hill 0.75)
-							(mountain 0.5)
-							(sea 1))
-						    (declare (special grass hill mountain sea))
-						    (*
-						     (apply #'min
-							    (mapcar #'symbol-value
-								    (tile-type (tile-at (car target) (cdr target)))))
-						     (+ (* (or (gethash parent-1 visibles) 0) (/ p1-weight total-weight))
-							(* (or (gethash parent-2 visibles) 0) (/ p2-weight total-weight))))
-						    ))))
-				    ))))
+				  (move-unit selected-unit selected-tile))
+				 ))
 
 			  ((equal button sdl:sdl-button-wheel-up)
 			   (set-tile-size 'large)
