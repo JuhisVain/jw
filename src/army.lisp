@@ -280,3 +280,10 @@ In form: ( (tile-type move-cost ..rest-slowest-units..) ...)"
 	    ))
 	))
     slowest))
+
+;;TODO: Should be combined with (hash-path) from worldgen.lisp
+(defun path-move-table (target move-area)
+  "Return list of (x . y) from TARGET to wherever MOVE-AREA starts."
+  (let ((current (cdr (gethash target move-area))))
+    (when (car current)
+      (cons current (path-move-table current move-area)))))
