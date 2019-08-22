@@ -290,9 +290,8 @@
 			   
 			   (cond ((null selected-unit) ; Nothing selected -> try to select unit from tile:
 				  (setf selected-unit (car (tile-units ;; take the first unit from list
-							    (aref (world-map *world*)
-								  (car selected-tile)
-								  (cdr selected-tile))))))
+							    (tile-at (car selected-tile)
+								     (cdr selected-tile))))))
 				 
 				 ((member selected-unit ; Previously selected unit in tile -> select next (or first) unit
 					  (tile-units (tile-at (car selected-tile)
