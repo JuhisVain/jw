@@ -210,13 +210,21 @@
     ))
 
 
-(defun select-unit (xy &optional (faction *current-pov-faction*))
-  "Select FACTION's first unit from XY."
-  (declare (cons xy) (faction faction))
-  (dolist (unit (tile-units (tile-at (car xy) (cdr xy))))
+(defun select-unit (x y &optional (faction *current-pov-faction*))
+  "Select FACTION's first unit from tile at X Y."
+  (declare (integer x y) (faction faction))
+  (dolist (unit (tile-units (tile-at x y)))
     (when (eq (army-owner unit) faction)
       (return unit))))
 
+(defun select-next-unit (selected-unit x y &optional (faction *current-pov-faction*))
+  "Select unit that comes after (with wrap around) SELECTED-UNIT owned by FACTION from tile at XY."
+  (declare (army selected-unit) (integer x y) (faction faction))
+  (or 
+   (dolist (unit (cdr (member selected-unit (tile-units (tile-at x y)) :test #'eq)))
+     (when (eq (army-owner unit) faction)
+       (return unit)))
+   (select-unit x y faction)))
 
 (defun test ()
   (sdl:with-init()
