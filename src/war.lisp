@@ -209,7 +209,8 @@
 		    ))))
     ))
 
-
+;; TODO: in case player wants to check out an enemy unit the default behaviour when clicking tile
+;; with only enemy units should select one of them into a uncontrollable state?
 (defun select-unit (x y &optional (faction *current-pov-faction*))
   "Select FACTION's first unit from tile at X Y."
   (declare (integer x y) (faction faction))
@@ -334,20 +335,15 @@
 			   (format t "~&Selected ~a~%" selected-tile)
 			   
 			   (cond ((null selected-unit) ; Nothing selected -> try to select unit from tile:
-				  (setf selected-unit (car (tile-units ;; take the first unit from list
-							    (tile-at (car selected-tile)
-								     (cdr selected-tile))))))
+				  (setf selected-unit (select-unit (car selected-tile) (cdr selected-tile))))
 				 
-				 ((member selected-unit ; Previously selected unit in tile -> select next (or first) unit
-					  (tile-units (tile-at (car selected-tile)
-							       (cdr selected-tile))))
+				 ((and (= (army-x selected-unit); Previously selected unit in tile 
+					  (car selected-tile))  ; -> select next (or first) unit
+				       (= (army-y selected-unit)
+					  (cdr selected-tile)))
+				  
 				  (setf selected-unit
-					(or (cadr
-					     (member selected-unit ; Should be LETted but whatcha gonna do
-						     (tile-units (tile-at (car selected-tile)
-									  (cdr selected-tile)))))
-					    (car (tile-units (tile-at (car selected-tile)
-								      (cdr selected-tile)))))))
+					(select-next-unit selected-unit (car selected-tile) (cdr selected-tile))))
 				 
 				 ((gethash selected-tile *current-move-area*) ; Clicked tile inside current unit's move area
 				  (move-unit selected-unit selected-tile))
