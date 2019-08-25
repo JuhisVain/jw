@@ -210,6 +210,14 @@
     ))
 
 
+(defun select-unit (xy &optional (faction *current-pov-faction*))
+  "Select FACTION's first unit from XY."
+  (declare (cons xy) (faction faction))
+  (dolist (unit (tile-units (tile-at (car xy) (cdr xy))))
+    (when (eq (army-owner unit) faction)
+      (return unit))))
+
+
 (defun test ()
   (sdl:with-init()
     (defparameter window (sdl:window 1500 900 :title-caption "a war game"))
