@@ -379,7 +379,7 @@
 
 		   (when gui-state-changed
 		     (draw-world x-shift y-shift
-				 selector-graphics selector-tile
+				 selector-tile
 				 selected-tile selected-unit)
 		     ;;(draw-panel selected-tile selected-unit)
 		     (draw-panels)
@@ -520,7 +520,7 @@
 			   :color sdl:*blue*))))
    *cpf-vision*))
 
-(defun draw-world (x-shift y-shift selector-graphics selector-tile selected-tile selected-unit)
+(defun draw-world (x-shift y-shift selector-tile selected-tile selected-unit)
 
   (let* (;;(draw-count 0)
 	 (x-start-void (floor x-shift tile-size-x))
@@ -553,17 +553,22 @@
 
 		      (dolist (,slot (,accessor (aref (world-map *world*) ,x ,y)))
 
-
-		      
-			(draw-at ,x ,y x-shift y-shift
-				 ,(if sub-accessor
-				      `(,sub-accessor ,slot)
-				      `(symbol-value ,slot))))
+			,(case sub-accessor
+			   ((nil) `(draw-at ,x ,y x-shift y-shift (symbol-value ,slot)))
+			   ('army-counter
+			    `(if (eq (army-owner ,slot) *current-pov-faction*)
+				 (draw-at ,x ,y x-shift y-shift (army-counter ,slot))
+				 (when (chance (floor (* 100 (seen (cons ,x ,y) *cpf-vision*))))
+				   ;; TODO: Armies should roll values at round start
+				   ;; for all factions -> compare that to SEEN percentage
+				   ;; NOTE: DRAW-WORLD is called when gui state is changed,
+				   ;; aka. all the time: calling random here is bad. Do it at round start.
+				   (draw-at ,x ,y x-shift y-shift (army-counter ,slot))
+				   )))))
 		      (incf ,y)))))
 
-      ;;(draw-tiles-by-slot tile-type) ; types moved to variants list
       (draw-tiles-by-slot tile-variant)
-      (draw-tiles-by-slot tile-units army-counter) ; TODO: this macro won't cut it anymore. use fun SEEN to pick
+      (draw-tiles-by-slot tile-units army-counter)
       (draw-vision x-start y-start x-end y-end x-shift y-shift)
       ))
 
