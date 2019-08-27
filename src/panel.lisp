@@ -142,7 +142,7 @@
 				      :x 4 :y 4
 				      :width 48 :height 48
 				      :icon (sdl-image:load-image "graphics/PANEL_BUTTON_TEST.png")
-				      :action #'(lambda () (clrhash *cpf-vision*)))
+				      :action #'(lambda () (end-turn *current-pov-faction*)))
 		       (make-instance 'panel-button
 				      :x 56 :y 4
 				      :width 48 :height 48
