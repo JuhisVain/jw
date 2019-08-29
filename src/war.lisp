@@ -104,9 +104,14 @@
   (clrhash *cpf-vision*)
   (dolist (army (faction-armies faction))
     )
-
+  
   ;;(setf *current-pov-faction* ???)
   )
+
+(defun new-turn (faction)
+  (dolist (army (faction-armies faction))
+    (update-vision-by-unit army) ;; Setup initial vision table
+    ))
 
 (defmacro do-world-tiles ((var &optional (world *world*)) &body body)
   (let ((x (gensym))
