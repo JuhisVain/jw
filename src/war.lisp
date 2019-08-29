@@ -15,6 +15,8 @@
 ;;; Note: that would mean enemy movement can't be shown in real time
 ;; which would be easier for multiplayer if I'll ever do that
 
+(defvar *max-vision-range* 5 "Absolute max distance that can be seen from a tile")
+
 (defvar *testunit* nil)
 (defvar *current-move-area* nil)
 (defvar *war-color-key* (sdl:color :r 255 :g 0 :b 255))
@@ -187,7 +189,7 @@
     (cons adj-screen-x adj-screen-y)))
 
 
-(defun move-unit (unit target &optional (move-area *current-move-area*) (max-vision-range 5))
+(defun move-unit (unit target &optional (move-area *current-move-area*))
   "Move unit UNIT towards TARGET. Compute vision on every step of the way."
   (unless (gethash target move-area) (return-from move-unit)) ; Target not in range
   (dolist (step (reverse (path-move-table target move-area)))
@@ -200,7 +202,7 @@
 			  (setf (gethash coord *cpf-vision*) percentage)))))
 	     (visible-area ; Work in progress
 	      unit
-	      max-vision-range
+	      *max-vision-range*
 	      #'(lambda (target parent-1 p1-weight parent-2 p2-weight visibles)
 		  (let ((total-weight (+ p1-weight p2-weight))
 			(grass 0.95)
