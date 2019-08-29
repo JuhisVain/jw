@@ -188,35 +188,39 @@
 	 )
     (cons adj-screen-x adj-screen-y)))
 
+(defun update-vision-by-unit (army &optional (vision-ht *cpf-vision*))
+  "Modifies VISION-HT (which should have :test #'equal) with vision of ARMY."
+  (maphash #'(lambda (coord percentage)
+	       (let ((old-vision (gethash coord vision-ht)))
+		 (cond ((and old-vision (< old-vision percentage))
+			(setf (gethash coord vision-ht) percentage))
+		       ((null old-vision)
+			(setf (gethash coord vision-ht) percentage)))))
+	   (visible-area ; Work in progress
+	    army
+	    *max-vision-range*
+	    #'(lambda (target parent-1 p1-weight parent-2 p2-weight visibles)
+		(let ((total-weight (+ p1-weight p2-weight))
+		      (grass 0.95)
+		      (hill 0.75)
+		      (mountain 0.5)
+		      (sea 1))
+		  (declare (special grass hill mountain sea))
+		  (*
+		   (apply #'min
+			  (mapcar #'symbol-value
+				  (tile-type (tile-at (car target) (cdr target)))))
+		   (+ (* (or (gethash parent-1 visibles) 0) (/ p1-weight total-weight))
+		      (* (or (gethash parent-2 visibles) 0) (/ p2-weight total-weight))))
+		  ))))
+  vision-ht)
 
 (defun move-unit (unit target &optional (move-area *current-move-area*))
   "Move unit UNIT towards TARGET. Compute vision on every step of the way."
   (unless (gethash target move-area) (return-from move-unit)) ; Target not in range
   (dolist (step (reverse (path-move-table target move-area)))
     (place-unit unit (car step) (cdr step))
-    (maphash #'(lambda (coord percentage)
-		 (let ((old-vision (gethash coord *cpf-vision*)))
-		   (cond ((and old-vision (< old-vision percentage))
-			  (setf (gethash coord *cpf-vision*) percentage))
-			 ((null old-vision)
-			  (setf (gethash coord *cpf-vision*) percentage)))))
-	     (visible-area ; Work in progress
-	      unit
-	      *max-vision-range*
-	      #'(lambda (target parent-1 p1-weight parent-2 p2-weight visibles)
-		  (let ((total-weight (+ p1-weight p2-weight))
-			(grass 0.95)
-			(hill 0.75)
-			(mountain 0.5)
-			(sea 1))
-		    (declare (special grass hill mountain sea))
-		    (*
-		     (apply #'min
-			    (mapcar #'symbol-value
-				    (tile-type (tile-at (car target) (cdr target)))))
-		     (+ (* (or (gethash parent-1 visibles) 0) (/ p1-weight total-weight))
-			(* (or (gethash parent-2 visibles) 0) (/ p2-weight total-weight))))
-		    ))))
+    (update-vision-by-unit unit)
     ))
 
 ;; TODO: in case player wants to check out an enemy unit the default behaviour when clicking tile
