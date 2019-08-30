@@ -15,9 +15,13 @@
   (declare (number percent))
   (if (< (random 100) percent) t))
 
-(defstruct log-turn
+(defstruct log-round
   (index nil :type integer)
-  (log-list nil))
+  (turns nil))
+
+(defstruct log-turn
+  (faction nil :type faction) ; Whose turn this is
+  (events nil))
 
 (defstruct log-event
   (index nil :type integer)
@@ -39,7 +43,7 @@
 			   "Le Havre" "Brest" "Caen"
 			   "Sainte-Geneviève-des-Bois")))
   (current-round 0)
-  (log)           ;list of log-turns
+  (log (list (make-log-round :index 0))) ;list of log-rounds
   )
 
 (defstruct city
@@ -70,6 +74,41 @@
   (troops)
   (movement)
   (counter))
+
+;; LOG is the logarithm function
+;; I think datalog is a programming language but whatcha gonna do
+;; WIP
+(defun datalog (dingdong &optional (faction *current-pov-faction*) (world *world*))
+
+  (let* ((round
+	  (progn
+	    ;; If we're on a new turn, create new log-round
+	    (when (> (world-current-round world)
+		     (log-round-index (car (world-log world))))
+	      (setf (world-log world)
+		    (pushnew (make-log-round :index (world-current-round world))
+			     (world-log world))))
+	    (car (world-log world))))
+	 
+	 ;; If log's source faction is not the faction at head of this round's turn list
+	 ;;   check if the faction has a log-turn for this round
+	 (turn
+	  (or (find-if #'(lambda (turn)
+			   (eq (log-turn-faction turn)
+			       faction))
+		       (log-round-turns round))
+	      (progn
+		(setf (log-round-turns round)
+		      (pushnew (make-log-turn :faction faction) (log-round-turns round)))
+		(car (log-round-turns round)))))
+	 
+	 )
+
+    (setf (log-turn-events turn) (pushnew dingdong (log-turn-events turn)))
+
+    ))
+    
+      
 
 (defun place-unit (unit x y &optional (world *world*))
   "Removes army from (army-x,army-y) and places at (x,y) in *world*."

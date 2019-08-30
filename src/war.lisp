@@ -105,7 +105,9 @@
   (dolist (army (faction-armies faction))
     )
   
-  ;;(setf *current-pov-faction* ???)
+  ;;(setf *current-pov-faction* ???) ; set next turn's faction from world-factions
+  ;;check if faction nil, if yes:
+  (incf (world-current-round *world*))
   )
 
 (defun new-turn (faction)
