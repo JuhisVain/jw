@@ -78,7 +78,7 @@
 ;; LOG is the logarithm function
 ;; I think datalog is a programming language but whatcha gonna do
 ;; WIP
-(defun datalog (dingdong &optional (faction *current-pov-faction*) (world *world*))
+(defun datalog (faction type content &key (world *world*))
 
   (let* ((round
 	  (progn
@@ -90,21 +90,30 @@
 			     (world-log world))))
 	    (car (world-log world))))
 	 
-	 ;; If log's source faction is not the faction at head of this round's turn list
-	 ;;   check if the faction has a log-turn for this round
+	 ;; If currently playing faction is not the faction at head of this round's turn list
+	 ;; -> means that the turn has changed
 	 (turn
-	  (or (find-if #'(lambda (turn)
-			   (eq (log-turn-faction turn)
-			       faction))
-		       (log-round-turns round))
-	      (progn
-		(setf (log-round-turns round)
-		      (pushnew (make-log-turn :faction faction) (log-round-turns round)))
-		(car (log-round-turns round)))))
+	  (if (eq (log-turn-faction (car (log-round-turns round)))
+		  *current-pov-faction*)
+	      (car (log-round-turns round))
+	      (make-log-turn :faction *current-pov-faction*)
+	    ))
 	 
-	 )
 
-    (setf (log-turn-events turn) (pushnew dingdong (log-turn-events turn)))
+	 (event
+	  (make-log-event :index (let ((previous
+					(car (log-turn-events turn))))
+				   (if previous
+				       (1+ (log-event-index previous))
+				       0))
+			  :source faction
+			  :data-type type
+			  :data content
+			  
+	 
+	 )))
+
+    (setf (log-turn-events turn) (pushnew event (log-turn-events turn)))
 
     ))
     
