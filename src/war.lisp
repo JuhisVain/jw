@@ -225,10 +225,12 @@
 (defun move-unit (unit target &optional (move-area *current-move-area*))
   "Move unit UNIT towards TARGET. Compute vision on every step of the way."
   (unless (gethash target move-area) (return-from move-unit)) ; Target not in range
-  (dolist (step (reverse (path-move-table target move-area)))
-    (place-unit unit (car step) (cdr step))
-    (update-vision-by-unit unit)
-    ))
+  (let ((path (reverse (path-move-table target move-area))))
+    (dolist (step path)
+      (place-unit unit (car step) (cdr step))
+      (update-vision-by-unit unit)
+      )
+    (datalog *current-pov-faction* 'move-unit path )))
 
 ;; TODO: in case player wants to check out an enemy unit the default behaviour when clicking tile
 ;; with only enemy units should select one of them into a uncontrollable state?

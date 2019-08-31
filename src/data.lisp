@@ -86,18 +86,25 @@
 	    (when (> (world-current-round world)
 		     (log-round-index (car (world-log world))))
 	      (setf (world-log world)
-		    (pushnew (make-log-round :index (world-current-round world))
-			     (world-log world))))
+		    (push (make-log-round :index (world-current-round world))
+			  (world-log world))))
 	    (car (world-log world))))
 	 
 	 ;; If currently playing faction is not the faction at head of this round's turn list
 	 ;; -> means that the turn has changed
 	 (turn
-	  (if (eq (log-turn-faction (car (log-round-turns round)))
-		  *current-pov-faction*)
+	  
+	  (if (and
+	       (log-round-turns round)
+	       (eq (log-turn-faction (car (log-round-turns round)))
+		   *current-pov-faction*))
 	      (car (log-round-turns round))
-	      (make-log-turn :faction *current-pov-faction*)
-	    ))
+	      (progn
+		(setf (log-round-turns round)
+		      (push (make-log-turn :faction *current-pov-faction*)
+			    (log-round-turns round)))
+		(car (log-round-turns round))
+		)))
 	 
 
 	 (event
@@ -113,7 +120,7 @@
 	 
 	 )))
 
-    (setf (log-turn-events turn) (pushnew event (log-turn-events turn)))
+    (setf (log-turn-events turn) (push event (log-turn-events turn)))
 
     ))
     
