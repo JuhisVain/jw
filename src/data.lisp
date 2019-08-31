@@ -1,7 +1,7 @@
 (in-package :war)
 
 (defmacro count+list (&body list)
-  ;; Push list's length to beginning of list
+  "Push LIST's length to beginning of LIST."
   `'(,(length list) ,@list))
 
 (defun conc-syms (&rest to-concs)
