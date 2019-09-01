@@ -15,19 +15,44 @@
   (declare (number percent))
   (if (< (random 100) percent) t))
 
-(defstruct log-round
+(defstruct (log-round
+	     (:print-object log-round-printer))
   (index nil :type integer)
   (turns nil))
 
-(defstruct log-turn
+(defstruct (log-turn
+	     (:print-object log-turn-printer))
   (faction nil :type faction) ; Whose turn this is
   (events nil))
 
-(defstruct log-event
+(defstruct (log-event
+	     (:print-object log-event-printer))
   (index nil :type integer)
   (source nil :type faction)
   (data-type nil :type symbol)
   (data))
+
+
+(defun log-round-printer (this stream)
+  (declare (log-round this))
+  (format stream "ROUND ~a~%~{~a~}"
+	  (log-round-index this)
+	  (log-round-turns this)))
+
+(defun log-turn-printer (this stream)
+  (declare (log-turn this))
+  (format stream "~2tTURN ~a :~%~{~4t~a~%~}"
+	  (faction-name (log-turn-faction this))
+	  (log-turn-events this)))
+
+(defun log-event-printer (this stream)
+  (declare (log-event this))
+  (format stream "~a, ~a, ~a :: ~a"
+	  (log-event-index this)
+	  (faction-name (log-event-source this))
+	  (log-event-data-type this)
+	  (not (null (log-event-data this)))))
+
 
 (defstruct world
   (width nil)     ;amount of columns
