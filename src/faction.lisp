@@ -7,6 +7,8 @@
   (relationships) ; list diplomatic statuses with other factions
    ;; ex. (("Usa" . HOSTILE) ("China" . FRIENDLY) ("Martians" . UNKNOWN)) ; use actual structs instead of strings
   (armies) ; List of armies owned by this faction
+  (enemy-unit-info (make-hash-table :test 'eq)) ; List of enemies seen on previous / this turn
+					;key is enemy army, value is ??
   )
 
 (defun create-faction (name &key controller (world *world*))
