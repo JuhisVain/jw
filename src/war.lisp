@@ -102,6 +102,14 @@
 
 (defun end-turn (faction)
   (clrhash *cpf-vision*)
+  
+  ;; Decrement faction's memory of enemy units:
+  (maphash #'(lambda (key value)
+	       (if (unit-info-was-seen-this-turn value)
+		   (setf (unit-info-was-seen-this-turn value) nil)
+		   (remhash key (faction-enemy-unit-info faction))));remhash inside maphash OK per spec
+	   (faction-enemy-unit-info faction))
+  
   (dolist (army (faction-armies faction))
     )
   
@@ -113,7 +121,13 @@
 (defun new-turn (faction)
   (dolist (army (faction-armies faction))
     (update-vision-by-unit army) ;; Setup initial vision table
-    ))
+    )
+  ;; If remembered enemy has moved outside vision:
+  (maphash #'(lambda (key value)
+	       (unless (gethash (cons (army-x key) (army-y key))
+				*cpf-vision*)
+		 (remhash key (faction-enemy-unit-info faction))))
+	   (faction-enemy-unit-info faction)))
 
 (defmacro do-world-tiles ((var &optional (world *world*)) &body body)
   (let ((x (gensym))
@@ -202,7 +216,18 @@
 		 (cond ((and old-vision (< old-vision percentage))
 			(setf (gethash coord vision-ht) percentage))
 		       ((null old-vision)
-			(setf (gethash coord vision-ht) percentage)))))
+			(setf (gethash coord vision-ht) percentage))))
+	       (dolist (enemy-army
+			 (loop for unit in (tile-units (tile-at (car coord) (cdr coord)))
+			    unless (eq (army-owner unit) (army-owner army))
+			    collect unit))
+		 ;; TODO: this is done at every move
+		 ;; generate a percentage into the struct unit-info & compare 
+		 (when (or
+			(gethash enemy-army (faction-enemy-unit-info (army-owner army)))
+			(chance (floor (* 100 (seen coord vision-ht)))))
+		   (setf (gethash enemy-army (faction-enemy-unit-info (army-owner army))) (make-unit-info))
+		   )))
 	   (visible-area ; Work in progress
 	    army
 	    *max-vision-range*
@@ -581,12 +606,11 @@
 			   ('army-counter
 			    `(if (eq (army-owner ,slot) *current-pov-faction*)
 				 (draw-at ,x ,y x-shift y-shift (army-counter ,slot))
-				 (when (chance (floor (* 100 (seen (cons ,x ,y) *cpf-vision*))))
-				   ;; TODO: Armies should roll values at round start
-				   ;; for all factions -> compare that to SEEN percentage
-				   ;; NOTE: DRAW-WORLD is called when gui state is changed,
-				   ;; aka. all the time: calling random here is bad. Do it at round start.
+
+				 ;; If enemy army at this location is in memory:
+				 (when (gethash ,slot (faction-enemy-unit-info *current-pov-faction*))
 				   (draw-at ,x ,y x-shift y-shift (army-counter ,slot))
+				   
 				   )))))
 		      (incf ,y)))))
 

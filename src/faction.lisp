@@ -11,6 +11,10 @@
 					;key is enemy army, value is ??
   )
 
+(defstruct unit-info
+  "Hashtable value record to use in factions' enemy-unit-info hashtables"
+  (was-seen-this-turn t :type boolean))
+
 (defun create-faction (name &key controller (world *world*))
   (when (member-if #'(lambda (faction)
 		       (if (string= (faction-name faction) name) t))
