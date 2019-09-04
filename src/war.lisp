@@ -103,13 +103,6 @@
 (defun end-turn (faction)
   (clrhash *cpf-vision*)
   
-  ;; Decrement faction's memory of enemy units:
-  (maphash #'(lambda (key value)
-	       (if (unit-info-was-seen-this-turn value)
-		   (setf (unit-info-was-seen-this-turn value) nil)
-		   (remhash key (faction-enemy-unit-info faction))));remhash inside maphash OK per spec
-	   (faction-enemy-unit-info faction))
-  
   (dolist (army (faction-armies faction))
     )
   
@@ -210,7 +203,8 @@
     (cons adj-screen-x adj-screen-y)))
 
 (defun update-vision-by-unit (army &optional (vision-ht *cpf-vision*))
-  "Modifies VISION-HT (which should have :test #'equal) with vision of ARMY."
+  "Modifies ARMY's owners enemy-unit-info and
+VISION-HT (which should have :test #'equal) with vision of ARMY."
   (maphash #'(lambda (coord percentage)
 	       (let ((old-vision (gethash coord vision-ht)))
 		 (cond ((and old-vision (< old-vision percentage))
@@ -221,13 +215,17 @@
 			 (loop for unit in (tile-units (tile-at (car coord) (cdr coord)))
 			    unless (eq (army-owner unit) (army-owner army))
 			    collect unit))
-		 ;; TODO: this is done at every move
-		 ;; generate a percentage into the struct unit-info & compare 
-		 (when (or
-			(gethash enemy-army (faction-enemy-unit-info (army-owner army)))
-			(chance (floor (* 100 (seen coord vision-ht)))))
-		   (setf (gethash enemy-army (faction-enemy-unit-info (army-owner army))) (make-unit-info))
-		   )))
+		 ;; this is done at every move
+		 ;; TODO: Detecting a previously unknown army mid-move should cause move to end immediately
+		 (let ((info (or (gethash enemy-army (faction-enemy-unit-info (army-owner army)))
+				 (setf (gethash enemy-army (faction-enemy-unit-info (army-owner army)))
+				       (make-unit-info :has-been-seen nil))))
+		       (seen (floor (* 100 (seen coord vision-ht)))))
+		   
+		   (when (<= (unit-info-visibility info) seen) ; This enemy is directly visible
+		     (setf (unit-info-has-been-seen info) t)))
+
+		 ))
 	   (visible-area ; Work in progress
 	    army
 	    *max-vision-range*
@@ -608,8 +606,9 @@
 				 (draw-at ,x ,y x-shift y-shift (army-counter ,slot))
 
 				 ;; If enemy army at this location is in memory:
-				 (when (gethash ,slot (faction-enemy-unit-info *current-pov-faction*))
-				   (draw-at ,x ,y x-shift y-shift (army-counter ,slot))
+				 (let ((info (gethash ,slot (faction-enemy-unit-info *current-pov-faction*))))
+				   (when (and info (unit-info-has-been-seen info))
+				     (draw-at ,x ,y x-shift y-shift (army-counter ,slot)))
 				   
 				   )))))
 		      (incf ,y)))))

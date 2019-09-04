@@ -13,7 +13,8 @@
 
 (defstruct unit-info
   "Hashtable value record to use in factions' enemy-unit-info hashtables"
-  (was-seen-this-turn t :type boolean))
+  (visibility (1+ (random 100)) :type integer :read-only t) ; Maybe needs to be a bell curve?
+  (has-been-seen t :type boolean))
 
 (defun create-faction (name &key controller (world *world*))
   (when (member-if #'(lambda (faction)
@@ -33,7 +34,7 @@
     this))
 
 (defun faction-named (name)
-  "Returns faction named NAME. NAME may be a quoted symbol or stringand does not care about case."
+  "Returns faction named NAME. NAME may be a quoted symbol or string and does not care about case."
   (let ((name-string (string-upcase (string name))))
     (dolist (f (world-factions *world*))
       (when (string= name-string
