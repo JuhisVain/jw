@@ -32,6 +32,13 @@
     (push this (world-factions world))
     this))
 
+(defun faction-named (name)
+  (let ((name-string (string-upcase (string name))))
+    (dolist (f (world-factions *world*))
+      (when (string= name-string
+		     (string-upcase (string (faction-name f))))
+	(return f)))))
+
 (defun faction-relationship-with (pov-faction other-faction)
   (if (eq pov-faction other-faction)
       (return-from faction-relationship-with 'friendly))
