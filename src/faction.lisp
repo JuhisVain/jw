@@ -33,6 +33,7 @@
     this))
 
 (defun faction-named (name)
+  "Returns faction named NAME. NAME may be a quoted symbol or stringand does not care about case."
   (let ((name-string (string-upcase (string name))))
     (dolist (f (world-factions *world*))
       (when (string= name-string
