@@ -32,6 +32,15 @@
   (data-type nil :type symbol)
   (data))
 
+;; Just for testing, will break if given indexes too high
+(defun print-log-event (round turn event)
+  "Prints event number EVENT of turn number NUMBER of round number ROUND,
+with data field in full."
+  (let ((event
+	 (nth event (log-turn-events
+		     (nth turn (log-round-turns
+				(nth round (world-log *world*))))))))
+    (format t "~&~a~%~a~%" event (log-event-data event))))
 
 (defun log-round-printer (this stream)
   (declare (log-round this))
