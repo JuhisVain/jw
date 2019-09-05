@@ -205,54 +205,64 @@
 (defun update-vision-by-unit (army &optional (vision-ht *cpf-vision*))
   "Modifies ARMY's owners enemy-unit-info and
 VISION-HT (which should have :test #'equal) with vision of ARMY."
-  (maphash #'(lambda (coord percentage)
-	       (let ((old-vision (gethash coord vision-ht)))
-		 (cond ((and old-vision (< old-vision percentage))
-			(setf (gethash coord vision-ht) percentage))
-		       ((null old-vision)
-			(setf (gethash coord vision-ht) percentage))))
-	       (dolist (enemy-army
-			 (loop for unit in (tile-units (tile-at (car coord) (cdr coord)))
-			    unless (eq (army-owner unit) (army-owner army))
-			    collect unit))
-		 ;; this is done at every move
-		 ;; TODO: Detecting a previously unknown army mid-move should cause move to end immediately
-		 (let ((info (or (gethash enemy-army (faction-enemy-unit-info (army-owner army)))
-				 (setf (gethash enemy-army (faction-enemy-unit-info (army-owner army)))
-				       (make-unit-info :has-been-seen nil))))
-		       (seen (floor (* 100 (seen coord vision-ht)))))
-		   
-		   (when (<= (unit-info-visibility info) seen) ; This enemy is directly visible
-		     (setf (unit-info-has-been-seen info) t)))
+  (let ((discovered-enemies nil)) ; return value, used for aborting moves
+    (maphash #'(lambda (coord percentage)
+		 (let ((old-vision (gethash coord vision-ht)))
+		   (cond ((and old-vision (< old-vision percentage))
+			  (setf (gethash coord vision-ht) percentage))
+			 ((null old-vision)
+			  (setf (gethash coord vision-ht) percentage))))
+		 (dolist (enemy-army
+			   (loop for unit in (tile-units (tile-at (car coord) (cdr coord)))
+			      unless (eq (army-owner unit) (army-owner army))
+			      collect unit))
+		   ;; this is done at every move
+		   (let ((info (or (gethash enemy-army (faction-enemy-unit-info (army-owner army)))
+				   (setf (gethash enemy-army (faction-enemy-unit-info (army-owner army)))
+					 (make-unit-info :has-been-seen nil))))
+			 (seen (floor (* 100 (seen coord vision-ht)))))
+		     
+		     (when (<= (unit-info-visibility info) seen) ; This enemy is directly visible
+		       (when (not (unit-info-has-been-seen info))
+			 (push enemy-army discovered-enemies))
+		       (setf (unit-info-has-been-seen info) t)))
 
-		 ))
-	   (visible-area ; Work in progress
-	    army
-	    *max-vision-range*
-	    #'(lambda (target parent-1 p1-weight parent-2 p2-weight visibles)
-		(let ((total-weight (+ p1-weight p2-weight))
-		      (grass 0.95)
-		      (hill 0.75)
-		      (mountain 0.5)
-		      (sea 1))
-		  (declare (special grass hill mountain sea))
-		  (*
-		   (apply #'min
-			  (mapcar #'symbol-value
-				  (tile-type (tile-at (car target) (cdr target)))))
-		   (+ (* (or (gethash parent-1 visibles) 0) (/ p1-weight total-weight))
-		      (* (or (gethash parent-2 visibles) 0) (/ p2-weight total-weight))))
-		  ))))
-  vision-ht)
+		   ))
+	     (visible-area ; Work in progress
+	      army
+	      *max-vision-range*
+	      #'(lambda (target parent-1 p1-weight parent-2 p2-weight visibles)
+		  (let ((total-weight (+ p1-weight p2-weight))
+			(grass 0.95)
+			(hill 0.75)
+			(mountain 0.5)
+			(sea 1))
+		    (declare (special grass hill mountain sea))
+		    (*
+		     (apply #'min
+			    (mapcar #'symbol-value
+				    (tile-type (tile-at (car target) (cdr target)))))
+		     (+ (* (or (gethash parent-1 visibles) 0) (/ p1-weight total-weight))
+			(* (or (gethash parent-2 visibles) 0) (/ p2-weight total-weight))))
+		    ))))
+    discovered-enemies))
 
 (defun move-unit (unit target &optional (move-area *current-move-area*))
   "Move unit UNIT towards TARGET. Compute vision on every step of the way."
   (unless (gethash target move-area) (return-from move-unit)) ; Target not in range
-  (let ((path (reverse (path-move-table target move-area))))
+  (let* ((rev-path (path-move-table target move-area))
+	 (path (reverse rev-path))
+	 (discovered-enemies nil))
     (dolist (step path)
       (place-unit unit (car step) (cdr step))
-      (update-vision-by-unit unit)
-      )
+      (setf discovered-enemies (update-vision-by-unit unit))
+      (when discovered-enemies ; Abort move
+	(return-from move-unit
+	  (progn
+	    (format t "~&Enemy revealed after move to: ~a~%~a~%" step discovered-enemies)
+	    (datalog *current-pov-faction* 'move-unit-with-abort
+		     (list (reverse (member step rev-path :test #'equal))
+			   discovered-enemies))))))
     (datalog *current-pov-faction* 'move-unit path )))
 
 ;; TODO: in case player wants to check out an enemy unit the default behaviour when clicking tile
