@@ -105,10 +105,16 @@
   
   (dolist (army (faction-armies faction))
     )
-  
-  ;;(setf *current-pov-faction* ???) ; set next turn's faction from world-factions
-  ;;check if faction nil, if yes:
-  (incf (world-current-round *world*))
+
+  ;;;; TODO:
+  ;; selected unit remains between turns in GUI.
+  ;; might not cause problems with AI turns but should prolly be made
+  ;; completely independant of user interface in any case
+  ;; + this is ugly
+  (setf *current-pov-faction*
+	(or (cadr (member *current-pov-faction* (world-factions *world*) :test #'eq))
+	    (progn (incf (world-current-round *world*))
+		   (car (world-factions *world*)))))
   )
 
 (defun new-turn (faction)
