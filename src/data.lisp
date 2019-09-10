@@ -247,7 +247,7 @@ Optional endfunc takes x y world, if returns true this function returns before f
   (- y (/ (- x (rem x 2))
 	  2)))
 
-(defun test-a* ()
+'(defun test-a* ()
   ;; Not guaranteed to produce sensible results
   (defparameter a*test
     (a* 1 12 11 8
