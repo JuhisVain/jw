@@ -271,22 +271,21 @@ TEST-FUNC should take to arguments and return the preferable one."
 	    (reduce #'+ (army-troops two) :key #'cdr))
 	 one two))
   (tile-units (tile-at 10 8)))
-'(enemy-army-at (car *testunit*) 34 33)
-'(enemy-army-at (car (tile-units (tile-at 34 33))) 10 8 'weakest)
+'(enemy-army-at (army-owner (car *testunit*)) 34 33)
+'(enemy-army-at (army-owner (car (tile-units (tile-at 34 33)))) 10 8 'weakest)
 
 
 
-(defun enemy-army-at (army tile-x tile-y &optional (strength 'strongest))
+(defun enemy-army-at (pov tile-x tile-y &optional (strength 'strongest))
   "Return a single army from (TILE-X,TILE-Y), which is an enemy of ARMY's owner.
 Acceptable arguments for STRENGTH are symbols STRONGEST, WEAKEST and RANDOM"
-  (declare (army army)
+  (declare (faction pov)
 	   (integer tile-x tile-y)
 	   (symbol strength))
-  (let* ((pov (army-owner army))
-	 (enemy-armies
-	  (loop for tile-army in (tile-units (tile-at tile-x tile-y))
-	     unless (eq 'friendly (faction-relationship-with pov (army-owner tile-army)))
-	     collect tile-army)))
+  (let ((enemy-armies
+	 (loop for tile-army in (tile-units (tile-at tile-x tile-y))
+	    unless (eq 'friendly (faction-relationship-with pov (army-owner tile-army)))
+	    collect tile-army)))
     
     (unless enemy-armies ; no enemies in this tile, return nil
       (return-from enemy-army-at nil))
