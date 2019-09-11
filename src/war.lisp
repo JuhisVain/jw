@@ -253,8 +253,64 @@ VISION-HT (which should have :test #'equal) with vision of ARMY."
 		    ))))
     discovered-enemies))
 
+(defun select-army-by (test-func army-list)
+  "Select army from ARMY-LIST using TEST-FUNC.
+TEST-FUNC should take to arguments and return the preferable one."
+  (declare (function test-func)
+	   (list army-list))
+  (let ((result (car army-list)))
+    (dolist (candidate (cdr army-list) result)
+      (setf result (funcall test-func result candidate)))))
+
+
+
+;; test: need to push buttons a bit in default testing setup for these to work
+'(select-army-by
+ #'(lambda (one two)
+     (if (> (reduce #'+ (army-troops one) :key #'cdr)
+	    (reduce #'+ (army-troops two) :key #'cdr))
+	 one two))
+  (tile-units (tile-at 10 8)))
+'(enemy-army-at (car *testunit*) 34 33)
+'(enemy-army-at (car (tile-units (tile-at 34 33))) 10 8 'weakest)
+
+
+
+(defun enemy-army-at (army tile-x tile-y &optional (strength 'strongest))
+  "Return a single army from (TILE-X,TILE-Y), which is an enemy of ARMY's owner.
+Acceptable arguments for STRENGTH are symbols STRONGEST, WEAKEST and RANDOM"
+  (declare (army army)
+	   (integer tile-x tile-y)
+	   (symbol strength))
+  (let* ((pov (army-owner army))
+	 (enemy-armies
+	  (loop for tile-army in (tile-units (tile-at tile-x tile-y))
+	     unless (eq 'friendly (faction-relationship-with pov (army-owner tile-army)))
+	     collect tile-army)))
+    
+    (unless enemy-armies ; no enemies in this tile, return nil
+      (return-from enemy-army-at nil))
+
+    ;; WIP. currently applies philosophy of 'strength in numbers'
+    (case strength
+      (strongest (select-army-by
+		  #'(lambda (one two)
+		      (if (> (reduce #'+ (army-troops one) :key #'cdr)
+			     (reduce #'+ (army-troops two) :key #'cdr))
+			  one two))
+		  enemy-armies))
+      (weakest (select-army-by
+		  #'(lambda (one two)
+		      (if (< (reduce #'+ (army-troops one) :key #'cdr)
+			     (reduce #'+ (army-troops two) :key #'cdr))
+			  one two))
+		  enemy-armies))
+      (random (nth (random (length enemy-armies)) enemy-armies)))))
+    
+
 (defun move-unit (unit target &optional (move-area *current-move-area*))
-  "Move unit UNIT towards TARGET. Compute vision on every step of the way."
+  "Move unit UNIT towards TARGET within MOVE-AREA. Compute vision on every step of the way.
+Aborted if new enemy discovered."
   (unless (gethash target move-area) (return-from move-unit)) ; Target not in range
   (let* ((rev-path (path-move-table target move-area))
 	 (path (reverse rev-path))
