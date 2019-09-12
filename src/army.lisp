@@ -115,6 +115,52 @@ parcoord2 ,parcoord2's weight and returns float between 0 and 1."
       )
     visibles))
 
+(defun army-attack (army target &key (advance nil))
+  "ARMY attacks TARGET, which must be in a tile adjacent to ARMY's.
+If ADVANCE is true ARMY will move to TARGET's position, if possible."
+  (declare (army army target))
+
+  (unless (neighbourp (cons (army-x army)
+			    (army-y army))
+		      (cons (army-x target)
+			    (army-y target)))
+    (format t "~&ERROR: Army at ~a,~a tried to attack army at ~a,~a~%"
+	    (army-x army) (army-y army) (army-x target) (army-y target))
+    (return-from army-attack nil))
+  
+  (let ((winner (if (>= (reduce #'+ (army-troops army) :key #'cdr)
+			(reduce #'+ (army-troops target) :key #'cdr))
+		    army target)))
+
+    (if (eq winner army)
+	(progn
+	  (destroy-army target)
+	  (unless (enemy-army-at (army-owner army) (army-x target) (army-y target))
+	    (place-unit army (army-x target) (army-y target))))
+	(destroy-army army))
+    
+    (datalog (army-owner army) 'attack
+	     (list (list army ; It will be smarter to just store troops involved in the final log
+			 (army-x army)
+			 (army-y army))
+		   (list target
+			 (army-x target)
+			 (army-y target))
+		   winner))))
+
+(defun destroy-army (army)
+  "Removes ARMY from map."
+  (let ((tile (tile-at (army-x army) (army-y army))))
+    (setf (tile-units tile)
+	  (delete army (tile-units tile))
+	  (faction-armies (army-owner army))
+	  (delete army (faction-armies (army-owner army)))
+	  )
+    ;;; TODO:
+    ;; increase straglers
+    ;; do logging
+    ;; etc..
+    ))
 
 (defun move-area (army &optional (world *world*))
   (let ((start-x (army-x army))
