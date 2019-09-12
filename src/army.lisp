@@ -131,7 +131,9 @@ parcoord2 ,parcoord2's weight and returns float between 0 and 1."
 				(terrain (coord-types x y world))
 				(locations (coord-locations x y world)))
 
-			   (cond (roads
+			   (cond ((enemy-army-at (army-owner army) x y) ; This makes a tile occupied by
+				  most-positive-fixnum)                 ;  an enemy impossible to enter
+				 (roads
 				  (apply #'max
 					 (mapcar
 					  #'(lambda (movetype) ; for all movetypes in army
