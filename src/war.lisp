@@ -464,6 +464,15 @@ Aborted if new enemy discovered."
 				 
 				 ((gethash selected-tile *current-move-area*) ; Clicked tile inside current unit's move area
 				  (move-unit selected-unit selected-tile))
+				 ((and
+				   (enemy-army-at (army-owner selected-unit) (car selected-tile) (cdr selected-tile))
+				   (neighbourp (cons (army-x selected-unit) (army-y selected-unit))
+					       selected-tile))
+				  ;; TODO: clicking a move after losing combat resurrects dead unit
+				  (army-attack selected-unit
+					       (enemy-army-at (army-owner selected-unit)
+							      (car selected-tile) (cdr selected-tile))
+					       :advance t))
 				 ))
 
 			  ((equal button sdl:sdl-button-wheel-up)
