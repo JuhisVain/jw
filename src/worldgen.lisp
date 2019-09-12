@@ -915,6 +915,10 @@ outskirt towards direction."
 				     (world-height world)))
 	  +std-short-dirs+))
 
+(defun neighbourp (xy0 xy1)
+  (declare (cons xy0 xy1))
+  (find xy1 (neighbour-tiles (car xy0) (cdr xy0)) :test #'equal))
+
 ;;   TODO: might want to handle complete masks in some way (as in no field outskirts on sea tiles etc..)
 (defun finalize-tile (x y &optional (world *world*))
   (setf (tile-variant (tile-at x y world))
