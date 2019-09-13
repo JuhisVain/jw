@@ -118,6 +118,12 @@
   )
 
 (defun new-turn (faction)
+
+  ;; Reroll visibility for units in memory
+  (maphash #'(lambda (enemy-army info)
+	       (setf (unit-info-visibility info) (1+ (random 100))))
+   (faction-enemy-unit-info faction))
+  
   (dolist (army (faction-armies faction))
     (update-vision-by-unit army) ;; Setup initial vision table
     )

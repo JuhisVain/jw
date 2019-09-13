@@ -13,7 +13,8 @@
 
 (defstruct unit-info
   "Hashtable value record to use in factions' enemy-unit-info hashtables"
-  (visibility (1+ (random 100)) :type integer :read-only t) ; Maybe needs to be a bell curve?
+  ;; lower visibility = more visible
+  (visibility (1+ (random 100)) :type integer) ; Maybe needs to be a bell curve?
   (has-been-seen t :type boolean))
 
 (defun create-faction (name &key controller (world *world*))
