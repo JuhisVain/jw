@@ -77,7 +77,7 @@
              *nato-symbol-lib*)))
 
 (defun description-to-counter (faction width description
-			       &optional (current-pov *current-pov-faction*))
+			       &optional (current-pov (world-current-turn *world*)))
   (let* ((aff-desc
 	  (sort (cons (faction-relationship-with current-pov faction)
 		      description)

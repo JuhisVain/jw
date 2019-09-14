@@ -100,39 +100,40 @@
 
 (defvar *world* nil)
 
-(defun end-turn (faction)
-  (clrhash *cpf-vision*)
-  
-  (dolist (army (faction-armies faction))
-    )
+(defun end-turn () ; TODO: faction arg should be useless, use world's current-turn faction
+  (let ((faction (world-current-turn *world*)))
+    (clrhash *cpf-vision*)
+    
+    (dolist (army (faction-armies faction))
+      )
 
   ;;;; TODO:
-  ;; selected unit remains between turns in GUI.
-  ;; might not cause problems with AI turns but should prolly be made
-  ;; completely independant of user interface in any case
-  ;; + this is ugly
-  (setf *current-pov-faction*
-	(or (cadr (member *current-pov-faction* (world-factions *world*) :test #'eq))
-	    (progn (incf (world-current-round *world*))
-		   (car (world-factions *world*)))))
-  )
+    ;; selected unit remains between turns in GUI.
+    ;; might not cause problems with AI turns but should prolly be made
+    ;; completely independant of user interface in any case
+    ;; + this is ugly
+    (setf (world-current-turn *world*)
+	  (or (cadr (member (world-current-turn *world*) (world-factions *world*) :test #'eq))
+	      (progn (incf (world-current-round *world*))
+		     (car (world-factions *world*)))))
+    ))
 
-(defun new-turn (faction)
-
-  ;; Reroll visibility for units in memory
-  (maphash #'(lambda (enemy-army info)
-	       (setf (unit-info-visibility info) (1+ (random 100))))
-   (faction-enemy-unit-info faction))
-  
-  (dolist (army (faction-armies faction))
-    (update-vision-by-unit army) ;; Setup initial vision table
-    )
-  ;; If remembered enemy has moved outside vision:
-  (maphash #'(lambda (key value)
-	       (unless (gethash (cons (army-x key) (army-y key))
-				*cpf-vision*)
-		 (remhash key (faction-enemy-unit-info faction))))
-	   (faction-enemy-unit-info faction)))
+(defun new-turn () ; TODO: use world's current-turn faction
+  (let ((faction (world-current-turn *world*)))
+    ;; Reroll visibility for units in memory
+    (maphash #'(lambda (enemy-army info)
+		 (setf (unit-info-visibility info) (1+ (random 100))))
+	     (faction-enemy-unit-info faction))
+    
+    (dolist (army (faction-armies faction))
+      (update-vision-by-unit army) ;; Setup initial vision table
+      )
+    ;; If remembered enemy has moved outside vision:
+    (maphash #'(lambda (key value)
+		 (unless (gethash (cons (army-x key) (army-y key))
+				  *cpf-vision*)
+		   (remhash key (faction-enemy-unit-info faction))))
+	     (faction-enemy-unit-info faction))))
 
 (defmacro do-world-tiles ((var &optional (world *world*)) &body body)
   (let ((x (gensym))
@@ -327,21 +328,21 @@ Aborted if new enemy discovered."
 	(return-from move-unit
 	  (progn
 	    (format t "~&Enemy revealed after move to: ~a~%~a~%" step discovered-enemies)
-	    (datalog *current-pov-faction* 'move-unit-with-abort
+	    (datalog (world-current-turn *world*) 'move-unit-with-abort
 		     (list (reverse (member step rev-path :test #'equal))
 			   discovered-enemies))))))
-    (datalog *current-pov-faction* 'move-unit path )))
+    (datalog (world-current-turn *world*) 'move-unit path )))
 
 ;; TODO: in case player wants to check out an enemy unit the default behaviour when clicking tile
 ;; with only enemy units should select one of them into a uncontrollable state?
-(defun select-unit (x y &optional (faction *current-pov-faction*))
+(defun select-unit (x y &optional (faction (world-current-turn *world*)))
   "Select FACTION's first unit from tile at X Y."
   (declare (integer x y) (faction faction))
   (dolist (unit (tile-units (tile-at x y)))
     (when (eq (army-owner unit) faction)
       (return unit))))
 
-(defun select-next-unit (selected-unit x y &optional (faction *current-pov-faction*))
+(defun select-next-unit (selected-unit x y &optional (faction (world-current-turn *world*)))
   "Select unit that comes after (with wrap around) SELECTED-UNIT owned by FACTION from tile at XY."
   (declare (army selected-unit) (integer x y) (faction faction))
   (or 
@@ -688,11 +689,11 @@ Aborted if new enemy discovered."
 			,(case sub-accessor
 			   ((nil) `(draw-at ,x ,y x-shift y-shift (symbol-value ,slot)))
 			   ('army-counter
-			    `(if (eq (army-owner ,slot) *current-pov-faction*)
+			    `(if (eq (army-owner ,slot) (world-current-turn *world*))
 				 (draw-at ,x ,y x-shift y-shift (army-counter ,slot))
 
 				 ;; If enemy army at this location is in memory:
-				 (let ((info (gethash ,slot (faction-enemy-unit-info *current-pov-faction*))))
+				 (let ((info (gethash ,slot (faction-enemy-unit-info (world-current-turn *world*)))))
 				   (when (and info (unit-info-has-been-seen info))
 				     (draw-at ,x ,y x-shift y-shift (army-counter ,slot)))
 				   

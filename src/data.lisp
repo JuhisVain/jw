@@ -77,6 +77,7 @@ with data field in full."
 			   "Le Havre" "Brest" "Caen"
 			   "Sainte-Geneviève-des-Bois")))
   (current-round 0)
+  (current-turn nil) ; a faction
   (log (list (make-log-round :index 0))) ;list of log-rounds
   )
 
@@ -131,11 +132,11 @@ with data field in full."
 	  (if (and
 	       (log-round-turns round)
 	       (eq (log-turn-faction (car (log-round-turns round)))
-		   *current-pov-faction*))
+		   (world-current-turn world)))
 	      (car (log-round-turns round))
 	      (progn
 		(setf (log-round-turns round)
-		      (push (make-log-turn :faction *current-pov-faction*)
+		      (push (make-log-turn :faction (world-current-turn world))
 			    (log-round-turns round)))
 		(car (log-round-turns round))
 		)))

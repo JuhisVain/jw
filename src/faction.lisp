@@ -32,6 +32,8 @@
     (dolist (faction (world-factions world))
       (push (cons this 'hostile) (faction-relationships faction)))
     (push this (world-factions world))
+    (unless (world-current-turn world)
+      (setf (world-current-turn world) this))
     this))
 
 (defun faction-named (name)
