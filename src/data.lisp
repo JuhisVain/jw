@@ -160,7 +160,7 @@ with data field in full."
 
     ))
     
-      
+
 
 (defun place-unit (unit x y &optional (world *world*))
   "Removes army from (army-x,army-y) and places at (x,y) in *world*."
@@ -171,7 +171,12 @@ with data field in full."
 		  :test #'eq)))
   (setf (army-x unit) x)
   (setf (army-y unit) y)
+  (change-tile-owner x y (army-owner unit))
   (pushnew unit (tile-units (tile-at x y world))))
+
+;; A stronger army moving to a tile might also take control of neighbourhood?
+(defun change-tile-owner (x y faction)
+  (setf (tile-owner (tile-at x y)) faction))
 
 (defun coord-in-bounds (coord-pair &optional (world *world*))
   (and (<= 0 (car coord-pair) (world-width world))
