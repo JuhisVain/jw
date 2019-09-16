@@ -95,6 +95,7 @@ with data field in full."
   (production))
 
 (defstruct tile
+  (owner nil :type (or faction null))
   (type (list 'sea)) ;things within tile that affect unit movement
   (variant nil)  ;graphical data
   (location nil) ;city/resource/airfield etc.. -> things of importance
