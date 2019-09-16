@@ -404,6 +404,8 @@ Aborted if new enemy discovered."
       (init-test 40 40 :algo 'smooth :islands 20 :mirror t)
       (setf *current-pov-faction* (create-faction "Free France" :controller 'local :world *world*))
       (create-faction "Martians" :controller 'none :world *world*)
+      (setf (faction-color (faction-named "Free France")) sdl:*blue*
+	    (faction-color (faction-named "Martians")) sdl:*red*)
       )
     ;; init-test can't be executed before variant and outskirts have been generated in grand-unified-graphics-setup
 

@@ -4,6 +4,7 @@
   (name (name-init *world*) :type string) ; Faction ID for both humans and program. Some kind of string?
   (controller 'none :type symbol) ; What controls this faction
   (counter-base) ; The sdl:surface used as nato counter card's background
+  (color sdl:*black* :type sdl:color)
   (relationships) ; list diplomatic statuses with other factions
    ;; ex. (("Usa" . HOSTILE) ("China" . FRIENDLY) ("Martians" . UNKNOWN)) ; use actual structs instead of strings
   (armies) ; List of armies owned by this faction

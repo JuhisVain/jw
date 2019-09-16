@@ -96,6 +96,8 @@ with data field in full."
 
 (defstruct tile
   (owner nil :type (or faction null))
+  (same-owner #6*0 :type simple-bit-vector) ;Whether or not neighbours are same owner
+  ;; above is more of a GUI thing though... may need more thinking
   (type (list 'sea)) ;things within tile that affect unit movement
   (variant nil)  ;graphical data
   (location nil) ;city/resource/airfield etc.. -> things of importance
