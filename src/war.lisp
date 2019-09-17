@@ -39,6 +39,7 @@
 (defparameter tile-small-size-full-hor-x 36)
 (defparameter tile-small-size (cons 49 52))
 
+(defparameter tile-size-full-x tile-large-size-full-x)
 (defparameter tile-size-x (car tile-large-size))
 (defparameter tile-size-y (cdr tile-large-size))
 (defparameter tile-size-hor-x tile-large-size-full-hor-x) ; these should be set in the init func
@@ -705,6 +706,31 @@ Aborted if new enemy discovered."
       (draw-tiles-by-slot tile-variant)
       (draw-tiles-by-slot tile-units army-counter)
       (draw-vision x-start y-start x-end y-end x-shift y-shift)
+
+      ;; TODO: draw graphics for borders and use those instead of lines
+      (do ((x x-start)
+	   (y y-start))
+	  (nil)
+
+	(cond ((> y y-end)
+	       (setf y y-start)
+	       (incf x)))
+	(if (> x x-end)
+	    (return))
+
+	(let ((xy-owner (tile-owner (tile-at x y)))
+	      (current-dir +std-short-dirs+))
+	  (when xy-owner
+	    (dolist (neigh (neighbour-tiles x y))
+	      (when (and neigh
+			 (not (eq (tile-owner (tile-at (car neigh) (cdr neigh)))
+				  xy-owner)))
+		(draw-border-line-at x y (car current-dir) x-shift y-shift (faction-color xy-owner)))
+	      (setf current-dir (cdr current-dir))
+	      )))
+	  
+	(incf y))
+
       ))
 
   (if (coord-in-bounds selector-tile) ; Avoid drawing selector & coords if mouse pointer outside world
@@ -734,6 +760,40 @@ Aborted if new enemy discovered."
 				(+ gy-location (/ tile-size-y 2)))
 			    y-shift (graphics-y-at graphics))
 			 :surface destination)))
+
+(defun draw-border-line-at (x y border x-shift y-shift color &optional (destination sdl:*default-surface*))
+  "Draws a line at tile X,Y on BORDER of color COLOR."
+  (declare (fixnum x y x-shift y-shift)
+	   (symbol border))
+  (macrolet ((nsw-point ()
+	       '(floor (- tile-size-full-x tile-size-hor-x) 2))
+	     (nse-point ()
+	       '(- tile-size-full-x (floor (- tile-size-full-x tile-size-hor-x) 2))))
+    
+    (let* ((coord (cons x y))
+	   (screen-coord (tc-gc coord x-shift y-shift))
+	   (sx (car screen-coord))
+	   (sy (cdr screen-coord))
+	   (xy0 nil)
+	   (xy1 nil))
+      
+      (case border
+	(N (setf xy0 (cons (nsw-point) 0)
+		 xy1 (cons (nse-point) 0)))
+	(NE (setf xy0 (cons (nse-point) 0)
+		  xy1 (cons tile-size-full-x (floor tile-size-y 2))))
+	(SE (setf xy0 (cons tile-size-full-x (floor tile-size-y 2))
+		  xy1 (cons (nse-point) tile-size-y)))
+	(S (setf xy0 (cons (nse-point) tile-size-y)
+		 xy1 (cons (nsw-point) tile-size-y)))
+	(SW (setf xy0 (cons (nsw-point) tile-size-y)
+		  xy1 (cons 0 (floor tile-size-y 2))))
+	(NW (setf xy0 (cons 0 (floor tile-size-y 2))
+		  xy1 (cons (nsw-point) 0))))
+      (sdl:draw-line-* (+ sx (car xy0)) (+ sy (cdr xy0))
+		       (+ sx (car xy1)) (+ sy (cdr xy1))
+		       :surface destination
+		       :color color))))
 
 (defun draw-string-at (x y x-shift y-shift string &key (color sdl:*black*))
   (let* ((tile-width tile-size-x)
