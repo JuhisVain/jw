@@ -391,11 +391,22 @@ Aborted if new enemy discovered."
 			:south-west (60 -39 50))
 		:small (:north (60 1 1)
 			:north-west (60 1 1)
-			:south-west (60 1 1))))
+			:south-west (60 1 1)))
+	       ;;;; TODO: creating faction border graphics here means the files need to be named with
+	       ;; a variant ID and that will also be the name of the variable (as in BORDER-N-A)
+	       ;; will also be pushed to *graphics-variants*
+	       (border
+		:large (:north (100 24 -2)
+			:north-west (100 -1 -1)
+			:south-west (100 -1 51))
+		:small (:north (100 0 0) ;dummy data
+			:north-west (100 0 0)
+			:south-west (100 0 0))))
 
      :misc
      '((selector :large (200 11 0) :small (200 5 0))
        (missing :large (300 0 0) :small (300 0 0)))
+
      )
 
     (set-tile-size 'small)
@@ -719,6 +730,24 @@ Aborted if new enemy discovered."
 	    (return))
 
 	(let ((xy-owner (tile-owner (tile-at x y)))
+	      (current-dir '(N NW SW)))
+	  ;;(when xy-owner ; now doing for all tiles
+	  (dolist (neigh (mapcar #'(lambda (dir)
+				     (neighbour-tile-coords x y dir))
+				 '(N NW SW)))
+	    (when (and neigh
+		       (not (eq (tile-owner (tile-at (car neigh) (cdr neigh)))
+				xy-owner)))
+	      (draw-at x y x-shift y-shift (case (car current-dir)
+					     (n border-n-a)
+					     (nw border-nw-a)
+					     (sw border-sw-a)))
+	      )
+	    (setf current-dir (cdr current-dir)))) 
+	  
+	
+	;; ignored:
+	'(let ((xy-owner (tile-owner (tile-at x y)))
 	      (current-dir +std-short-dirs+))
 	  (when xy-owner
 	    (dolist (neigh (neighbour-tiles x y))
@@ -728,6 +757,8 @@ Aborted if new enemy discovered."
 		(draw-border-line-at x y (car current-dir) x-shift y-shift (faction-color xy-owner)))
 	      (setf current-dir (cdr current-dir))
 	      )))
+
+	
 	  
 	(incf y))
 
