@@ -395,17 +395,21 @@ Aborted if new enemy discovered."
 	       ;;;; TODO: creating faction border graphics here means the files need to be named with
 	       ;; a variant ID and that will also be the name of the variable (as in BORDER-N-A)
 	       ;; will also be pushed to *graphics-variants*
-	       (border
-		:large (:north (100 24 -2)
-			:north-west (100 -1 -1)
-			:south-west (100 -1 51))
-		:small (:north (100 0 0) ;dummy data
-			:north-west (100 0 0)
-			:south-west (100 0 0))))
+	       )
 
      :misc
      '((selector :large (200 11 0) :small (200 5 0))
        (missing :large (300 0 0) :small (300 0 0)))
+
+     :misc-border
+     '((border
+	:large (:north (100 24 -2)
+		:north-west (100 -1 -1)
+		:south-west (100 -1 51))
+	:small (:north (100 12 -1)
+		:north-west (100 -1 0)
+		:south-west (100 -1 26)))
+       )
 
      )
 
@@ -740,9 +744,9 @@ Aborted if new enemy discovered."
 		       (not (eq (tile-owner (tile-at (car neigh) (cdr neigh)))
 				xy-owner)))
 	      (draw-at x y x-shift y-shift (case (car current-dir)
-					     (n border-n-a)
-					     (nw border-nw-a)
-					     (sw border-sw-a)))
+					     (n border-n)
+					     (nw border-nw)
+					     (sw border-sw)))
 	      )
 	    (setf current-dir (cdr current-dir)))) 
 	  

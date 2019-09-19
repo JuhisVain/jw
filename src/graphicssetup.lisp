@@ -83,6 +83,14 @@
 	(setf load-tiles-list (nconc (car head-results) load-tiles-list))
       ))
 
+    ;; Process miscellaneous borders:
+    (do ((head (getf args :misc-border) (cdr head)))
+	((null head))
+      (let ((head-results (process-borderform (car head) :type 'misc-border)))
+	(setf load-tiles-list (nconc (car head-results) load-tiles-list))
+	(setf set-large-list (nconc (cadr head-results) set-large-list))
+	(setf set-small-list (nconc (caddr head-results) set-small-list))
+	))
     
     ;;(list load-tiles-list set-large-list set-small-list) ;; just testing TODO remove
 
@@ -185,7 +193,7 @@
 				:north-west (40 50 60)
 				:south-west (70 80 90))))
 
-(defun process-borderform (border-form)
+(defun process-borderform (border-form &key (type 'normal))
   "Returns '((load-tiles contents) (set-tile-size 'large contents) (setsmall contents))
 for border graphics setup"
   (let* ((load-tiles) (set-large) (set-small) ; Lists to return
@@ -214,7 +222,11 @@ for border graphics setup"
 	  )
 	 ((null large-head))
       
-      (push `(push ',(car large-head) *graphics-variants*) load-tiles)
+      (case type
+	(normal (push `(push ',(car large-head) *graphics-variants*) load-tiles))
+	;; form-variant-defpars only reads the cdr -> push some filler on top:
+	(misc-border (setf (car large-head) (push 'fvd-fooler (car large-head)))
+		     (setf (car small-head) (push 'fvd-fooler (car small-head)))))
 
       (let ((variant-defpars (form-variant-defpars (car large-head) (car small-head))))
 	(setf
