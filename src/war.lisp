@@ -718,7 +718,7 @@ Aborted if new enemy discovered."
       (draw-tiles-by-slot tile-units army-counter)
       (draw-vision x-start y-start x-end y-end x-shift y-shift)
 
-      ;; TODO: draw graphics for borders and use those instead of lines
+
       (do ((x x-start)
 	   (y y-start))
 	  (nil)
@@ -732,6 +732,7 @@ Aborted if new enemy discovered."
 	(let ((xy-owner (tile-owner (tile-at x y)))
 	      (current-dir '(N NW SW)))
 	  ;;(when xy-owner ; now doing for all tiles
+	  ;;-> if only done (when xy-owner) will need to do all dirs
 	  (dolist (neigh (mapcar #'(lambda (dir)
 				     (neighbour-tile-coords x y dir))
 				 '(N NW SW)))
