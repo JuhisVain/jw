@@ -105,9 +105,11 @@
 		(when river
 		  (push (reverse (cdr river)) river-lists)))))))
 
-	  (dolist (river-piece (compile-downstream-rivers river-lists))
-	    (apply #'add-river (append river-piece (list world)))))
+      (defparameter rltest river-lists)
 
+      (dolist (river-piece (compile-downstream-rivers river-lists))
+	(apply #'add-river (append river-piece (list world)))))
+    
     )
 
     world))
@@ -135,7 +137,7 @@
     (dolist (river river-lists)
       (block river
 
-	;; If there is already a river here or in adjacent borders:
+	;; If there is already a river starting here or in adjacent borders:
 	(when (find-if #'(lambda (x)
 			   (gethash (prime-border-synonym x) border-size-ht))
 		       (border-and-neighbours (car river)))
@@ -151,8 +153,15 @@
 	  (let ((previous (car border-head))
 		(current (cadr border-head))
 		(next (caddr border-head)))
+
+	    (when (member '((1 . 12) N) river :test #'border=)
+	      (format t "~&((1.12)N) part of river starting at ~a~%" (car river))
+	      (format t " ~a :: ~a :: ~a~%" previous current next))
 	    
 	    (when (null current) (return-from river))
+
+	    (when (member '((1 . 12) N) river :test #'border=)
+	      (format t " 1 OK~%"))
 	    
 	    ;; If there is a river at current but a not at a subsequent
 	    (and (not rest-checked)
@@ -163,6 +172,8 @@
 		     (return t)))
 		 (return-from river))
 
+	    (when (member '((1 . 12) N) river :test #'border=)
+	      (format t " 2 OK~%"))
 	    
 	    (let ((current-size (gethash current border-size-ht)))
 	      (setf (gethash current border-size-ht) (enlarge-river current-size)))
@@ -176,6 +187,20 @@
 						    (cadr current))
 			    (list previous next)
 			    :test #'border=))
+
+	      (when (member '((1 . 12) N) river :test #'border=)
+		(format t " ???? : ~a~%" (car river)))
+	      (format t "~&Found touching ~%~a~%" (list
+						   (list-neighbour-borders (caar current)
+									   (cdar current)
+									   (cadr current))
+						   (list previous next)
+						   ))
+
+	      
+	      
+	      
+	      
 	      (return-from river))))))
     
     (let ((compiled-borders))
@@ -190,7 +215,65 @@
       compiled-borders)))
 
 
+'(defun find-river-to-sea (x y dir &optional (world *world*))
+  "Returns a river as a list of ((x . y) border-dir), starting from a border
+adjacent to ((X . Y) DIR), leading to a body of water"
+  (labels ((find-with-from (x y dir (came-from))
+	     
+	     (remove came-from
+		     (loop for potential in (list-neighbour-borders x y dir)
+			when (apply #'is-river potential)
+			collect potential)
+		     :test #'border=)
+	     ;;TODO: finish use fun below
+	     ))
+  
+    ))
 
+;; I hope this works
+(defun coord-at-border-end (border came-from)
+  "Returns coordinate of tile that BORDER points to opposite of CAME-FROM."
+  (let* ((p-border (prime-border-synonym border))
+	 (p-came-from (prime-border-synonym came-from))
+	 (pbor-x (caar p-border))
+	 (pbor-y (cdar p-border))
+	 (pcaf-x (caar p-came-from))
+	 (pcaf-y (cdar p-came-from))
+	 (coord
+	  (case (cadr p-border)
+	    (N (remove (case (cadr p-came-from)
+			 (N (format t "~&Error at (coord-at-border-end), both args N~%"))
+			 (NW (car p-came-from))
+			 (SW (car p-came-from)))
+		       (list (neighbour-tile-coords pbor-x pbor-y 'nw)
+			     (neighbour-tile-coords pbor-x pbor-y 'ne))
+		       :test #'equal))
+	    (NW (remove (case (cadr p-came-from)
+			  (N (if (= pcaf-x pbor-x)
+				 (cons pcaf-x (1- pcaf-y))
+				 (car p-came-from)))
+			  (NW (format t "~&Error at (coord-at-border-end), both args NW~%"))
+			  (SW (car p-came-from)))
+			(list (neighbour-tile-coords pbor-x pbor-y 'n)
+			      (neighbour-tile-coords pbor-x pbor-y 'sw))
+			:test #'equal))
+	    (SW (remove (case (cadr p-came-from)
+			  (N (if (= pcaf-x pbor-x)
+				 (car p-came-from)
+				 (cons pcaf-x (1+ pcaf-y))))
+			  (NW (if (and (= pbor-x pcaf-x)
+				       (= pbor-y pcaf-y))
+				  (neighbour-tile-coords pbor-x pbor-y 'nw)
+				  (cons pcaf-x (1+ pcaf-y))))
+			  (SW (format t "~&Error at (coord-at-border-end), both args SW~%")))
+			(list (neighbour-tile-coords pbor-x pbor-y 'nw)
+			      (neighbour-tile-coords pbor-x pbor-y 's))
+			:test #'equal)))))
+    (if (= (length coord)
+	   1)
+	(car coord)
+	(format t "~& Error at (coord-at-border-end), list created not 1 long: ~%~a~%" coord))))
+    
 (defun compile-rivers (river-lists)
   "Collect hm-gen-riv-from-high border-lists into a list and feed to this thing."
   (let ((border-size-ht (make-hash-table :test 'equal))
