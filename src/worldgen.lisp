@@ -107,7 +107,8 @@
 
       (defparameter rltest river-lists)
 
-      (dolist (river-piece (compile-downstream-rivers river-lists))
+      (dolist (river-piece (let ((*world* world))
+			     (compile-downstream-rivers river-lists)))
 	(apply #'add-river (append river-piece (list world)))))
     
     )
@@ -154,15 +155,8 @@
 		(current (cadr border-head))
 		(next (caddr border-head)))
 
-	    (when (member '((1 . 12) N) river :test #'border=)
-	      (format t "~&((1.12)N) part of river starting at ~a~%" (car river))
-	      (format t " ~a :: ~a :: ~a~%" previous current next))
-	    
 	    (when (null current) (return-from river))
 
-	    (when (member '((1 . 12) N) river :test #'border=)
-	      (format t " 1 OK~%"))
-	    
 	    ;; If there is a river at current but a not at a subsequent
 	    (and (not rest-checked)
 		 (gethash current border-size-ht)
@@ -172,36 +166,29 @@
 		     (return t)))
 		 (return-from river))
 
-	    (when (member '((1 . 12) N) river :test #'border=)
-	      (format t " 2 OK~%"))
-	    
 	    (let ((current-size (gethash current border-size-ht)))
 	      (setf (gethash current border-size-ht) (enlarge-river current-size)))
 
 	    ;; when a river is generated that touches a river generated earlier, join with older
-	    (when (find-if #'(lambda (x)
-			       (gethash (prime-border-synonym x) border-size-ht))
-			   (set-difference
-			    (list-neighbour-borders (caar current)
-						    (cdar current)
-						    (cadr current))
-			    (list previous next)
-			    :test #'border=))
+	    (let ((earlier-river (find-if #'(lambda (x)
+					      (gethash (prime-border-synonym x) border-size-ht))
+					  (set-difference
+					   (list-neighbour-borders (caar current)
+								   (cdar current)
+								   (cadr current))
+					   (list previous next)
+					   :test #'border=))))
 
-	      (when (member '((1 . 12) N) river :test #'border=)
-		(format t " ???? : ~a~%" (car river)))
-	      (format t "~&Found touching ~%~a~%" (list
-						   (list-neighbour-borders (caar current)
-									   (cdar current)
-									   (cadr current))
-						   (list previous next)
-						   ))
-
+	      ;; TODO: Need to create *world* BEFORE growing rivers
+	      (when earlier-river
+		(format t "~&Earlier river found! ~a :: ~a~% pathtosea: ~a~%" earlier-river current
+			(path-to-sea earlier-river current))
+		(dolist (river-step (path-to-sea earlier-river current))
+		  (let ((current-size (gethash river-step border-size-ht)))
+		    (setf (gethash river-step border-size-ht) (enlarge-river current-size))
+		    (format t "~a~%" (gethash river-step border-size-ht))))
 	      
-	      
-	      
-	      
-	      (return-from river))))))
+		(return-from river)))))))
     
     (let ((compiled-borders))
       (maphash #'(lambda (key value)
@@ -215,22 +202,33 @@
       compiled-borders)))
 
 
-'(defun find-river-to-sea (x y dir &optional (world *world*))
-  "Returns a river as a list of ((x . y) border-dir), starting from a border
-adjacent to ((X . Y) DIR), leading to a body of water"
-  (labels ((find-with-from (x y dir (came-from))
-	     
-	     (remove came-from
-		     (loop for potential in (list-neighbour-borders x y dir)
-			when (apply #'is-river potential)
-			collect potential)
-		     :test #'border=)
-	     ;;TODO: finish use fun below
-	     ))
-  
-    ))
+(defun path-to-sea (border came-from &key ignore-list (world *world*))
+  "Returns a list of river borders that lead to a 'sea tile, starting from
+BORDER and ignoring CAME-FROM and borders in IGNORE-LIST.
+Returns NIL if no path found."
+  ;; Dunno what happens if used on river touching multiple bodies of water
+  ;; -> most likely the path found first will be returnedwhich might be wrong..
+  '(format t "~&~a :: ~a :: ~a~%" border came-from ignore-list)
+  (let ((pointed-coord (coord-at-border-end border came-from)))
+    (unless pointed-coord (return-from path-to-sea nil)) ; if outside map -> dead-end
+    (if (find 'sea (tile-type (tile-at (car pointed-coord) (cdr pointed-coord) world)))
+	(list border) ; SEA found, return
+	(let ((adj-rivers
+	       (remove-if #'(lambda (b)
+			      (not (apply #'is-river b)))
+			  (set-difference 
+			   (list-neighbour-borders (caar border)
+						   (cdar border)
+						   (cadr border))
+			   (cons came-from ignore-list)
+			   :test #'border=))))
+	  (dolist (next adj-rivers)
+	    (let ((path (path-to-sea next border
+				     :ignore-list (cons came-from (remove next adj-rivers))
+				     :world world)))
+	      (when path (return (cons border path)))))))))
 
-;; I hope this works
+
 (defun coord-at-border-end (border came-from)
   "Returns coordinate of tile that BORDER points to opposite of CAME-FROM."
   (let* ((p-border (prime-border-synonym border))
@@ -238,41 +236,35 @@ adjacent to ((X . Y) DIR), leading to a body of water"
 	 (pbor-x (caar p-border))
 	 (pbor-y (cdar p-border))
 	 (pcaf-x (caar p-came-from))
-	 (pcaf-y (cdar p-came-from))
-	 (coord
-	  (case (cadr p-border)
-	    (N (remove (case (cadr p-came-from)
-			 (N (format t "~&Error at (coord-at-border-end), both args N~%"))
-			 (NW (car p-came-from))
-			 (SW (car p-came-from)))
-		       (list (neighbour-tile-coords pbor-x pbor-y 'nw)
-			     (neighbour-tile-coords pbor-x pbor-y 'ne))
-		       :test #'equal))
-	    (NW (remove (case (cadr p-came-from)
-			  (N (if (= pcaf-x pbor-x)
-				 (cons pcaf-x (1- pcaf-y))
-				 (car p-came-from)))
-			  (NW (format t "~&Error at (coord-at-border-end), both args NW~%"))
-			  (SW (car p-came-from)))
-			(list (neighbour-tile-coords pbor-x pbor-y 'n)
-			      (neighbour-tile-coords pbor-x pbor-y 'sw))
-			:test #'equal))
-	    (SW (remove (case (cadr p-came-from)
-			  (N (if (= pcaf-x pbor-x)
-				 (car p-came-from)
-				 (cons pcaf-x (1+ pcaf-y))))
-			  (NW (if (and (= pbor-x pcaf-x)
-				       (= pbor-y pcaf-y))
-				  (neighbour-tile-coords pbor-x pbor-y 'nw)
-				  (cons pcaf-x (1+ pcaf-y))))
-			  (SW (format t "~&Error at (coord-at-border-end), both args SW~%")))
-			(list (neighbour-tile-coords pbor-x pbor-y 'nw)
-			      (neighbour-tile-coords pbor-x pbor-y 's))
-			:test #'equal)))))
-    (if (= (length coord)
-	   1)
-	(car coord)
-	(format t "~& Error at (coord-at-border-end), list created not 1 long: ~%~a~%" coord))))
+	 (pcaf-y (cdar p-came-from)))
+    
+    (case (cadr p-border)
+      (N (case (cadr p-came-from)
+	   (N (error "No two N borders can ever be adjacent: ~a and ~a~%"
+		     p-border p-came-from))
+	   (OTHERWISE ;; Same results for NW & SW
+	    (if (= pbor-x pcaf-x)
+		(neighbour-tile-coords pbor-x pbor-y 'ne)
+		(neighbour-tile-coords pbor-x pbor-y 'nw)))))
+      (NW (case (cadr p-came-from)
+	    (N (if (= pbor-x pcaf-x)
+		   (neighbour-tile-coords pbor-x pbor-y 'sw)
+		   (neighbour-tile-coords pbor-x pbor-y 'n)))
+	    (NW (error "No two NW borders can ever be adjacent: ~a and ~a~%"
+		       p-border p-came-from))
+	    (SW (if (= pbor-y pcaf-y)
+		    (neighbour-tile-coords pbor-x pbor-y 'n)
+		    (neighbour-tile-coords pbor-x pbor-y 'sw)))))
+      (SW (case (cadr p-came-from)
+	    (N (if (= pbor-x pcaf-x)
+		   (neighbour-tile-coords pbor-x pbor-y 'nw)
+		   (neighbour-tile-coords pbor-x pbor-y 's)))
+	    (NW (if (= pbor-y pcaf-y)
+		    (neighbour-tile-coords pbor-x pbor-y 's)
+		    (neighbour-tile-coords pbor-x pbor-y 'nw)))
+	    (SW (error "No two SW borders can ever be adjacent: ~a and ~a~%"
+		       p-border p-came-from)))))))
+
     
 (defun compile-rivers (river-lists)
   "Collect hm-gen-riv-from-high border-lists into a list and feed to this thing."
