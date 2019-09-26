@@ -107,8 +107,7 @@
 
       (defparameter rltest river-lists)
 
-      (dolist (river-piece (let ((*world* world))
-			     (compile-downstream-rivers river-lists)))
+      (dolist (river-piece (compile-downstream-rivers river-lists world))
 	(apply #'add-river (append river-piece (list world)))))
     
     )
@@ -131,7 +130,7 @@
 				   (cadr border)))))
 
 
-(defun compile-downstream-rivers (river-lists)
+(defun compile-downstream-rivers (river-lists world)
   "Transforms high to low rivers into list of (x y border size)s."
   (let ((border-size-ht (make-hash-table :test 'equal)))
     (format t "~&Received ~a rivers~%" (length river-lists))
@@ -179,14 +178,15 @@
 					   (list previous next)
 					   :test #'border=))))
 
-	      ;; TODO: Need to create *world* BEFORE growing rivers
 	      (when earlier-river
-		(format t "~&Earlier river found! ~a :: ~a~% pathtosea: ~a~%" earlier-river current
-			(path-to-sea earlier-river current))
-		(dolist (river-step (path-to-sea earlier-river current))
+		(dolist (river-step (cdr ; path-to-sea starts 1 step too early
+				     (path-to-sea earlier-river current
+						  :river-test
+						  #'(lambda (b)
+						      (gethash b border-size-ht))
+						  :world world)))
 		  (let ((current-size (gethash river-step border-size-ht)))
-		    (setf (gethash river-step border-size-ht) (enlarge-river current-size))
-		    (format t "~a~%" (gethash river-step border-size-ht))))
+		    (setf (gethash river-step border-size-ht) (enlarge-river current-size))))
 	      
 		(return-from river)))))))
     
@@ -202,36 +202,37 @@
       compiled-borders)))
 
 
-(defun path-to-sea (border came-from &key ignore-list (world *world*))
+(defun path-to-sea (border came-from &key river-test ignore-list world)
   "Returns a list of river borders that lead to a 'sea tile, starting from
 BORDER and ignoring CAME-FROM and borders in IGNORE-LIST.
 Returns NIL if no path found."
   ;; Dunno what happens if used on river touching multiple bodies of water
   ;; -> most likely the path found first will be returnedwhich might be wrong..
-  '(format t "~&~a :: ~a :: ~a~%" border came-from ignore-list)
-  (let ((pointed-coord (coord-at-border-end border came-from)))
+  (let ((pointed-coord (coord-at-border-end border came-from world)))
     (unless pointed-coord (return-from path-to-sea nil)) ; if outside map -> dead-end
     (if (find 'sea (tile-type (tile-at (car pointed-coord) (cdr pointed-coord) world)))
 	(list border) ; SEA found, return
 	(let ((adj-rivers
-	       (remove-if #'(lambda (b)
-			      (not (apply #'is-river b)))
-			  (set-difference 
-			   (list-neighbour-borders (caar border)
-						   (cdar border)
-						   (cadr border))
-			   (cons came-from ignore-list)
-			   :test #'border=))))
+	       (remove-if-not ;#'(lambda (b) (not (apply #'is-river (append b (list world)))))
+		river-test
+		(set-difference 
+		 (list-neighbour-borders (caar border)
+					 (cdar border)
+					 (cadr border))
+		 (cons came-from ignore-list)
+		 :test #'border=))))
 	  (dolist (next adj-rivers)
 	    (let ((path (path-to-sea next border
+				     :river-test river-test
 				     :ignore-list (cons came-from (remove next adj-rivers))
 				     :world world)))
 	      (when path (return (cons border path)))))))))
 
 
-(defun coord-at-border-end (border came-from)
+(defun coord-at-border-end (border came-from &optional (world *world*))
   "Returns coordinate of tile that BORDER points to opposite of CAME-FROM."
-  (let* ((p-border (prime-border-synonym border))
+  (let* ((*world* world)
+	 (p-border (prime-border-synonym border))
 	 (p-came-from (prime-border-synonym came-from))
 	 (pbor-x (caar p-border))
 	 (pbor-y (cdar p-border))
