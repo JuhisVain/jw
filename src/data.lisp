@@ -111,6 +111,12 @@ with data field in full."
   (movement)
   (counter))
 
+(defstruct (border
+	     (:constructor make-border (x y dir)))
+  (x 0 :type fixnum)
+  (y 0 :type fixnum)
+  (dir 'N :type symbol))
+
 ;; LOG is the logarithm function
 ;; I think datalog is a programming language but whatcha gonna do
 ;; WIP
