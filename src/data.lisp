@@ -111,7 +111,16 @@ with data field in full."
   (movement)
   (counter))
 
-(defstruct (border
+(deftype coordinates ()
+  '(cons fixnum fixnum))
+
+(deftype direction ()
+  '(member n nw sw s se ne))
+
+(deftype border ()
+  '(cons coordinates direction))
+
+'(defstruct (border
 	     (:constructor make-border (x y dir)))
   (x 0 :type fixnum)
   (y 0 :type fixnum)
