@@ -120,7 +120,19 @@ with data field in full."
 '(deftype border ()
   '(cons coordinates direction))
 
-(defstruct border
+(defstruct (border
+	     (:constructor make-border
+			   (coordinates direction &aux
+					(crd (case direction
+					       ((S SE NE) (neighbour-tile-coords
+							   (car coordinates)
+							   (cdr coordinates)
+							   direction
+							   10000 10000))
+					       (OTHERWISE coordinates)))
+					(dir (case direction
+					       ((S SE NE) (oppdir direction))
+					       (OTHERWISE direction))))))
   (crd '(0 . 0) :type coordinates)
   (dir 'N :type direction))
 
