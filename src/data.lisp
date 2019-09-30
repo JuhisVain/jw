@@ -117,12 +117,14 @@ with data field in full."
 (deftype direction ()
   '(member n nw sw s se ne))
 
-'(deftype border ()
+(deftype border ()
   '(cons coordinates direction))
 
-(defstruct border
-  (crd '(0 . 0) :type coordinates)
-  (dir 'N :type direction))
+'(defstruct (border
+	     (:constructor make-border (x y dir)))
+  (x 0 :type fixnum)
+  (y 0 :type fixnum)
+  (dir 'N :type symbol))
 
 ;; LOG is the logarithm function
 ;; I think datalog is a programming language but whatcha gonna do
