@@ -111,6 +111,19 @@ with data field in full."
   (movement)
   (counter))
 
+;;; This should be used in a list in faction struct to be used
+;; for the basic values of a type of unit.
+;; The values in this thing should only be changed by faction teching up ??maybe??
+;; Real units on map should then have experience, morale, readiness, cohesion etc..
+;; That will be taken into account when checking these during play.
+(defstruct faction-unit
+  (movement :type symbol)
+  (name :type string) ; TODO: Change *unit-types* :test to 'equal
+  (move-points :type fixnum)
+  (vision) ; TODO
+  (combat-values) ; TODO: a structure containing data on fighting on terrain against what?? 
+  )
+
 (deftype coordinates ()
   '(cons fixnum fixnum))
 

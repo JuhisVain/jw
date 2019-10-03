@@ -12,6 +12,8 @@
 
 ;; Using a struct or array for *unit-type-(road-)movecosts* might be smarter,
 ;; but will have to be defined procedurally
+;; I think these should be the same for all factions.
+;; Factions' techs should affect only only move points as far as these are concerned.
 (defvar *unit-types* (make-hash-table :test 'eq)) ; dragoon # cavalry
 (defvar *unit-type-movecosts* (make-hash-table :test 'eq)) ; cavalry # ((grass 2) (hill 3) ...)
 (defvar *unit-type-road-movecosts* (make-hash-table :test 'eq))
