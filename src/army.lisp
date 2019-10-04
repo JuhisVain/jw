@@ -14,7 +14,7 @@
 ;; but will have to be defined procedurally
 ;; I think these should be the same for all factions.
 ;; Factions' techs should affect only only move points as far as these are concerned.
-(defvar *unit-types* (make-hash-table :test 'eq)) ; dragoon # cavalry
+(defvar *unit-types* (make-hash-table :test 'equal)) ; dragoon # cavalry
 (defvar *unit-type-movecosts* (make-hash-table :test 'eq)) ; cavalry # ((grass 2) (hill 3) ...)
 (defvar *unit-type-road-movecosts* (make-hash-table :test 'eq))
 
@@ -264,11 +264,11 @@ for movement-type."
 (defun test-slowest-movecosts ()
   ;; This is dumb dumb dumb dummy data only for testing
   ;;(setf *road-types* '(rail road)) ; Too late to set here
-  (defmovetypeunits infantry commando ranger light-machinegun)
-  (defmovetypeunits cavalry dragoon haccapelite knight)
-  (defmovetypeunits wheeled jeep truck formula1)
-  (defmovetypeunits towed flak88 8-pounder)
-  (defmovetypeunits rail pendolino steam-locomotive)
+  (defmovetypeunits infantry "Commando" "ranger" "light-machinegun")
+  (defmovetypeunits cavalry "Dragoon" "haccapelite" "knight")
+  (defmovetypeunits wheeled "Jeep" "truck" "formula1")
+  (defmovetypeunits towed "8.8cm Flak" "8-pounder")
+  (defmovetypeunits rail "Pendolino" "steam-locomotive")
   (defmovecosts infantry (grass 3) (hill 5) (mountain 10) (forest 4)
 		(sea 10000) (city 3) (stream 3) (river 5) (rail 3) (road 3))
   (defmovecosts cavalry (grass 2) (hill 5) (mountain 12) (forest 5)
@@ -280,17 +280,45 @@ for movement-type."
   (defmovecosts rail (grass 4) (hill 5) (mountain 20) (forest 10)
 		(sea 10000) (city 2)(stream 10) (river 20) (rail 1) (road 5))
 
-  ;;this is a test and may be removed:
-  (slowest-movecosts '((commando . 10) (dragoon . 50) (jeep . 10) (flak88 . 10)))
+  (mapcar
+   #'(lambda (faction)
+       (setf (faction-unit-types faction)
+	     (list
+	      (make-faction-unit :movement 'infantry :name "Commando" :move-points 20)
+	      (make-faction-unit :movement 'cavalry :name "Dragoon" :move-points 30)
+	      (make-faction-unit :movement 'wheeled :name "Jeep" :move-points 40)
+	      (make-faction-unit :movement 'towed :name "8.8cm Flak" :move-points 10)
+	      (make-faction-unit :movement 'rail :name "Pendolino" :move-points 50)))) ; etc..
+   (world-factions *world*))
+  
+  nil ; No need to print previous
   )
 
 (defun test-movecosts ()
   (test-slowest-movecosts) ; setup dummy movetype data
   ;; can't set *testunit*s here since sdl needs to be initalized -> do it manually
   (when (>= (length *testunit*) 2)
-    (setf (army-troops (car *testunit*)) '((jeep . 10) (pendolino . 2)))
-    (setf (army-troops (cadr *testunit*)) '((dragoon . 20) (commando . 20)))
-    ))
+    (setf (army-troops (car *testunit*))
+	  (list (make-unit-stack :type (unit-type-by-name "Jeep" (army-owner (car *testunit*)))
+				 :count 10)
+		(make-unit-stack :type (unit-type-by-name "Pendolino" (army-owner (car *testunit*)))
+				 :count 1)))
+    (setf (army-troops (cadr *testunit*))
+	  (list (make-unit-stack :type (unit-type-by-name "Dragoon" (army-owner (car *testunit*)))
+				 :count 20)
+		(make-unit-stack :type (unit-type-by-name "Commando" (army-owner (car *testunit*)))
+				 :count 20)))
+    )
+
+  ;; Could just iterate over armies for every faction and set random unit-stacks
+  
+  )
+
+(defun unit-type-by-name (name faction)
+  "Returns basic unit-type named NAME from FACTION's unit-types"
+  (find-if #'(lambda (unit-type)
+	       (string= (faction-unit-name unit-type) name))
+	   (faction-unit-types faction)))
 
 (defun dumb-tiles-within (range)
   "How many hexes within RANGE from a hex."
@@ -300,10 +328,10 @@ for movement-type."
 	   2))))
 
 (defun troops-to-movetypes (unit-list)
-  "Convert list of units to their movement-types."
+  "Convert list of unit-stacks to their movement-types."
   (let ((move-types))
     (dolist (unit unit-list)
-      (pushnew (gethash (car unit) *unit-types*) move-types))
+      (pushnew (faction-unit-movement (unit-stack-type unit)) move-types))
     move-types))
 
 (defun slowest-movecosts (unit-list)

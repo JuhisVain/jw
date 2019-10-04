@@ -10,6 +10,7 @@
   (armies) ; List of armies owned by this faction
   (enemy-unit-info (make-hash-table :test 'eq)) ; List of enemies seen on previous / this turn
 					;key is enemy army, value is ??
+  (unit-types)
   )
 
 (defstruct unit-info
@@ -66,7 +67,13 @@
 (defun new-army (faction x y &optional counter-desc)
   (let ((new-army (make-army :x x :y y
 			     :owner faction
-			     :troops '((commando . 0)) ;; WIP
+			     :troops (let ((unit-type (unit-type-by-name "Commando" faction)))
+				       (list
+					(if unit-type ; if unit-lists have been setup:
+					    (make-unit-stack
+					     :type unit-type
+					     :count 0)
+					    (make-unit-stack)))) ; else make dummy
 			     :movement 25 ;; should be generated base on ???something???
 			     :counter
 			     (make-graphics

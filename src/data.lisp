@@ -126,6 +126,7 @@ with data field in full."
 
 (defstruct unit-stack
   (type (make-faction-unit) :type faction-unit)
+  (count 0 :type fixnum)
   (experience 0 :type fixnum)
   (morale 0 :type fixnum)
   (readiness 0 :type fixnum))
