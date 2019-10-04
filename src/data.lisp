@@ -117,12 +117,18 @@ with data field in full."
 ;; Real units on map should then have experience, morale, readiness, cohesion etc..
 ;; That will be taken into account when checking these during play.
 (defstruct faction-unit
-  (movement :type symbol)
-  (name :type string) ; TODO: Change *unit-types* :test to 'equal
-  (move-points :type fixnum)
+  (movement 'UNSET :type symbol)
+  (name "unset" :type string) ; TODO: Change *unit-types* :test to 'equal
+  (move-points 0 :type fixnum)
   (vision) ; TODO
   (combat-values) ; TODO: a structure containing data on fighting on terrain against what?? 
   )
+
+(defstruct unit-stack
+  (type (make-faction-unit) :type faction-unit)
+  (experience 0 :type fixnum)
+  (morale 0 :type fixnum)
+  (readiness 0 :type fixnum))
 
 (deftype coordinates ()
   '(cons fixnum fixnum))
