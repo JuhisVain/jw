@@ -130,8 +130,8 @@ If ADVANCE is true ARMY will move to TARGET's position, if possible."
 	    (army-x army) (army-y army) (army-x target) (army-y target))
     (return-from army-attack nil))
   
-  (let ((winner (if (>= (reduce #'+ (army-troops army) :key #'cdr)
-			(reduce #'+ (army-troops target) :key #'cdr))
+  (let ((winner (if (>= (reduce #'+ (army-troops army) :key #'unit-stack-count)
+			(reduce #'+ (army-troops target) :key #'unit-stack-count))
 		    army target)))
 
     (if (eq winner army)
