@@ -81,18 +81,13 @@ with data field in full."
   (log (list (make-log-round :index 0))) ;list of log-rounds
   )
 
-(defstruct city
+(defstruct location
   (name)
   (owner)
   (x) (y)
   (production))
 
-(defstruct location
-  (name)
-  (type)
-  (owner)
-  (x) (y)
-  (production))
+(defstruct (city (:include location)))
 
 (defstruct tile
   (owner nil :type (or faction null))
@@ -205,7 +200,11 @@ with data field in full."
 
 ;; A stronger army moving to a tile might also take control of neighbourhood?
 (defun change-tile-owner (x y faction)
-  (setf (tile-owner (tile-at x y)) faction))
+  (let* ((tile (tile-at x y))
+	 (locations (tile-location tile)))
+    (setf (tile-owner tile) faction)
+    (dolist (loc locations)
+      (setf (location-owner loc) faction))))
 
 (defun coord-in-bounds (coord-pair &optional (world *world*))
   (and (<= 0 (car coord-pair) (world-width world))

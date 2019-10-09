@@ -202,7 +202,7 @@ If ADVANCE is true ARMY will move to TARGET's position, if possible."
 					 0)
 				     (apply #'max (mapcar #'(lambda (location)
 							      (cadr (assoc location slow-moves)))
-							  (mapcar #'car locations)))))
+							  (mapcar #'type-of locations)))))
 				 
 				 (t
 				  (+ (if river

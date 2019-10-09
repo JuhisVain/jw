@@ -856,7 +856,7 @@ dir being one of (N NW SW)."
   (when tile
     (remove nil
 	    (append (tile-type tile)
-		    (mapcar #'car (tile-location tile))
+		    (mapcar #'type-of (tile-location tile))
 		    (mapcar #'border-symbol (tile-river-borders tile))
 		    (border-list-to-symbols (tile-road-links tile))
 		    ))))
@@ -1079,7 +1079,7 @@ NIL on failure."
 		    :production (or production *standard-city-production-list*))))
     (if world
 	(progn
-	  (pushnew (list 'city new-city) (tile-location (tile-at x y world)))
+	  (pushnew new-city (tile-location (tile-at x y world)))
 	  (pushnew (random-variant 'city) (tile-variant (tile-at x y world)))
 	  (finalize-tile-region x y world)
 	  (pushnew new-city (world-cities world))))
