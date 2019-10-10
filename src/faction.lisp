@@ -1,6 +1,7 @@
 (in-package :war)
 
-(defstruct faction
+(defstruct (faction
+	     (:print-object faction-printer))
   (name (name-init *world*) :type string) ; Faction ID for both humans and program. Some kind of string?
   (controller 'none :type symbol) ; What controls this faction
   (counter-base) ; The sdl:surface used as nato counter card's background
@@ -18,6 +19,10 @@
   ;; lower visibility = more visible
   (visibility (1+ (random 100)) :type integer) ; Maybe needs to be a bell curve?
   (has-been-seen t :type boolean))
+
+(defun faction-printer (this stream)
+  (declare (faction this))
+  (format stream "#S(FACTION :name ~s) " (faction-name this)))
 
 (defun create-faction (name &key controller (world *world*))
   (when (member-if #'(lambda (faction)
