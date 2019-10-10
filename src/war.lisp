@@ -288,9 +288,9 @@ TEST-FUNC should take to arguments and return the preferable one."
 
 
 
-(defun enemy-army-at (pov tile-x tile-y &optional (strength 'strongest))
+(defun enemy-army-at (pov tile-x tile-y &optional (strength 'any))
   "Return a single army from (TILE-X,TILE-Y), which is an enemy of ARMY's owner.
-Acceptable arguments for STRENGTH are symbols STRONGEST, WEAKEST and RANDOM"
+Acceptable arguments for STRENGTH are symbols ANY, STRONGEST, WEAKEST and RANDOM"
   (declare (faction pov)
 	   (integer tile-x tile-y)
 	   (symbol strength))
@@ -304,16 +304,17 @@ Acceptable arguments for STRENGTH are symbols STRONGEST, WEAKEST and RANDOM"
 
     ;; WIP. currently applies philosophy of 'strength in numbers'
     (case strength
+      (any (car enemy-armies))
       (strongest (select-army-by
 		  #'(lambda (one two)
-		      (if (> (reduce #'+ (army-troops one) :key #'cdr)
-			     (reduce #'+ (army-troops two) :key #'cdr))
+		      (if (> (reduce #'+ (army-troops one) :key #'unit-stack-count)
+			     (reduce #'+ (army-troops two) :key #'unit-stack-count))
 			  one two))
 		  enemy-armies))
       (weakest (select-army-by
 		  #'(lambda (one two)
-		      (if (< (reduce #'+ (army-troops one) :key #'cdr)
-			     (reduce #'+ (army-troops two) :key #'cdr))
+		      (if (< (reduce #'+ (army-troops one) :key #'unit-stack-count)
+			     (reduce #'+ (army-troops two) :key #'unit-stack-count))
 			  one two))
 		  enemy-armies))
       (random (nth (random (length enemy-armies)) enemy-armies)))))
