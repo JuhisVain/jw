@@ -121,20 +121,24 @@
 
 (defun new-turn () ; TODO: use world's current-turn faction
   (let ((faction (world-current-turn *world*)))
-    ;; Reroll visibility for units in memory
-    (maphash #'(lambda (enemy-army info)
-		 (setf (unit-info-visibility info) (1+ (random 100))))
-	     (faction-enemy-unit-info faction))
-    
-    (dolist (army (faction-armies faction))
-      (update-vision-by-unit army) ;; Setup initial vision table
-      )
-    ;; If remembered enemy has moved outside vision:
-    (maphash #'(lambda (key value)
-		 (unless (gethash (cons (army-x key) (army-y key))
-				  *cpf-vision*)
-		   (remhash key (faction-enemy-unit-info faction))))
-	     (faction-enemy-unit-info faction))))
+    (setup-new-turn-vision faction)
+    ))
+
+(defun setup-new-turn-vision (faction)
+  ;; Reroll visibility for units in memory
+  (maphash #'(lambda (enemy-army info)
+	       (setf (unit-info-visibility info) (1+ (random 100))))
+	   (faction-enemy-unit-info faction))
+  
+  (dolist (army (faction-armies faction))
+    (update-vision-by-unit army) ;; Setup initial vision table
+    )
+  ;; If remembered enemy has moved outside vision:
+  (maphash #'(lambda (key value)
+	       (unless (gethash (cons (army-x key) (army-y key))
+				*cpf-vision*)
+		 (remhash key (faction-enemy-unit-info faction))))
+	   (faction-enemy-unit-info faction)))
 
 (defmacro do-world-tiles ((var &optional (world *world*)) &body body)
   (let ((x (gensym))
