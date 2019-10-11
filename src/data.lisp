@@ -182,20 +182,23 @@ with data field in full."
     (setf (log-turn-events turn) (push event (log-turn-events turn)))
 
     ))
-    
 
 
 (defun place-unit (unit x y &optional (world *world*))
-  "Removes army from (army-x,army-y) and places at (x,y) in *world*."
-  (when (tile-at x y *world*) ; Check that army has been initialized with coordinates
-    (setf (tile-units (tile-at (army-x unit) (army-y unit) world))
-	  (delete unit
-		  (tile-units (tile-at (army-x unit) (army-y unit) world))
-		  :test #'eq)))
+  "Removes UNIT from it's current location if within world bounds
+and places it at (X,Y) in WORLD if within bounds. Giving out of bounds
+X Y coordinates places unit outside of WORLD."
+  (when (coord-in-bounds (cons (army-x unit) (army-y unit)) world)
+    (let ((old-tile (tile-at (army-x unit) (army-y unit) world)))
+      (setf (tile-units old-tile)
+	    (delete unit (tile-units old-tile) :test #'eq))))
+  
   (setf (army-x unit) x)
   (setf (army-y unit) y)
-  (change-tile-owner x y (army-owner unit))
-  (pushnew unit (tile-units (tile-at x y world))))
+  
+  (when (coord-in-bounds (cons x y) world)
+    (change-tile-owner x y (army-owner unit))
+    (pushnew unit (tile-units (tile-at x y world)))))
 
 ;; A stronger army moving to a tile might also take control of neighbourhood?
 (defun change-tile-owner (x y faction)
