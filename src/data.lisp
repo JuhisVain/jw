@@ -103,7 +103,6 @@ with data field in full."
   (owner) ; owning faction
   (x) (y)
   (troops)
-  (movement)
   (counter))
 
 ;;; This should be used in a list in faction struct to be used
