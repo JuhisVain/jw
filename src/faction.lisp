@@ -79,7 +79,6 @@
 					     :type unit-type
 					     :count 0)
 					    (make-unit-stack)))) ; else make dummy
-			     :movement 25 ;; should be generated base on ???something???
 			     :counter
 			     (make-graphics
 			      :surface (description-to-counter faction 40 (or counter-desc '(land analysis)))
