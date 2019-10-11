@@ -104,9 +104,6 @@
 (defun end-turn () ; TODO: faction arg should be useless, use world's current-turn faction
   (let ((faction (world-current-turn *world*)))
     (clrhash *cpf-vision*)
-    
-    (dolist (army (faction-armies faction))
-      )
 
   ;;;; TODO:
     ;; selected unit remains between turns in GUI.
@@ -122,6 +119,13 @@
 (defun new-turn () ; TODO: use world's current-turn faction
   (let ((faction (world-current-turn *world*)))
     (setup-new-turn-vision faction)
+
+    ;;; Reset action points (and other stats) for armies:
+    ;; TODO: might want to "reset" to less than full if cohesion or whatever not full
+    (dolist (army (faction-armies faction))
+      (dolist (stack (army-troops army))
+	(setf (unit-stack-action-points stack) 100)))
+    
     ))
 
 (defun setup-new-turn-vision (faction)
