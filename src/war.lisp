@@ -576,7 +576,7 @@ Aborted if new enemy discovered."
 
 (defun draw-move-area (army x-shift y-shift end)
   (let* ((start (cons (army-x army) (army-y army)))
-	 (move-range (army-movement army))
+	 (move-range (army-action-points army))
 	 (move-area (move-area army)))
     (labels ((draw-path (current)
 	       (let* ((next (cdr (gethash current move-area)))

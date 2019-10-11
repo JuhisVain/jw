@@ -117,6 +117,10 @@ parcoord2 ,parcoord2's weight and returns float between 0 and 1."
       )
     visibles))
 
+(defun army-action-points (army)
+  "Returns current action points of ARMY."
+  (reduce #'min (army-troops army) :key #'unit-stack-action-points))
+
 (defun army-attack (army target &key (advance nil))
   "ARMY attacks TARGET, which must be in a tile adjacent to ARMY's.
 If ADVANCE is true ARMY will move to TARGET's position, if possible."
@@ -168,7 +172,7 @@ If ADVANCE is true ARMY will move to TARGET's position, if possible."
   (let ((start-x (army-x army))
 	(start-y (army-y army))
 	(slow-moves (slowest-movecosts (army-troops army)))
-	(move-range (army-movement army)))
+	(move-range (army-action-points army)))
 
     (setf *current-move-area*  ;; aww shit
 	  (breadth-first-fill
@@ -269,26 +273,26 @@ for movement-type."
   (defmovetypeunits wheeled "Jeep" "truck" "formula1")
   (defmovetypeunits towed "8.8cm Flak" "8-pounder")
   (defmovetypeunits rail "Pendolino" "steam-locomotive")
-  (defmovecosts infantry (grass 3) (hill 5) (mountain 10) (forest 4)
-		(sea 10000) (city 3) (stream 3) (river 5) (rail 3) (road 3))
-  (defmovecosts cavalry (grass 2) (hill 5) (mountain 12) (forest 5)
-		(sea 10000) (city 3) (stream 3) (river 5) (rail 2) (road 2))
-  (defmovecosts wheeled (grass 2) (hill 5) (mountain 20) (forest 10)
-		(sea 10000) (city 2)(stream 10) (river 20) (rail 3) (road 1))
-  (defmovecosts towed (grass 4) (hill 10) (mountain 14) (forest 7)
-		(sea 10000) (city 3)(stream 10) (river 20) (rail 5) (road 3))
-  (defmovecosts rail (grass 4) (hill 5) (mountain 20) (forest 10)
-		(sea 10000) (city 2)(stream 10) (river 20) (rail 1) (road 5))
+  (defmovecosts infantry (grass 10) (hill 25) (mountain 90) (forest 15)
+		(sea 10000) (city 7) (stream 20) (river 50) (rail 5) (road 5))
+  (defmovecosts cavalry (grass 5) (hill 15) (mountain 90) (forest 15)
+		(sea 10000) (city 7) (stream 20) (river 50) (rail 4) (road 4))
+  (defmovecosts wheeled (grass 5) (hill 30) (mountain 100) (forest 50)
+		(sea 10000) (city 5)(stream 50) (river 75) (rail 3) (road 3))
+  (defmovecosts towed (grass 15) (hill 30) (mountain 90) (forest 20)
+		(sea 10000) (city 10)(stream 50) (river 75) (rail 7) (road 7))
+  (defmovecosts rail (grass 1000) (hill 1000) (mountain 1000) (forest 1000)
+		(sea 10000) (city 1000)(stream 1000) (river 1000) (rail 2) (road 1000))
 
   (mapcar
    #'(lambda (faction)
        (setf (faction-unit-types faction)
 	     (list
-	      (make-faction-unit :movement 'infantry :name "Commando" :move-points 20)
-	      (make-faction-unit :movement 'cavalry :name "Dragoon" :move-points 30)
-	      (make-faction-unit :movement 'wheeled :name "Jeep" :move-points 40)
-	      (make-faction-unit :movement 'towed :name "8.8cm Flak" :move-points 10)
-	      (make-faction-unit :movement 'rail :name "Pendolino" :move-points 50)))) ; etc..
+	      (make-faction-unit :movement 'infantry :name "Commando")
+	      (make-faction-unit :movement 'cavalry :name "Dragoon")
+	      (make-faction-unit :movement 'wheeled :name "Jeep")
+	      (make-faction-unit :movement 'towed :name "8.8cm Flak")
+	      (make-faction-unit :movement 'rail :name "Pendolino")))) ; etc..
    (world-factions *world*))
   
   nil ; No need to print previous
@@ -301,7 +305,7 @@ for movement-type."
     (setf (army-troops (car *testunit*))
 	  (list (make-unit-stack :type (unit-type-by-name "Jeep" (army-owner (car *testunit*)))
 				 :count 10)
-		(make-unit-stack :type (unit-type-by-name "Pendolino" (army-owner (car *testunit*)))
+		(make-unit-stack :type (unit-type-by-name "8.8cm Flak" (army-owner (car *testunit*)))
 				 :count 1)))
     (setf (army-troops (cadr *testunit*))
 	  (list (make-unit-stack :type (unit-type-by-name "Dragoon" (army-owner (car *testunit*)))

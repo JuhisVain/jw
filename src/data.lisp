@@ -114,7 +114,6 @@ with data field in full."
 (defstruct faction-unit
   (movement 'UNSET :type symbol)
   (name "unset" :type string) ; TODO: Change *unit-types* :test to 'equal
-  (move-points 0 :type fixnum)
   (vision) ; TODO
   (combat-values) ; TODO: a structure containing data on fighting on terrain against what?? 
   )
@@ -122,6 +121,7 @@ with data field in full."
 (defstruct unit-stack
   (type (make-faction-unit) :type faction-unit)
   (count 0 :type fixnum)
+  (action-points 100 :type (integer 0 100))
   (experience 0 :type fixnum)
   (morale 0 :type fixnum)
   (readiness 0 :type fixnum))
