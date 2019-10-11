@@ -992,8 +992,12 @@ outskirt towards direction."
 	  +std-short-dirs+))
 
 (defun neighbourp (xy0 xy1)
+  "If XY0 and XY1 are neighbours, returns direction to XY1 from XY0, else nil."
   (declare (cons xy0 xy1))
-  (find xy1 (neighbour-tiles (car xy0) (cdr xy0)) :test #'equal))
+  (loop for crd in (neighbour-tiles (car xy0) (cdr xy0))
+     for dir in +std-short-dirs+
+     when (equal crd xy1)
+     return dir))
 
 ;;   TODO: might want to handle complete masks in some way (as in no field outskirts on sea tiles etc..)
 (defun finalize-tile (x y &optional (world *world*))
