@@ -154,6 +154,22 @@ If ADVANCE is true ARMY will move to TARGET's position, if possible."
 			 (army-y target))
 		   winner))))
 
+(defun step-unit-to (army x y &optional (world *world*))
+  "Places ARMY to coordinates (X,Y), which must be ARMY's current location's neighbour."
+  (let ((direction (neighbourp (cons (army-x army) (army-y army))
+			       (cons x y))))
+    (when direction
+
+      (let ((cost (step-cost army (army-x army) (army-y army) direction world)))
+	(dolist (stack (army-troops army))
+	  (decf (unit-stack-action-points stack) cost)))
+      
+      ;;TODO: 
+      ;; then go check which place-unit calls to replace with this
+      ;; NOTE moving enemy unit to 16 18 causes heap to overflow ???
+
+      )))
+
 (defun destroy-army (army)
   "Removes ARMY from map."
   (let ((tile (tile-at (army-x army) (army-y army))))
@@ -168,53 +184,64 @@ If ADVANCE is true ARMY will move to TARGET's position, if possible."
     ;; etc..
     ))
 
+
+(defun step-cost (army x y dir world
+		  &optional
+		    (movetypes (troops-to-movetypes (army-troops army))) ; sweet baby jesus
+		    (slow-moves (slowest-movecosts movetypes)))
+  "Returns the cost of stepping ARMY towards DIR from (X,Y)."
+  (let* ((roads (coord-border-roads x y dir world))
+	 (river (coord-border-rivers x y dir world))
+	 (terrain (coord-types x y world))
+	 (locations (coord-locations x y world)))
+
+    (cond ((enemy-army-at (army-owner army) x y) ; This makes a tile occupied by
+	   most-positive-fixnum)                 ;  an enemy impossible to enter
+	  (roads
+	   (apply #'max
+		  (mapcar
+		   #'(lambda (movetype) ; for all movetypes in army
+		       (apply #'min ; choose smallest
+			      (mapcar
+			       #'cadr ; from the costs
+			       (intersection ; out of list of road-costs for current movetype
+				;; This works ONLY IF result is picked from LIST1 argument
+				(gethash movetype *unit-type-road-movecosts*)
+				roads
+				:test #'(lambda (road-cost road)
+					  (eq road (car road-cost)))))))
+		   movetypes)))
+	  
+	  (locations
+	   (+ (if river
+		  (cadr (assoc river slow-moves))
+		  0)
+	      (apply #'max (mapcar #'(lambda (location)
+				       (cadr (assoc location slow-moves)))
+				   (mapcar #'type-of locations)))))
+	  
+	  (t
+	   (+ (if river
+		  (cadr (assoc river slow-moves))
+		  0)
+	      (apply #'max (mapcar #'(lambda (terrain-type)
+				       (cadr (assoc terrain-type slow-moves)))
+				   terrain)))))))
+
+
 (defun move-area (army &optional (world *world*))
-  (let ((start-x (army-x army))
-	(start-y (army-y army))
-	(slow-moves (slowest-movecosts (army-troops army)))
-	(move-range (army-action-points army)))
+  "Sets *current-move-area* to hold hashtable of tiles in range of ARMY."
+  (let* ((start-x (army-x army))
+	 (start-y (army-y army))
+	 (movetypes (troops-to-movetypes (army-troops army)))
+	 (slow-moves (slowest-movecosts movetypes))
+	 (move-range (army-action-points army)))
 
     (setf *current-move-area*  ;; aww shit
 	  (breadth-first-fill
 	   start-x start-y :range move-range
 	   :costfunc #'(lambda (x y dir world)
-			 (let* ((roads (coord-border-roads x y dir world))
-				(river (coord-border-rivers x y dir world))
-				(terrain (coord-types x y world))
-				(locations (coord-locations x y world)))
-
-			   (cond ((enemy-army-at (army-owner army) x y) ; This makes a tile occupied by
-				  most-positive-fixnum)                 ;  an enemy impossible to enter
-				 (roads
-				  (apply #'max
-					 (mapcar
-					  #'(lambda (movetype) ; for all movetypes in army
-					      (apply #'min ; choose smallest
-						     (mapcar
-						      #'cadr ; from the costs
-						      (intersection ; out of list of road-costs for current movetype
-						       ;; This works ONLY IF result is picked from LIST1 argument
-						       (gethash movetype *unit-type-road-movecosts*)
-						       roads
-						       :test #'(lambda (road-cost road)
-								 (eq road (car road-cost)))))))
-					  (troops-to-movetypes (army-troops army)))))
-				 
-				 (locations
-				  (+ (if river
-					 (cadr (assoc river slow-moves))
-					 0)
-				     (apply #'max (mapcar #'(lambda (location)
-							      (cadr (assoc location slow-moves)))
-							  (mapcar #'type-of locations)))))
-				 
-				 (t
-				  (+ (if river
-					 (cadr (assoc river slow-moves))
-					 0)
-				     (apply #'max (mapcar #'(lambda (terrain-type)
-							      (cadr (assoc terrain-type slow-moves)))
-							  terrain)))))))))))
+			 (step-cost army x y dir world movetypes slow-moves))))))
 
 ;; These would probably work better as macros so they could be set.
 (defun coord-types (x y &optional (world *world*))
@@ -338,11 +365,10 @@ for movement-type."
       (pushnew (faction-unit-movement (unit-stack-type unit)) move-types))
     move-types))
 
-(defun slowest-movecosts (unit-list)
-  "Returns list containing highest move costs on different tiles for units in unit-list.
+(defun slowest-movecosts (unit-type-list)
+  "Returns list containing highest move costs on different tiles for unit-types in unit-type-list.
 In form: ( (tile-type move-cost ..rest-slowest-units..) ...)"
-  (let ((unit-type-list (troops-to-movetypes unit-list))
-	(slowest))
+  (let ((slowest))
     (dolist (type-costs
 	      (mapcar #'(lambda (unit-type) ; ( (unit-type ((tile-type move-cost) ...)) ...)
 			  (cons unit-type
