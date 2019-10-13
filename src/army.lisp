@@ -236,11 +236,10 @@ If ADVANCE is true ARMY will move to TARGET's position, if possible."
 	 (slow-moves (slowest-movecosts movetypes))
 	 (move-range (army-action-points army)))
 
-    (setf *current-move-area*  ;; aww shit
-	  (breadth-first-fill
-	   start-x start-y :range move-range
-	   :costfunc #'(lambda (x y dir world)
-			 (step-cost army x y dir world movetypes slow-moves))))))
+    (breadth-first-fill
+     start-x start-y :range move-range
+     :costfunc #'(lambda (x y dir world)
+		   (step-cost army x y dir world movetypes slow-moves)))))
 
 ;; These would probably work better as macros so they could be set.
 (defun coord-types (x y &optional (world *world*))
