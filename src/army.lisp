@@ -165,8 +165,7 @@ If ADVANCE is true ARMY will move to TARGET's position, if possible."
 	  (decf (unit-stack-action-points stack) cost)))
       
       ;;TODO: 
-      ;; then go check which place-unit calls to replace with this
-      ;; NOTE moving enemy unit to 16 18 causes heap to overflow ???
+      ;;  go check which place-unit calls to replace with this
 
       )))
 
@@ -291,7 +290,9 @@ for movement-type."
 	    `(setf (gethash ',unit *unit-types*) ',move-type))
        unit-names)))
 
-
+;;; NOTE: A movecost value of any less than 10 is risky while heap size is 6139
+;; if movecosts need to be lower might need to investigate rewriting heaps with lists
+;; or some other algorithm altogether
 (defun test-slowest-movecosts ()
   ;; This is dumb dumb dumb dummy data only for testing
   ;;(setf *road-types* '(rail road)) ; Too late to set here

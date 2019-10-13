@@ -1,7 +1,30 @@
 (in-package #:war)
 
+
+;;;; Testing maximum values:
+;; In a world with a single movetype
+;; COST    HEAPSIZE <- that's the rightmost index which is off by one
+;; 101     2
+;; 51      7
+;; 34      19
+;; 26      43
+;; 21      91
+;; 17      187
+;; 16      379
+;; 15      379       same range
+;; 14      763
+;; 13      763       same range
+;; 12      1531
+;; 11      3067
+;; 10      6139
+;;  9      12283     noticeably slow
+;;  8      24571
+;;  7      98299     extremely slow, reaches two tiles farther than 8
+;;  6      393211    reaches 2 farther than 7
+;; useless to test more
+
 (defstruct heap
-  (head (make-array 1000 :initial-element (cons nil nil)))
+  (head (make-array 6139 :initial-element (cons nil nil)))
   ;;                                    priority^   ^value
   (rightmost-index 1) ;;rightmost nil
   (test #'>))

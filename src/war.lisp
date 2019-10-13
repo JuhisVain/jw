@@ -507,7 +507,9 @@ Aborted if new enemy discovered."
 					       (enemy-army-at (army-owner selected-unit)
 							      (car selected-tile) (cdr selected-tile))
 					       :advance t))
-				 ))
+				 )
+			   (when selected-unit (setf *current-move-area* (move-area selected-unit)))
+			   )
 
 			  ((equal button sdl:sdl-button-wheel-up)
 			   (set-tile-size 'large)
@@ -581,7 +583,7 @@ Aborted if new enemy discovered."
 (defun draw-move-area (army x-shift y-shift end)
   (let* ((start (cons (army-x army) (army-y army)))
 	 (move-range (army-action-points army))
-	 (move-area (move-area army)))
+	 (move-area *current-move-area*))
     (labels ((draw-path (current)
 	       (let* ((next (cdr (gethash current move-area)))
 		     (current-g (tc-gc current
