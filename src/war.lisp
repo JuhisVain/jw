@@ -332,7 +332,8 @@ Aborted if new enemy discovered."
 	 (path (reverse rev-path))
 	 (discovered-enemies nil))
     (dolist (step path)
-      (place-unit unit (car step) (cdr step))
+      ;;(place-unit unit (car step) (cdr step))
+      (step-unit-to unit (car step) (cdr step))
       (setf discovered-enemies (update-vision-by-unit unit))
       (when discovered-enemies ; Abort move
 	(return-from move-unit

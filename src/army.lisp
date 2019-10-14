@@ -156,18 +156,19 @@ If ADVANCE is true ARMY will move to TARGET's position, if possible."
 
 (defun step-unit-to (army x y &optional (world *world*))
   "Places ARMY to coordinates (X,Y), which must be ARMY's current location's neighbour."
-  (let ((direction (neighbourp (cons (army-x army) (army-y army))
-			       (cons x y))))
+  (let ((direction (neighbourp (cons x y)
+			       (cons (army-x army) (army-y army)))))
     (when direction
-
-      (let ((cost (step-cost army (army-x army) (army-y army) direction world)))
-	(dolist (stack (army-troops army))
-	  (decf (unit-stack-action-points stack) cost)))
-      
-      ;;TODO: 
-      ;;  go check which place-unit calls to replace with this
-
-      )))
+      (dolist (stack (army-troops army))
+	;; step-cost was not intended to be used this way
+	;; only reduce specific unit-type's movecost from stack of its type
+	(let ((cost (step-cost army x y direction world 
+			       (list (faction-unit-movement (unit-stack-type stack))))))
+	  (decf (unit-stack-action-points stack) cost)
+	  ;; There was a check here if AP is now less than zero but AP type is (MOD 101)
+	  ;; Maybe that will take care of error checking
+	  ))
+      (place-unit army x y world))))
 
 (defun destroy-army (army)
   "Removes ARMY from map."
@@ -186,9 +187,9 @@ If ADVANCE is true ARMY will move to TARGET's position, if possible."
 
 (defun step-cost (army x y dir world
 		  &optional
-		    (movetypes (troops-to-movetypes (army-troops army))) ; sweet baby jesus
+		    (movetypes (troops-to-movetypes (army-troops army)))
 		    (slow-moves (slowest-movecosts movetypes)))
-  "Returns the cost of stepping ARMY towards DIR from (X,Y)."
+  "Returns the cost of stepping ARMY ***from*** DIR ***to*** (X,Y)."
   (let* ((roads (coord-border-roads x y dir world))
 	 (river (coord-border-rivers x y dir world))
 	 (terrain (coord-types x y world))
