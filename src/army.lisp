@@ -195,38 +195,47 @@ If ADVANCE is true ARMY will move to TARGET's position, if possible."
 	 (terrain (coord-types x y world))
 	 (locations (coord-locations x y world)))
 
-    (cond ((enemy-army-at (army-owner army) x y) ; This makes a tile occupied by
-	   most-positive-fixnum)                 ;  an enemy impossible to enter
-	  (roads
-	   (apply #'max
-		  (mapcar
-		   #'(lambda (movetype) ; for all movetypes in army
-		       (apply #'min ; choose smallest
-			      (mapcar
-			       #'cadr ; from the costs
-			       (intersection ; out of list of road-costs for current movetype
-				;; This works ONLY IF result is picked from LIST1 argument
-				(gethash movetype *unit-type-road-movecosts*)
-				roads
-				:test #'(lambda (road-cost road)
-					  (eq road (car road-cost)))))))
-		   movetypes)))
-	  
-	  (locations
-	   (+ (if river
-		  (cadr (assoc river slow-moves))
-		  0)
-	      (apply #'max (mapcar #'(lambda (location)
-				       (cadr (assoc location slow-moves)))
-				   (mapcar #'type-of locations)))))
-	  
-	  (t
-	   (+ (if river
-		  (cadr (assoc river slow-moves))
-		  0)
-	      (apply #'max (mapcar #'(lambda (terrain-type)
-				       (cadr (assoc terrain-type slow-moves)))
-				   terrain)))))))
+    (cond
+      ;; 1st check: If there's an unknown enemy at (x y) make tile appear movable
+      ;; if it's known make tile unmoveable
+      ;; This seems like a human interface thing, but the AI should have the same disadvantage in theory...
+      ((let ((enemy (enemy-army-at (army-owner army) x y))) 
+	 (when enemy                                        
+	   (let ((known (gethash enemy (faction-enemy-unit-info (army-owner army)))))
+	     (when known
+	       (unit-info-has-been-seen known)))))
+       most-positive-fixnum)
+      ;; No known enemies: do the cost computing
+      (roads
+       (apply #'max
+	      (mapcar
+	       #'(lambda (movetype) ; for all movetypes in army
+		   (apply #'min ; choose smallest
+			  (mapcar
+			   #'cadr ; from the costs
+			   (intersection ; out of list of road-costs for current movetype
+			    ;; This works ONLY IF result is picked from LIST1 argument
+			    (gethash movetype *unit-type-road-movecosts*)
+			    roads
+			    :test #'(lambda (road-cost road)
+				      (eq road (car road-cost)))))))
+	       movetypes)))
+      
+      (locations
+       (+ (if river
+	      (cadr (assoc river slow-moves))
+	      0)
+	  (apply #'max (mapcar #'(lambda (location)
+				   (cadr (assoc location slow-moves)))
+			       (mapcar #'type-of locations)))))
+      
+      (t
+       (+ (if river
+	      (cadr (assoc river slow-moves))
+	      0)
+	  (apply #'max (mapcar #'(lambda (terrain-type)
+				   (cadr (assoc terrain-type slow-moves)))
+			       terrain)))))))
 
 
 (defun move-area (army &optional (world *world*))
