@@ -255,11 +255,12 @@ VISION-HT (which should have :test #'equal) with vision of ARMY."
 	      *max-vision-range*
 	      #'(lambda (target parent-1 p1-weight parent-2 p2-weight visibles)
 		  (let ((total-weight (+ p1-weight p2-weight))
-			(grass 0.95)
+			(grass 0.95) ;; TODO: Put these into a hashtable
 			(hill 0.75)
 			(mountain 0.5)
-			(sea 1))
-		    (declare (special grass hill mountain sea))
+			(sea 1)
+			(nforest 0.5))
+		    (declare (special grass hill mountain sea nforest))
 		    (*
 		     (apply #'min
 			    (mapcar #'symbol-value
@@ -374,7 +375,7 @@ Aborted if new enemy discovered."
      '((sea :large (100 -4 -9) :small (0 0 0))
        (grass :large (0 0 0) :small (0 0 0))
        (field :large (25 -4 -9) :small (25 0 0) :overrides (:outskirts-everywhere))
-       (forest :large (75 -4 -17) :small (75 0 0))
+       (nforest :large (75 4 -8) :small (75 0 0) :overrides (:outskirts-everywhere))
        (city :large (50 -6 -6) :small (50 0 0))
        (suburb :large (50 0 0) :small (50 0 0))
        (swamp :large (1 0 0) :small (1 0 0))
