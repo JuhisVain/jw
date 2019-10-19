@@ -103,6 +103,7 @@ with data field in full."
   (owner) ; owning faction
   (x) (y)
   (troops)
+  (supplies 0 :type fixnum)
   (counter))
 
 ;;; This should be used in a list in faction struct to be used
@@ -114,6 +115,10 @@ with data field in full."
   (movement 'UNSET :type symbol)
   (name "unset" :type string) ; TODO: Change *unit-types* :test to 'equal
   (vision) ; TODO
+  (carry-space 0 :type fixnum) ; How many sizes worth of units this thing can carry
+  (size 1 :type fixnum)
+  (supply-use 2 :type fixnum) ; Supplies used in a turn based on readiness ???
+  (fuel-use 0 :type fixnum) ; Fuel used per 100 move-points
   (combat-values) ; TODO: a structure containing data on fighting on terrain against what?? 
   )
 
@@ -123,7 +128,7 @@ with data field in full."
   (action-points 100 :type (integer 0 100))
   (experience 0 :type fixnum)
   (morale 0 :type fixnum)
-  (readiness 0 :type fixnum))
+  (readiness 0 :type (integer 0 100)))
 
 (deftype coordinates ()
   '(cons fixnum fixnum))
