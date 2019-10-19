@@ -1,35 +1,15 @@
 (in-package :war)
 
-;;; Currently at data.lisp:
-;;(defstruct army
-;;  (id)
-;;  (x) (y)
-;;  (troops)
-;;  (movement)
-;;  (counter))
-
-;; Army-troops should hold alist ((unit-name . amount) etc...)
-
 ;; Using a struct or array for *unit-type-(road-)movecosts* might be smarter,
 ;; but will have to be defined procedurally
 ;; I think these should be the same for all factions.
 ;; Factions' techs should affect only only move points as far as these are concerned.
+
 (defvar *unit-types* (make-hash-table :test 'equal)) ; "dragoon" # cavalry
 (defvar *unit-type-movecosts* (make-hash-table :test 'eq)) ; cavalry # ((grass 2) (hill 3) ...)
 (defvar *unit-type-road-movecosts* (make-hash-table :test 'eq))
 
 (defvar *road-types* '(rail road)) ; (road rail maglev teslavacuumtube footpath etc..)
-
-
-;;; !!!!!!!!!!!!!!!!!!!!!!! redo all
-;;; All visibles need to be placed in the same hashtable, as a unit's vision will affect
-;; the results of other units' visions
-
-;;; Notes:
-;; units should have a stat to determine how well they can see through various terrain types.
-;; Infantry on grass won't see "through" a city, but a hot air balloon might etc...
-;; Multiple units with vision -> all seen tiles must be placed in same hash-table
-;; Moving units ???
 
 (defun list-ring (xy radius)
   "Returns list of coordinate conses around XY at distance radius."
