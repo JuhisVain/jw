@@ -112,7 +112,7 @@ with data field in full."
 ;; Real units on map should then have experience, morale, readiness, cohesion etc..
 ;; That will be taken into account when checking these during play.
 (defstruct faction-unit
-  (movement 'UNSET :type symbol)
+  (movement nil :type symbol)
   (name "unset" :type string) ; TODO: Change *unit-types* :test to 'equal
   (vision) ; TODO
   (carry-space 0 :type fixnum) ; How many sizes worth of units this thing can carry
@@ -123,7 +123,7 @@ with data field in full."
   )
 
 (defstruct unit-stack
-  (type (make-faction-unit) :type faction-unit)
+  (type nil :type faction-unit)
   (count 0 :type fixnum)
   (action-points 100 :type (integer 0 100))
   (experience 0 :type fixnum)
