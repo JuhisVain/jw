@@ -6,16 +6,18 @@
   )
 
 (defstruct oob-element
-  (army nil :type army))
+  (army nil :type (or null army)))
 
-(defstruct (hq (:include oob-element))
+(defstruct (supreme-hq (:include oob-element))
   (general nil :type (or general null))
   (subordinates nil)
-  (supply-sources nil)
-  )
+  (supply-sources nil))
 
-(defstruct (sub-hq (:include hq))
-  (superior :type hq))
+(defstruct (sub-hq (:include oob-element))
+  (general nil :type (or general null))
+  (superior nil :type (or sub-hq supreme-hq))
+  (subordinates nil)
+  (supply-sources nil))
 
-(defstruct (oob-pos (:inlude oob-element))
-  (superior :type hq))
+(defstruct (oob-pos (:include oob-element))
+  (superior nil :type (or sub-hq supreme-hq)))

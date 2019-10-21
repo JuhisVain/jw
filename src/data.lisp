@@ -98,10 +98,13 @@ with data field in full."
   (road-links nil)
   (units nil))
 
+(defparameter *army-id-counter* 0) ; Would rather close on lexical var, but unclear if defstruct portable
 (defstruct army
-  (id)
-  (owner) ; owning faction
-  (x) (y)
+  (id (incf *army-id-counter*) :type (integer 0 *) :read-only t)
+  (owner nil :type faction) ; owning faction
+  (coc nil :type oob-element) ; position in chain of command
+  (x 0 :type (integer 0 *)) ; might want to have some kind of out of play value?
+  (y 0 :type (integer 0 *))
   (troops)
   (supplies 0 :type fixnum)
   (counter))
@@ -113,7 +116,7 @@ with data field in full."
 ;; That will be taken into account when checking these during play.
 (defstruct faction-unit
   (movement nil :type symbol)
-  (name "unset" :type string) ; TODO: Change *unit-types* :test to 'equal
+  (name nil :type string)
   (vision) ; TODO
   (carry-space 0 :type fixnum) ; How many sizes worth of units this thing can carry
   (size 1 :type fixnum)
