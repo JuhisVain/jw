@@ -356,6 +356,39 @@ for movement-type."
       (pushnew (faction-unit-movement (unit-stack-type unit)) move-types))
     move-types))
 
+(defstruct movecarry
+  (movetype nil :type symbol)
+  (totalsize nil :type (integer 0 *))
+  (carryspace nil :type (integer 0 *)))
+
+(defun troop-movecarry-data (unit-list)
+  (let ((data nil))
+    (loop for unit in unit-list
+	  do (let* ((unit-count (unit-stack-count unit))
+		(unit-type (unit-stack-type unit))
+		(move-type (faction-unit-movement unit-type))
+		(dataset (find-if
+			  #'(lambda (mc)
+			      (eq (movecarry-movetype mc)
+				  move-type))
+			  data)))
+	   (if dataset
+	       (progn (incf (movecarry-totalsize dataset)
+			    (* (faction-unit-size unit-type)
+			       unit-count))
+		      (incf (movecarry-carryspace dataset)
+			    (* (faction-unit-carry-space unit-type)
+			       unit-count)))
+	       (push (make-movecarry :movetype move-type
+				     :totalsize (* (faction-unit-size unit-type)
+						   unit-count)
+				     :carryspace (* (faction-unit-carry-space unit-type)
+						    unit-count))
+		     data)
+	       )))
+    data))
+    
+
 (defun slowest-movecosts (unit-type-list)
   "Returns list containing highest move costs on different tiles for unit-types in unit-type-list.
 In form: ( (tile-type move-cost ..rest-slowest-units..) ...)"
