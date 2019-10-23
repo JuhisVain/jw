@@ -143,7 +143,7 @@ If ADVANCE is true ARMY will move to TARGET's position, if possible."
 	;; step-cost was not intended to be used this way
 	;; only reduce specific unit-type's movecost from stack of its type
 	(let ((cost (step-cost army x y direction world 
-			       (list (faction-unit-movement (unit-stack-type stack))))))
+			       (troop-movecarry-data (list stack)))))
 	  (decf (unit-stack-action-points stack) cost)
 	  ;; There was a check here if AP is now less than zero but AP type is (MOD 101)
 	  ;; Maybe that will take care of error checking
@@ -167,7 +167,7 @@ If ADVANCE is true ARMY will move to TARGET's position, if possible."
 
 (defun step-cost (army x y dir world
 		  &optional
-		    (movetypes (troops-to-movetypes (army-troops army)))
+		    (movetypes (troop-movecarry-data (army-troops army)))
 		    (slow-moves (slowest-movecosts movetypes)))
   "Returns the cost of stepping ARMY ***from*** DIR ***to*** (X,Y)."
   (let* ((roads (coord-border-roads x y dir world))
@@ -222,7 +222,7 @@ If ADVANCE is true ARMY will move to TARGET's position, if possible."
   "Sets *current-move-area* to hold hashtable of tiles in range of ARMY."
   (let* ((start-x (army-x army))
 	 (start-y (army-y army))
-	 (movetypes (troops-to-movetypes (army-troops army)))
+	 (movetypes (troop-movecarry-data (army-troops army)))
 	 (slow-moves (slowest-movecosts movetypes))
 	 (move-range (army-action-points army)))
 
@@ -308,7 +308,7 @@ for movement-type."
 	     (list
 	      (make-faction-unit :movement 'infantry :name "Commando")
 	      (make-faction-unit :movement 'cavalry :name "Dragoon")
-	      (make-faction-unit :movement 'wheeled :name "Jeep")
+	      (make-faction-unit :movement 'wheeled :name "Jeep" :carry-space 1)
 	      (make-faction-unit :movement 'towed :name "8.8cm Flak")
 	      (make-faction-unit :movement 'rail :name "Pendolino")))) ; etc..
    (world-factions *world*))
@@ -323,8 +323,8 @@ for movement-type."
     (setf (army-troops (car *testunit*))
 	  (list (make-unit-stack :type (unit-type-by-name "Jeep" (army-owner (car *testunit*)))
 				 :count 10)
-		(make-unit-stack :type (unit-type-by-name "8.8cm Flak" (army-owner (car *testunit*)))
-				 :count 1)))
+		(make-unit-stack :type (unit-type-by-name "Commando" (army-owner (car *testunit*)))
+				 :count 10)))
     (setf (army-troops (cadr *testunit*))
 	  (list (make-unit-stack :type (unit-type-by-name "Dragoon" (army-owner (car *testunit*)))
 				 :count 20)
@@ -362,6 +362,8 @@ for movement-type."
   (carryspace nil :type (integer 0 *)))
 
 (defun troop-movecarry-data (unit-list)
+  "Returns list of movecarry structures, to be used in determining automatic
+carrying of slower units during movement."
   (let ((data nil))
     (loop for unit in unit-list
 	  do (let* ((unit-count (unit-stack-count unit))
@@ -389,10 +391,11 @@ for movement-type."
     data))
     
 
-(defun slowest-movecosts (unit-type-list)
+(defun slowest-movecosts (movecarry-list)
   "Returns list containing highest move costs on different tiles for unit-types in unit-type-list.
 In form: ( (tile-type move-cost ..rest-slowest-units..) ...)"
-  (let ((slowest))
+  (let ((unit-type-list (mapcar #'movecarry-movetype movecarry-list))
+	(slowest))
     (dolist (type-costs
 	      (mapcar #'(lambda (unit-type) ; ( (unit-type ((tile-type move-cost) ...)) ...)
 			  (cons unit-type
