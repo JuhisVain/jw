@@ -140,10 +140,8 @@ If ADVANCE is true ARMY will move to TARGET's position, if possible."
 			       (cons (army-x army) (army-y army)))))
     (when direction
       (dolist (stack (army-troops army))
-	;; step-cost was not intended to be used this way
-	;; only reduce specific unit-type's movecost from stack of its type
-	(let ((cost (step-cost army x y direction world 
-			       (troop-movecarry-data (list stack)))))
+	;; The pace of the slowest unit is the pace of everything:
+	(let ((cost (step-cost army x y direction world)))
 	  (decf (unit-stack-action-points stack) cost)
 	  ;; There was a check here if AP is now less than zero but AP type is (MOD 101)
 	  ;; Maybe that will take care of error checking
@@ -175,6 +173,8 @@ If ADVANCE is true ARMY will move to TARGET's position, if possible."
 	 (terrain (coord-types x y world))
 	 (locations (coord-locations x y world)))
 
+    ;; TODO: Automatic carrying per step, the output of (slowest-movecosts) might not cut it anymore
+    
     (cond
       ;; 1st check: If there's an unknown enemy at (x y) make tile appear movable
       ;; if it's known make tile unmoveable
@@ -362,8 +362,9 @@ for movement-type."
   (carryspace nil :type (integer 0 *)))
 
 (defun troop-movecarry-data (unit-list)
-  "Returns list of movecarry structures, to be used in determining automatic
-carrying of slower units during movement."
+  "Returns list of compiled movecarry structures, to be used in determining automatic
+carrying of slower units during movement.
+Duplicate movement types are compiled into one structure"
   (let ((data nil))
     (loop for unit in unit-list
 	  do (let* ((unit-count (unit-stack-count unit))
@@ -394,6 +395,8 @@ carrying of slower units during movement."
 (defun slowest-movecosts (movecarry-list)
   "Returns list containing highest move costs on different tiles for unit-types in unit-type-list.
 In form: ( (tile-type move-cost ..rest-slowest-units..) ...)"
+
+  
   (let ((unit-type-list (mapcar #'movecarry-movetype movecarry-list))
 	(slowest))
     (dolist (type-costs
@@ -403,8 +406,8 @@ In form: ( (tile-type move-cost ..rest-slowest-units..) ...)"
 		      unit-type-list))
       (let ((unit-type (car type-costs)) ; cavalry
 	    (unit-road-costs))
-	
-	(dolist (costs (cdr type-costs)) ; ( (tile-type move-cost) ...)
+;;ignore
+	'(dolist (costs (cdr type-costs)) ; ( (tile-type move-cost) ...)
 	  (let* ((type (car costs)) ; grass
 		 (is-road (member type *road-types*))
 		 (cost (cadr costs)) ; integer
@@ -418,6 +421,23 @@ In form: ( (tile-type move-cost ..rest-slowest-units..) ...)"
 		  ((= cost (cadr old))
 		   (rplacd old (append (cdr old) (list unit-type)))))
 	    ))
+;;end ignore
+	
+	(dolist (costs (cdr type-costs)) ;; todo: add road costs
+	  (let* ((typesym (car costs))
+		 (typecons (assoc typesym slowest))
+		 (cost (cadr costs)))
+	    (if typecons
+		(rplacd typecons
+			(merge 'list (list (list cost unit-type)) (cdr typecons) #'> :key #'car))
+		(push (list typesym
+			    (list cost unit-type))
+		      slowest))))
+	;; SLOWEST now holds ( (GRASS (60 TOWED) (40 INFANTRY) (25 WHEELED)) ...)
+
+	;; TODO: but what if trucks can carry horses and horses can carry men and men can carry artillery..
+	
+	
 	))
     slowest))
 
