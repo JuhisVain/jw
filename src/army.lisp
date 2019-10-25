@@ -428,12 +428,18 @@ In form: ( (tile-type move-cost ..rest-slowest-units..) ...)"
 		 (typecons (assoc typesym slowest))
 		 (cost (cadr costs)))
 	    (if typecons
-		(rplacd typecons
-			(merge 'list (list (list cost unit-type)) (cdr typecons) #'> :key #'car))
+	        (let ((same-cost (assoc cost (cdr typecons))))
+		  (if same-cost
+		      (rplacd same-cost (cons unit-type (cdr same-cost)))
+		      (rplacd typecons
+			      (merge 'list (list (list cost unit-type)) (cdr typecons)
+				     #'> :key #'car))))
 		(push (list typesym
 			    (list cost unit-type))
 		      slowest))))
-	;; SLOWEST now holds ( (GRASS (60 TOWED) (40 INFANTRY) (25 WHEELED)) ...)
+	
+	;; SLOWEST now holds ( (GRASS (60 TOWED) (40 INFANTRY) (25 WHEELED))
+	;;                     (MOUNTAIN (100 WHEELED) (80 INFANTRY CAVALRY)) ...)
 
 	;; TODO: but what if trucks can carry horses and horses can carry men and men can carry artillery..
 	
