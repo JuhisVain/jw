@@ -441,11 +441,54 @@ In form: ( (tile-type move-cost ..rest-slowest-units..) ...)"
 	;; SLOWEST now holds ( (GRASS (60 TOWED) (40 INFANTRY) (25 WHEELED))
 	;;                     (MOUNTAIN (100 WHEELED) (80 INFANTRY CAVALRY)) ...)
 
-	;; TODO: but what if trucks can carry horses and horses can carry men and men can carry artillery..
-	
+
 	
 	))
-    slowest))
+    (format t "~&~a~2%" slowest)
+    (labels
+	((populate-carryspace (totals faster)
+
+	   (incf totals
+		 (apply #'+
+			(mapcar #'(lambda (unit-type)
+				    (movecarry-totalsize (find unit-type movecarry-list
+							       :key #'movecarry-movetype)))
+				(cdar faster))))
+
+	   
+	   (when (cdr faster)
+	     (setf totals (populate-carryspace totals (cdr faster))))
+	   (if (listp totals) (return-from populate-carryspace totals))
+	   (format t "~&~a :: ~a ->" (car faster) totals)
+	   (decf totals
+		 (apply #'+
+			(mapcar #'(lambda (unit-type)
+				    (movecarry-totalsize (find unit-type movecarry-list
+							       :key #'movecarry-movetype)))
+				(cdar faster))))
+	   (decf totals
+		 (apply #'+
+			(mapcar #'(lambda (unit-type)
+				    (movecarry-carryspace (find unit-type movecarry-list
+								:key #'movecarry-movetype)))
+				(cdar faster))))
+
+	   (format t " ~a~%" totals)
+
+	   (if (<= totals 0)
+	       (car faster)
+	       totals)
+
+	   ))
+      
+    
+      'slowest
+      (mapcar #'(lambda (typecons)
+		  (cons (car typecons)
+			(or
+			 (populate-carryspace 0 (cdr typecons))
+			 (cadr typecons))))
+	      slowest))))
 
 ;;TODO: Should be combined with (hash-path) from worldgen.lisp
 (defun path-move-table (target move-area)
