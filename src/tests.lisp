@@ -18,8 +18,9 @@
     (slowest-movecosts
      (troop-movecarry-data
       (list
-       (funit slow 0 1 21)
+       (funit slow 0 1 20)
        (funit slow 0 1 10)
        (funit medium 2 2 5)
        (funit fast 20 10 1)
-       )))))
+       )))
+    ))

@@ -406,24 +406,8 @@ In form: ( (tile-type move-cost ..rest-slowest-units..) ...)"
 		      unit-type-list))
       (let ((unit-type (car type-costs)) ; cavalry
 	    (unit-road-costs))
-;;ignore
-	'(dolist (costs (cdr type-costs)) ; ( (tile-type move-cost) ...)
-	  (let* ((type (car costs)) ; grass
-		 (is-road (member type *road-types*))
-		 (cost (cadr costs)) ; integer
-		 (old (assoc type slowest))) ; (grass integer unit-types..)
-	    (cond (is-road
-		   nil) ; can't be done here
-		  ((null old)
-		   (push (append costs (list unit-type)) slowest))
-		  ((> cost (cadr old))
-		   (rplacd old (list cost unit-type)))
-		  ((= cost (cadr old))
-		   (rplacd old (append (cdr old) (list unit-type)))))
-	    ))
-;;end ignore
-	
-	(dolist (costs (cdr type-costs)) ;; todo: add road costs
+
+	(dolist (costs (cdr type-costs)) ;; todo: add road costs TODOTODO
 	  (let* ((typesym (car costs))
 		 (typecons (assoc typesym slowest))
 		 (cost (cadr costs)))
@@ -441,48 +425,46 @@ In form: ( (tile-type move-cost ..rest-slowest-units..) ...)"
 	;; SLOWEST now holds ( (GRASS (60 TOWED) (40 INFANTRY) (25 WHEELED))
 	;;                     (MOUNTAIN (100 WHEELED) (80 INFANTRY CAVALRY)) ...)
 
-
-	
 	))
-    (format t "~&~a~2%" slowest)
+
     (labels
 	((populate-carryspace (totals faster)
+	   ;; Totals is now the total sizes of all previous units
+	   (let* ((current-movetypes (cdar faster))
+		  (current-movecarries
+		   (mapcar #'(lambda (type)
+			       (find type movecarry-list
+				     :key #'movecarry-movetype))
+			   current-movetypes)))
 
-	   (incf totals
-		 (apply #'+
-			(mapcar #'(lambda (unit-type)
-				    (movecarry-totalsize (find unit-type movecarry-list
-							       :key #'movecarry-movetype)))
-				(cdar faster))))
-
-	   
-	   (when (cdr faster)
-	     (setf totals (populate-carryspace totals (cdr faster))))
-	   (if (listp totals) (return-from populate-carryspace totals))
-	   (format t "~&~a :: ~a ->" (car faster) totals)
-	   (decf totals
-		 (apply #'+
-			(mapcar #'(lambda (unit-type)
-				    (movecarry-totalsize (find unit-type movecarry-list
-							       :key #'movecarry-movetype)))
-				(cdar faster))))
-	   (decf totals
-		 (apply #'+
-			(mapcar #'(lambda (unit-type)
-				    (movecarry-carryspace (find unit-type movecarry-list
-								:key #'movecarry-movetype)))
-				(cdar faster))))
-
-	   (format t " ~a~%" totals)
-
+	     (when (cdr faster) ; If there are faster units
+	       (let ((total-size
+		      (apply
+		       #'+
+		       (mapcar #'movecarry-totalsize current-movecarries))))
+	       (setf totals
+		     (populate-carryspace
+		      (+ totals ; totals larger by amount of unitsizes in current
+			 total-size)
+		      (cdr faster)))
+	       ;; this types totals sizes are in totals -> take them them out
+	       (when (not (listp totals))
+		 (decf totals total-size))
+	       ))
+	     
+	     ;; A list instead of a number is the movetype whos carryspace is exhausted
+	     (when (listp totals)
+	       (return-from populate-carryspace totals))
+	     
+	     (decf totals
+		   (apply #'+
+			  (mapcar #'movecarry-carryspace current-movecarries))))
 	   (if (<= totals 0)
 	       (car faster)
-	       totals)
-
-	   ))
+	       totals))
+	 
+	 )
       
-    
-      'slowest
       (mapcar #'(lambda (typecons)
 		  (cons (car typecons)
 			(or
