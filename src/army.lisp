@@ -163,6 +163,7 @@ If ADVANCE is true ARMY will move to TARGET's position, if possible."
     ))
 
 
+;;TODO: It should always be possible to move at least one tile but currently impossible.
 (defun step-cost (army x y dir world
 		  &optional
 		    (movetypes (troop-movecarry-data (army-troops army)))
@@ -173,8 +174,6 @@ If ADVANCE is true ARMY will move to TARGET's position, if possible."
 	 (terrain (coord-types x y world))
 	 (locations (coord-locations x y world)))
 
-    ;; TODO: Automatic carrying per step, the output of (slowest-movecosts) might not cut it anymore
-    
     (cond
       ;; 1st check: If there's an unknown enemy at (x y) make tile appear movable
       ;; if it's known make tile unmoveable
@@ -186,7 +185,7 @@ If ADVANCE is true ARMY will move to TARGET's position, if possible."
 	       (unit-info-has-been-seen known)))))
        most-positive-fixnum)
       ;; No known enemies: do the cost computing
-      (roads
+      (roads ;; Road movement ignores terrain (even mountains??)
        (apply #'max
 	      (mapcar
 	       #'(lambda (movetype) ; for all movetypes in army
@@ -199,7 +198,8 @@ If ADVANCE is true ARMY will move to TARGET's position, if possible."
 			    roads
 			    :test #'(lambda (road-cost road)
 				      (eq road (car road-cost)))))))
-	       movetypes)))
+	       (mapcar #'movecarry-movetype movetypes)))
+       )
       
       (locations
        (+ (if river
@@ -209,7 +209,7 @@ If ADVANCE is true ARMY will move to TARGET's position, if possible."
 				   (cadr (assoc location slow-moves)))
 			       (mapcar #'type-of locations)))))
       
-      (t
+      (t ;; "Normal movement"
        (+ (if river
 	      (cadr (assoc river slow-moves))
 	      0)
@@ -395,8 +395,6 @@ Duplicate movement types are compiled into one structure"
 (defun slowest-movecosts (movecarry-list)
   "Returns list containing highest move costs on different tiles for unit-types in unit-type-list.
 In form: ( (tile-type move-cost ..rest-slowest-units..) ...)"
-
-  
   (let ((unit-type-list (mapcar #'movecarry-movetype movecarry-list))
 	(slowest))
     (dolist (type-costs
@@ -407,7 +405,7 @@ In form: ( (tile-type move-cost ..rest-slowest-units..) ...)"
       (let ((unit-type (car type-costs)) ; cavalry
 	    (unit-road-costs))
 
-	(dolist (costs (cdr type-costs)) ;; todo: add road costs TODOTODO
+	(dolist (costs (cdr type-costs))
 	  (let* ((typesym (car costs))
 		 (typecons (assoc typesym slowest))
 		 (cost (cadr costs)))
