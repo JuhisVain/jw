@@ -253,7 +253,7 @@ Optional endfunc takes x y world, if returns true this function returns before f
 	    (let ((neighbour (car neighbour-entry)) ; (x . y)
 		  (entry (cadr neighbour-entry))) ; dir
 	      (cond ((null neighbour) nil)
-		    (t (let ((move-cost (- range-left
+		    (t (let ((move-cost (- range-left ; move-cost is actually the potential range left if we move
 					   (funcall costfunc
 						    (car neighbour) (cdr neighbour)
 						    entry world))))
@@ -262,7 +262,12 @@ Optional endfunc takes x y world, if returns true this function returns before f
 			      (or (null (gethash neighbour came-from)) ; if this neighbouring tile is not already in came-from
 				  (>= move-cost ; OR if this neighbour's move cost is better than the one's in came-from
 				      (car (gethash neighbour came-from))))
-			      (>= move-cost 0)) ; AND we actually have range left for the move
+			      (or (>= move-cost 0) ; AND IF we actually have range left for the move
+				  (and (= range-left 100) (>= move-cost -100))) ; OR IF this is the first move
+			      ;; using range-left to determine first move is risky.
+			      ;; using move-cost to determine moveable tile is dumb. It's there mainly to ignore water
+			      ;; Currently UI will show negative movepoints left
+			      )
 
 			   (heap-insert frontier neighbour move-cost)
 			   (setf (gethash neighbour came-from)
