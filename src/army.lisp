@@ -328,7 +328,7 @@ for movement-type."
     (setf (army-troops (cadr *testunit*))
 	  (list (make-unit-stack :type (unit-type-by-name "Dragoon" (army-owner (car *testunit*)))
 				 :count 20)
-		(make-unit-stack :type (unit-type-by-name "Commando" (army-owner (car *testunit*)))
+		(make-unit-stack :type (unit-type-by-name "8.8cm Flak" (army-owner (car *testunit*)))
 				 :count 20)))
     )
 
