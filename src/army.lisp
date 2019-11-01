@@ -142,9 +142,14 @@ If ADVANCE is true ARMY will move to TARGET's position, if possible."
       (dolist (stack (army-troops army))
 	;; The pace of the slowest unit is the pace of everything:
 	(let ((cost (step-cost army x y direction world)))
+
+	  ;; Currently unit's first move may produce costs greater than actionpoints
+	  (when (< (- (unit-stack-action-points stack)
+		      cost)
+		   0)
+	    (setf cost (unit-stack-action-points stack)))
+	  
 	  (decf (unit-stack-action-points stack) cost)
-	  ;; There was a check here if AP is now less than zero but AP type is (MOD 101)
-	  ;; Maybe that will take care of error checking
 	  ))
       (place-unit army x y world))))
 
