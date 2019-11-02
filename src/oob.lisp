@@ -21,3 +21,23 @@
 
 (defstruct (oob-pos (:include oob-element))
   (superior nil :type (or sub-hq supreme-hq)))
+
+(defvar *turn-readiness-replenishment* 25)
+
+(defun readiness-replenish-mod (readiness)
+  "Returns multiplier to be used with unit's standard supply-use."
+  ;; Currently grows linearly from 1 up to 2 at *turn-readiness-replenishment*
+  (+ 1
+     (/ (min (- 100 readiness)
+	     *turn-readiness-replenishment*)
+	*turn-readiness-replenishment*)))
+
+(defun army-supply-request (army)
+  "Returns how many units of supply to request from HQ for maximum replenishment."
+  (apply #'+
+	 (mapcar #'(lambda (troop)
+		     (*
+		      (faction-unit-supply-use (unit-stack-type troop))
+		      (readiness-replenish-mod (unit-stack-readiness troop))
+		      (unit-stack-count troop)))
+		 (army-troops army))))
