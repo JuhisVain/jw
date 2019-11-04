@@ -107,6 +107,7 @@ with data field in full."
   (y 0 :type (integer 0 *))
   (troops)
   (supplies 0 :type fixnum)
+  (supply-req 100 :type (integer 0 *)) ; percentage, how much to request supply
   (counter))
 
 ;;; This should be used in a list in faction struct to be used
