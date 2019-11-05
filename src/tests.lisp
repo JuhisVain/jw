@@ -24,3 +24,8 @@
        (funit fast 20 10 1)
        )))
     ))
+
+(defun t-set-ready ()
+  (dolist (u *testunit*)
+    (dolist (uat (army-troops u))
+      (setf (unit-stack-readiness uat) 100))))
