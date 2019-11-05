@@ -134,6 +134,46 @@ If ADVANCE is true ARMY will move to TARGET's position, if possible."
 			 (army-y target))
 		   winner))))
 
+
+(defvar *turn-readiness-replenishment* 25)
+
+(defun readiness-replenish-mod (readiness)
+  "Returns multiplier to be used with unit's standard supply-use."
+  ;; Currently grows linearly from 1 up to 2 at *turn-readiness-replenishment*
+  (+ 1
+     (/ (min (- 100 readiness)
+	     *turn-readiness-replenishment*)
+	*turn-readiness-replenishment*)))
+
+(defun army-supply-use (army)
+  "Returns amount of supplies ARMY should request to replenish or maintain itself."
+  (declare (army army))
+  (apply #'+
+	 (mapcar #'(lambda (troop)
+		     (*
+		      (faction-unit-supply-use (unit-stack-type troop))
+		      (readiness-replenish-mod (unit-stack-readiness troop))
+		      (unit-stack-count troop)))
+		 (army-troops army))))
+
+(defun army-supply-space (army)
+  "Returns total amount of supplies ARMY can carry."
+  (declare (army army))
+  (apply #'+
+	 (mapcar #'(lambda (troop)
+		     (*
+		      (faction-unit-supply-space (unit-stack-type troop))
+		      (unit-stack-count troop)))
+		 (army-troops army))))
+
+(defun army-supply-request (army)
+  "Returns how many units of supply to request from HQ."
+  (* (/ (army-supply-req army)
+	100)
+     (+ (army-supply-use army) ; Use by turn
+	(- (army-supply-space army) ; Replenish army stocks:
+	   (army-supplies army)))))
+
 (defun step-unit-to (army x y &optional (world *world*))
   "Places ARMY to coordinates (X,Y), which must be ARMY's current location's neighbour."
   (let ((direction (neighbourp (cons x y)

@@ -44,42 +44,6 @@
 	  (supreme-hq-general this)
 	  (length (supreme-hq-subordinates this))))
 
-(defvar *turn-readiness-replenishment* 25)
-
-(defun readiness-replenish-mod (readiness)
-  "Returns multiplier to be used with unit's standard supply-use."
-  ;; Currently grows linearly from 1 up to 2 at *turn-readiness-replenishment*
-  (+ 1
-     (/ (min (- 100 readiness)
-	     *turn-readiness-replenishment*)
-	*turn-readiness-replenishment*)))
-
-;;Note: Will need to add to this to replenish army-supplies too
-(defun army-supply-request (army)
-  "Returns how many units of supply to request from HQ for maximum replenishment."
-
-  (* (/ (army-supply-req army)
-	100)
-     
-     (+
-      ;; Use by turn:
-      (apply #'+
-	     (mapcar #'(lambda (troop)
-			 (*
-			  (faction-unit-supply-use (unit-stack-type troop))
-			  (readiness-replenish-mod (unit-stack-readiness troop))
-			  (unit-stack-count troop)))
-		     (army-troops army)))
-
-      ;; Replenish army stocks:
-      (apply #'+
-	     (mapcar #'(lambda (troop)
-			 (*
-			  (faction-unit-supply-space (unit-stack-type troop))
-			  (unit-stack-count troop)))
-		     (army-troops army)))
-
-      )))
 
 ;; HQs will use their units with carry-space and full action-points to distribute supply
 ;; to subordinates.
