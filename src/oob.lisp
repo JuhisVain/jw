@@ -8,18 +8,25 @@
 (defstruct oob-element
   (army nil :type (or null army)))
 
-(defstruct (supreme-hq (:include oob-element)
-		       (:print-object supreme-hq-printer))
+(defstruct (hq (:include oob-element))
   (general nil :type (or general null))
   (subordinates nil)
   (supply-sources nil))
 
-(defstruct (sub-hq (:include oob-element)
+(defstruct (supreme-hq (:include hq)
+		       (:print-object supreme-hq-printer))
+;;  (general nil :type (or general null))
+;;  (subordinates nil)
+;;  (supply-sources nil)
+  )
+
+(defstruct (sub-hq (:include hq)
 		   (:print-object sub-hq-printer))
-  (general nil :type (or general null))
+;;  (general nil :type (or general null))
   (superior nil :type (or sub-hq supreme-hq))
-  (subordinates nil)
-  (supply-sources nil))
+;;  (subordinates nil)
+;;  (supply-sources nil)
+  )
 
 (defstruct (oob-pos (:include oob-element)
 		    (:print-object oob-pos-printer))
@@ -45,5 +52,24 @@
 	  (length (supreme-hq-subordinates this))))
 
 
-;; HQs will use their units with carry-space and full action-points to distribute supply
-;; to subordinates.
+;; HQs will use their WHEELED units with carry-space and full action-points to distribute supply
+;; to subordinates. Might want a separate distribution for trains?
+
+(defun total-supply-request (hq)
+  "Return total supply requested by HQ and all underlings combined."
+  (declare ((or sub-hq supreme-hq) hq))
+  (+
+   (army-supply-request (oob-element-army hq))
+   (apply #'+
+	  (mapcar #'(lambda (sub)
+		      (etypecase sub
+			(sub-hq (total-supply-request sub))
+			(oob-pos (army-supply-request (oob-element-army sub)))))
+		  (hq-subordinates hq)))))
+
+(defun supply-system (faction)
+
+  (unless (faction-chain-of-command faction)
+    (error "~&Faction ~a has no supreme HQ!~%" (faction-name faction)))
+
+  )
