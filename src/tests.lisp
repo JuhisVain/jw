@@ -28,4 +28,6 @@
 (defun t-set-ready ()
   (dolist (u *testunit*)
     (dolist (uat (army-troops u))
-      (setf (unit-stack-readiness uat) 100))))
+      (setf (unit-stack-readiness uat) 100)
+      (when (zerop (unit-stack-count (car (army-troops tu))))
+	(setf (unit-stack-count (car (army-troops tu))) 5)))))
