@@ -15,18 +15,11 @@
 
 (defstruct (supreme-hq (:include hq)
 		       (:print-object supreme-hq-printer))
-;;  (general nil :type (or general null))
-;;  (subordinates nil)
-;;  (supply-sources nil)
   )
 
 (defstruct (sub-hq (:include hq)
 		   (:print-object sub-hq-printer))
-;;  (general nil :type (or general null))
-  (superior nil :type (or sub-hq supreme-hq))
-;;  (subordinates nil)
-;;  (supply-sources nil)
-  )
+  (superior nil :type (or sub-hq supreme-hq)))
 
 (defstruct (oob-pos (:include oob-element)
 		    (:print-object oob-pos-printer))
@@ -50,6 +43,17 @@
   (format stream "Supreme-HQ of general ~a~%with ~a subordinates~%"
 	  (supreme-hq-general this)
 	  (length (supreme-hq-subordinates this))))
+
+(defun oob-pos-promote (position)
+  "Promotes an oob-pos to a sub-hq retaining superior HQ."
+  (declare (oob-pos position))
+  (let ((new-hq (make-sub-hq
+		 :army (oob-pos-army position)
+		 :superior (oob-pos-superior position)))
+	(superior-hq (oob-pos-superior position)))
+    (setf (army-coc (oob-pos-army position)) new-hq
+	  (hq-subordinates superior-hq)
+	  (delete position (push new-hq (hq-subordinates superior-hq))))))
 
 
 ;; HQs will use their WHEELED units with carry-space and full action-points to distribute supply
