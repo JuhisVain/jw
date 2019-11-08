@@ -31,3 +31,16 @@
       (setf (unit-stack-readiness uat) 100)
       (when (zerop (unit-stack-count (car (army-troops tu))))
 	(setf (unit-stack-count (car (army-troops tu))) 5)))))
+
+(defun print-coc (hq)
+  (declare (hq hq))
+  (format t "~a ~{~20,10T~a~%~}" ; Maybe I'll figure these out one day.
+	  (list (army-x (hq-army hq))
+		(army-y (hq-army hq))
+		(hq-general hq))
+	  (mapcar #'(lambda (x)
+		      (typecase x
+			(oob-pos (list (army-x (oob-pos-army x))
+				       (army-y (oob-pos-army x))))
+			(hq (print-coc x))))
+		  (hq-subordinates hq))))
