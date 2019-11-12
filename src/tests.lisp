@@ -29,8 +29,8 @@
   (dolist (u *testunit*)
     (dolist (uat (army-troops u))
       (setf (unit-stack-readiness uat) 100)
-      (when (zerop (unit-stack-count (car (army-troops tu))))
-	(setf (unit-stack-count (car (army-troops tu))) 5)))))
+      (when (zerop (unit-stack-count (car (army-troops u))))
+	(setf (unit-stack-count (car (army-troops u))) 5)))))
 
 (defun print-coc (hq)
   (declare (hq hq))
