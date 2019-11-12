@@ -332,7 +332,7 @@ for movement-type."
   ;;(setf *road-types* '(rail road)) ; Too late to set here
   (defmovetypeunits infantry "Commando" "ranger" "light-machinegun")
   (defmovetypeunits cavalry "Dragoon" "haccapelite" "knight")
-  (defmovetypeunits wheeled "Jeep" "truck" "formula1")
+  (defmovetypeunits wheeled "Jeep" "Truck" "formula1")
   (defmovetypeunits towed "8.8cm Flak" "8-pounder")
   (defmovetypeunits rail "Pendolino" "steam-locomotive")
   (defmovecosts infantry (grass 40) (hill 50) (mountain 80) (nforest 50)
@@ -353,7 +353,8 @@ for movement-type."
 	     (list
 	      (make-faction-unit :movement 'infantry :name "Commando")
 	      (make-faction-unit :movement 'cavalry :name "Dragoon")
-	      (make-faction-unit :movement 'wheeled :name "Jeep" :carry-space 1)
+	      (make-faction-unit :movement 'wheeled :name "Jeep" :carry-space 2 :size 10)
+	      (make-faction-unit :movement 'wheeled :name "Truck" :carry-space 20 :size 25)
 	      (make-faction-unit :movement 'towed :name "8.8cm Flak")
 	      (make-faction-unit :movement 'rail :name "Pendolino")))) ; etc..
    (world-factions *world*))
