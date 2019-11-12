@@ -27,6 +27,12 @@
 
 (defun t-set-ready ()
   (dolist (u *testunit*)
+    ;; Give supreme-hq some trucks:
+    (when (supreme-hq-p (army-coc u))
+      (push (make-unit-stack :type (unit-type-by-name "Truck" (army-owner (car *testunit*)))
+			     :count 10
+			     :readiness 100)
+	    (army-troops u)))
     (dolist (uat (army-troops u))
       (setf (unit-stack-readiness uat) 100)
       (when (zerop (unit-stack-count (car (army-troops u))))
