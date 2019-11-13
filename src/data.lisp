@@ -119,6 +119,8 @@ with data field in full."
 ;;        (declare (unit-stack troop))
 ;;        (faction-unit-movement (unit-stack-type troop))) ..)
 (defmacro create-nested-readers (reader-name nest-slot nest-struct-def mother-struct-def)
+  "Generates reader functions for NEST-STRUCT's slots using MOTHER-STRUCT instances as arguments,
+in form: (READERNAME-SLOTNAME MOTHERSTRUCTNAME)."
   (declare (symbol reader-name nest-slot)
 	   (list mother-struct-def nest-struct-def))
   (let* ((mother-name (if (listp (cadr mother-struct-def))
@@ -127,7 +129,7 @@ with data field in full."
 	 (nest-name (if (listp (cadr nest-struct-def))
 			(caadr nest-struct-def)
 			(cadr nest-struct-def)))
-	 (nest-accessor `(,(conc-syms mother-name '- nest-slot) troop)))
+	 (nest-accessor `(,(conc-syms mother-name '- nest-slot) troop))) ;; might want to rename "troop"
     `(progn ,mother-struct-def
 	    ,nest-struct-def
 	    ,@(mapcar #'(lambda (slot)
@@ -142,7 +144,7 @@ with data field in full."
 		      (cddr nest-struct-def)))))
 
 (create-nested-readers
- troop type ;; whoop whoop
+ troop type
 
 ;;; This should be used in a list in faction struct to be used
  ;; for the basic values of a type of unit.
