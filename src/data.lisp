@@ -110,30 +110,66 @@ with data field in full."
   (supply-req 100 :type (integer 0 *)) ; percentage, how much to request supply
   (counter))
 
-;;; This should be used in a list in faction struct to be used
-;; for the basic values of a type of unit.
-;; The values in this thing should only be changed by faction teching up ??maybe??
-;; Real units on map should then have experience, morale, readiness, cohesion etc..
-;; That will be taken into account when checking these during play.
-(defstruct faction-unit
-  (movement nil :type symbol)
-  (name nil :type string)
-  (vision) ; TODO
-  (carry-space 0 :type fixnum) ; How many sizes worth of units this thing can carry
-  (size 1 :type fixnum)
-  (supply-use 2 :type fixnum) ; Supplies used in a turn based on readiness ???
-  (supply-space 4 :type fixnum) ; How many supplies this thing can carry
-  (fuel-use 0 :type fixnum) ; Fuel used per 100 move-points
-  (combat-values) ; TODO: a structure containing data on fighting on terrain against what?? 
-  )
+;; (create-nest-readers troop
+;;                      (defstruct unit-stack ...)
+;;                      movement
+;;                      (defstruct faction-unit ...))
+;; -> (progn ...
+;;      (defun troop-movement (troop)
+;;        (declare (unit-stack troop))
+;;        (faction-unit-movement (unit-stack-type troop))) ..)
+(defmacro create-nested-readers (reader-name nest-slot nest-struct-def mother-struct-def)
+  (declare (symbol reader-name nest-slot)
+	   (list mother-struct-def nest-struct-def))
+  (let* ((mother-name (if (listp (cadr mother-struct-def))
+			  (caadr mother-struct-def)
+			  (cadr mother-struct-def)))
+	 (nest-name (if (listp (cadr nest-struct-def))
+			(caadr nest-struct-def)
+			(cadr nest-struct-def)))
+	 (nest-accessor `(,(conc-syms mother-name '- nest-slot) troop)))
+    `(progn ,mother-struct-def
+	    ,nest-struct-def
+	    ,@(mapcar #'(lambda (slot)
+			  (let ((slot-name (if (listp slot)
+					       (car slot)
+					       slot)))
+			    `(defun ,(conc-syms reader-name '- slot-name)
+				 (troop)
+			       (declare (,mother-name troop))
+			       (,(conc-syms nest-name '- slot-name)
+				 ,nest-accessor))))
+		      (cddr nest-struct-def)))))
 
-(defstruct unit-stack
-  (type nil :type faction-unit)
-  (count 0 :type fixnum)
-  (action-points 100 :type (integer 0 100))
-  (experience 0 :type fixnum)
-  (morale 0 :type fixnum)
-  (readiness 0 :type (integer 0 100)))
+(create-nested-readers
+ troop type ;; whoop whoop
+
+;;; This should be used in a list in faction struct to be used
+ ;; for the basic values of a type of unit.
+ ;; The values in this thing should only be changed by faction teching up ??maybe??
+ ;; Real units on map should then have experience, morale, readiness, cohesion etc..
+ ;; That will be taken into account when checking these during play.
+ (defstruct faction-unit
+   (movement nil :type symbol)
+   (name nil :type string)
+   (vision) ; TODO
+   (carry-space 0 :type fixnum) ; How many sizes worth of units this thing can carry
+   (size 1 :type fixnum)
+   (supply-use 2 :type fixnum) ; Supplies used in a turn based on readiness ???
+   (supply-space 4 :type fixnum) ; How many supplies this thing can carry
+   (fuel-use 0 :type fixnum) ; Fuel used per 100 move-points
+   (combat-values) ; TODO: a structure containing data on fighting on terrain against what?? 
+   )
+
+ (defstruct unit-stack
+   (type nil :type faction-unit)
+   (count 0 :type fixnum)
+   (action-points 100 :type (integer 0 100))
+   (experience 0 :type fixnum)
+   (morale 0 :type fixnum)
+   (readiness 0 :type (integer 0 100)))
+
+)
 
 (deftype coordinates ()
   '(cons fixnum fixnum))
