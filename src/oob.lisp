@@ -58,6 +58,8 @@
 
 ;; HQs will use their WHEELED units with carry-space and full action-points to distribute supply
 ;; to subordinates. Might want a separate distribution for trains?
+;; Need to start at cannon fodder requesting supplies at bottom of tree and move up through HQs
+;; But also need HQs to know how much all of their subordinates need before can distribute...
 
 (defun total-supply-request (hq)
   "Return total supply requested by HQ and all underlings combined."
@@ -71,9 +73,33 @@
 			(oob-pos (army-supply-request (oob-element-army sub)))))
 		  (hq-subordinates hq)))))
 
+(defun hq-usable-cargo (hq move-type)
+  "How much cargo HQ can move around using MOVE-TYPE cargo-movers."
+  (declare (hq hq) (symbol move-type))
+  (reduce #'+ (army-troops (hq-army hq))
+	  :key #'(lambda (troop)
+		   (if (eq (troop-movement troop)
+			   move-type)
+		       (round
+			(* ;; total carry space * working capability percentage
+			 (troop-carry-space troop)
+			 (unit-stack-count troop)
+			 (/ (unit-stack-action-points troop) 100)
+			 (/ (unit-stack-readiness troop) 100)))
+		       0))))
+
 (defun supply-system (faction)
 
   (unless (faction-chain-of-command faction)
     (error "~&Faction ~a has no supreme HQ!~%" (faction-name faction)))
 
-  )
+  ;; TODO: First it would be better to check railways supplies
+  ;; Maybe supplies can be delivered using all troops?
+
+  ;; Wheeled supplies:
+  (let* ((hq (faction-chain-of-command faction))
+	 (cargo-space (hq-useable-cargo hq)) ;if not wheeled
+
+	 )
+
+    ))
