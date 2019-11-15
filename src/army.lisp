@@ -208,18 +208,25 @@ If ADVANCE is true ARMY will move to TARGET's position, if possible."
     ))
 
 
-;;TODO: It should always be possible to move at least one tile but currently impossible.
 (defun step-cost (army x y dir world
 		  &optional
-		    (movetypes (troop-movecarry-data (army-troops army)))
-		    (slow-moves (slowest-movecosts movetypes)))
+		    (movecarries (troop-movecarry-data (army-troops army)))
+		    (slow-moves (slowest-movecosts movecarries))
+		    (movetypes (mapcar #'movecarry-movetype movecarries)))
   "Returns the cost of stepping ARMY ***from*** DIR ***to*** (X,Y).
-If MOVETYPES given, ARMY's actual movetypes are ignored and ARMY will
-only be used to determine owning faction."
+If MOVECARRIES set to NIL, ARMY's actual movetypes are ignored and ARMY will
+only be used to determine owning faction. SLOW-MOVES and MOVETYPES then must
+be supplied.
+
+SLOW-MOVES should be an alist of (tiletype . (cost))
+most likely source is (gethash movement-type *unit-type-movecosts*).
+
+MOVETYPES is a list of movement-types."
   (let* ((roads (coord-border-roads x y dir world))
 	 (river (coord-border-rivers x y dir world))
 	 (terrain (coord-types x y world))
-	 (locations (coord-locations x y world)))
+	 (locations (coord-locations x y world))
+	 )
 
     (cond
       ;; 1st check: If there's an unknown enemy at (x y) make tile appear movable
@@ -245,7 +252,7 @@ only be used to determine owning faction."
 			    roads
 			    :test #'(lambda (road-cost road)
 				      (eq road (car road-cost)))))))
-	       (mapcar #'movecarry-movetype movetypes)))
+	       movetypes))
        )
       
       (locations
