@@ -213,7 +213,8 @@ If ADVANCE is true ARMY will move to TARGET's position, if possible."
 		  &optional
 		    (movetypes (troop-movecarry-data (army-troops army)))
 		    (slow-moves (slowest-movecosts movetypes)))
-  "Returns the cost of stepping ARMY ***from*** DIR ***to*** (X,Y)."
+  "Returns the cost of stepping ARMY ***from*** DIR ***to*** (X,Y).
+If MOVETYPES given, ARMY's actual movetypes are ignored."
   (let* ((roads (coord-border-roads x y dir world))
 	 (river (coord-border-rivers x y dir world))
 	 (terrain (coord-types x y world))
