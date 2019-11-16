@@ -358,8 +358,8 @@ Optional endfunc takes x y world, if returns true this function returns before f
   "COSTFUNC takes takes two coordinate conses and returns the cost of moving from the first
 to the second.
 
-HEURISTIC should return ??best case?? estimate of total cost of moving from any
-coordinate cons to (X1, Y1)."
+HEURISTIC takes two coordinate conses, any coord and end coord should return ??best case??
+estimate of total cost of moving from first arg to (X1, Y1)."
   (let ((xy0 (cons x0 y0))
 	(xy1 (cons x1 y1))
 	(frontier (make-heap))
