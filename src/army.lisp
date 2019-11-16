@@ -7,7 +7,6 @@
 
 (defvar *unit-types* (make-hash-table :test 'equal)) ; "dragoon" # cavalry
 (defvar *unit-type-movecosts* (make-hash-table :test 'eq)) ; cavalry # ((grass 2) (hill 3) ...)
-(defvar *unit-type-road-movecosts* (make-hash-table :test 'eq))
 
 (defvar *road-types* '(rail road)) ; (road rail maglev teslavacuumtube footpath etc..)
 
@@ -248,7 +247,7 @@ MOVETYPES is a list of movement-types."
 			   #'cadr ; from the costs
 			   (intersection ; out of list of road-costs for current movetype
 			    ;; This works ONLY IF result is picked from LIST1 argument
-			    (gethash movetype *unit-type-road-movecosts*)
+			    (gethash movetype *unit-type-movecosts*)
 			    roads
 			    :test #'(lambda (road-cost road)
 				      (eq road (car road-cost)))))))
@@ -313,16 +312,8 @@ First element will be cons of roadtypeslist and river."
      (tile-type to))))
 
 (defmacro defmovecosts (movement-type &rest terrain-costs)
-  "*Road-types* needs to be set up before using this. Defines terrain specific entry costs
-for movement-type."
-  (let ((movecosts nil)
-	(roadcosts nil))
-    (dolist (tc terrain-costs)
-      (if (member (car tc) *road-types*)
-	  (push tc roadcosts)
-	  (push tc movecosts)))
-    `(setf (gethash ',movement-type *unit-type-movecosts*) ',movecosts
-	   (gethash ',movement-type *unit-type-road-movecosts*) ',roadcosts)))
+  "Defines terrain specific entry costs for MOVEMENT-TYPE."
+  `(setf (gethash ',movement-type *unit-type-movecosts*) ',terrain-costs))
 
 ;; Maybe rename:
 (defmacro defmovetypeunits (move-type &rest unit-names)
