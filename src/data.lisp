@@ -348,13 +348,18 @@ Optional endfunc takes x y world, if returns true this function returns before f
 		    ((member 'mountain xy1-terrain) 5)
 		    ((member 'hill xy1-terrain) 3)
 		    (t 1))))
-	:heuristic
+	:heuristic ;; Notice condition (t 1) above
 	#'(lambda (current end)
 	    (distance (car current) (cdr current)
 		      (car end) (cdr end))))))
 
 
 (defun a* (x0 y0 x1 y1 &key (max-range 1000000) (world *world*) costfunc endfunc heuristic)
+  "COSTFUNC takes takes two coordinate conses and returns the cost of moving from the first
+to the second.
+
+HEURISTIC should return ??best case?? estimate of total cost of moving from any
+coordinate cons to (X1, Y1)."
   (let ((xy0 (cons x0 y0))
 	(xy1 (cons x1 y1))
 	(frontier (make-heap))
