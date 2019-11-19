@@ -10,6 +10,13 @@
 
 (defvar *road-types* '(rail road)) ; (road rail maglev teslavacuumtube footpath etc..)
 
+(defun army-xy (army)
+  "Returns the values from the x and y slots in ARMY as a single cons."
+  (declare (army army))
+  (the coordinates
+       (cons (army-x army)
+	     (army-y army))))
+
 (defun list-ring (xy radius)
   "Returns list of coordinate conses around XY at distance radius."
   (let ((current xy)
@@ -209,11 +216,13 @@ If ADVANCE is true ARMY will move to TARGET's position, if possible."
 
 (defun step-cost (army x y dir world
 		  &optional
+		    (faction (army-owner army))
 		    (movecarries (troop-movecarry-data (army-troops army)))
 		    (slow-moves (slowest-movecosts movecarries)))
   "Returns the cost of stepping ARMY ***from*** DIR ***to*** (X,Y).
 If MOVECARRIES set to NIL, ARMY's actual movetypes are ignored and ARMY will
 only be used to determine owning faction. SLOW-MOVES then must be supplied.
+If ARMY set to nil FACTION must be supplied.
 
 SLOW-MOVES should be an alist of (tiletype . (cost))
 most likely source is (gethash movement-type *unit-type-movecosts*)."
@@ -227,9 +236,9 @@ most likely source is (gethash movement-type *unit-type-movecosts*)."
       ;; 1st check: If there's an unknown enemy at (x y) make tile appear movable
       ;; if it's known make tile unmoveable
       ;; This seems like a human interface thing, but the AI should have the same disadvantage in theory...
-      ((let ((enemy (enemy-army-at (army-owner army) x y))) 
+      ((let ((enemy (enemy-army-at faction x y))) 
 	 (when enemy                                        
-	   (let ((known (gethash enemy (faction-enemy-unit-info (army-owner army)))))
+	   (let ((known (gethash enemy (faction-enemy-unit-info faction))))
 	     (when known
 	       (unit-info-has-been-seen known)))))
        most-positive-fixnum)
