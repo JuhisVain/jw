@@ -210,17 +210,13 @@ If ADVANCE is true ARMY will move to TARGET's position, if possible."
 (defun step-cost (army x y dir world
 		  &optional
 		    (movecarries (troop-movecarry-data (army-troops army)))
-		    (slow-moves (slowest-movecosts movecarries))
-		    (movetypes (mapcar #'movecarry-movetype movecarries)))
+		    (slow-moves (slowest-movecosts movecarries)))
   "Returns the cost of stepping ARMY ***from*** DIR ***to*** (X,Y).
 If MOVECARRIES set to NIL, ARMY's actual movetypes are ignored and ARMY will
-only be used to determine owning faction. SLOW-MOVES and MOVETYPES then must
-be supplied.
+only be used to determine owning faction. SLOW-MOVES then must be supplied.
 
 SLOW-MOVES should be an alist of (tiletype . (cost))
-most likely source is (gethash movement-type *unit-type-movecosts*).
-
-MOVETYPES is a list of movement-types."
+most likely source is (gethash movement-type *unit-type-movecosts*)."
   (let* ((roads (coord-border-roads x y dir world))
 	 (river (coord-border-rivers x y dir world))
 	 (terrain (coord-types x y world))
@@ -239,21 +235,9 @@ MOVETYPES is a list of movement-types."
        most-positive-fixnum)
       ;; No known enemies: do the cost computing
       (roads ;; Road movement ignores terrain (even mountains??)
-       (apply #'max
-	      (mapcar
-	       #'(lambda (movetype) ; for all movetypes in army
-		   (apply #'min ; choose smallest
-			  (mapcar
-			   #'cadr ; from the costs
-			   (intersection ; out of list of road-costs for current movetype
-			    ;; This works ONLY IF result is picked from LIST1 argument
-			    (gethash movetype *unit-type-movecosts*)
-			    roads
-			    :test #'(lambda (road-cost road)
-				      (eq road (car road-cost)))))))
-	       movetypes))
-       )
-      
+       (apply #'max (mapcar #'(lambda (road-type)
+				(cadr (assoc road-type slow-moves)))
+			    roads)))
       (locations
        (+ (if river
 	      (cadr (assoc river slow-moves))
