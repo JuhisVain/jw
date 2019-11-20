@@ -275,7 +275,7 @@ most likely source is (gethash movement-type *unit-type-movecosts*)."
     (breadth-first-fill
      start-x start-y :range move-range
      :costfunc #'(lambda (x y dir world)
-		   (step-cost army x y dir world movetypes slow-moves)))))
+		   (step-cost army x y dir world (army-owner army) movetypes slow-moves)))))
 
 ;; These would probably work better as macros so they could be set.
 (defun coord-types (x y &optional (world *world*))
