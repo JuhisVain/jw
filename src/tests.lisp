@@ -51,3 +51,9 @@
 				       (army-y (oob-pos-army x))))
 			(hq (print-coc x))))
 		  (hq-subordinates hq))))
+
+(defun full-hash-path (xy ht)
+  (let ((step (gethash xy ht)))
+    (when step
+      (cons step
+	    (full-hash-path (cadr step) ht)))))
