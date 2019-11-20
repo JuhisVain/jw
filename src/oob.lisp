@@ -73,7 +73,7 @@
 			(oob-pos (army-supply-request (oob-element-army sub)))))
 		  (hq-subordinates hq)))))
 
-(defun hq-usable-cargo (hq move-type)
+(defun hq-useable-cargo (hq move-type)
   "How much cargo HQ can move around using MOVE-TYPE cargo-movers."
   (declare (hq hq) (symbol move-type))
   (reduce #'+ (army-troops (hq-army hq))
@@ -88,6 +88,53 @@
 			 (/ (unit-stack-readiness troop) 100)))
 		       0))))
 
+(defun range-delivery-percentage (range)
+  "Percentage of supply supplier can supply to suplee at RANGE."
+  (cond ((<= range 100) 100/100)
+	((<= range 150) 75/100)
+	((<= range 200) 50/100)
+	(t 0/100)))
+
+(defun hq-transfer-supply (origin destination amount)
+  (format t "~&~a sends ~a supplies to ~a~%"
+	  (let ((oa (oob-element-army origin)))
+	    (cons (army-x oa)
+		  (army-y oa)))
+	  (floor amount)
+	  (let ((da (oob-element-army destination)))
+	    (cons (army-x da)
+		  (army-y da)))))
+
+(defun movetype-distance (faction movetype xy0 xy1)
+  "The cost in action points that a troop of MOVETYPE belonging to FACTION
+takes to move from coordinates XY0 to XY1."
+  (declare (faction faction) (symbol movetype)
+	   (coordinates xy0 xy1))
+  (car ; the CAR of the destination's hash value is the cost to get there
+   (gethash xy1
+	    (a* (car xy0) (cdr xy0)
+		(car xy1) (cdr xy1)
+		:costfunc #'(lambda (from to)
+			      ;; supply cannot travel through unknown or enemy lands:
+			      (if (eq (tile-owner (tile-at (car to) (cdr to)))
+				      faction)
+				  (step-cost nil (car from) (cdr from)
+					     (neighbourp from to)
+					     *world*
+					     faction
+					     nil
+					     (gethash movetype *unit-type-movecosts*)
+					     )
+				  1000000))
+		;;; If the above magic number is not :max-range (or more?)
+		;;; something happens and a* breaks.
+		:heuristic #'(lambda (from to)
+			       (* (distance (car from) (cdr from)
+					    (car to) (cdr to))
+				  (cadr (assoc 'rail ; fastest possible TODO: dunno what to do
+					       (gethash movetype *unit-type-movecosts*))))))
+	    )))
+
 (defun supply-system (faction)
 
   (unless (faction-chain-of-command faction)
@@ -98,8 +145,35 @@
 
   ;; Wheeled supplies:
   (let* ((hq (faction-chain-of-command faction))
-	 (cargo-space (hq-useable-cargo hq)) ;if not wheeled
+	 (cargo-space (hq-useable-cargo hq 'WHEELED))
+	 (sub-request-list
+	  (mapcar
+	   #'(lambda (sub)
+	       (let ((hq-army (hq-army hq))
+		     (sub-army (oob-pos-army sub)))
 
-	 )
+		 ;; The HQ and subordinates might be on opposite sides of the map
+		 ;; -> breadth first fill can't be used.
+		 ;; However if done with a set max range of travel it could be used..
 
+		 (* ; request * range%
+		  (typecase sub
+		    (sub-hq (total-supply-request sub));Why is this unreachable?
+		    (t (army-supply-request sub-army)))
+		  (range-delivery-percentage
+		   (movetype-distance
+		    faction 'WHEELED (army-xy hq-army) (army-xy sub-army))))
+		 
+		 ))
+	   (hq-subordinates hq)
+	   )))
+
+    (let ((req-capability (/ (min cargo-space (army-supplies (hq-army hq)))
+			     (apply #'+ sub-request-list))))
+      (loop
+	 for sub-request in sub-request-list
+	 for sub in (hq-subordinates hq)
+	 do (hq-transfer-supply hq sub (* sub-request req-capability)))
+      )
+    
     ))
