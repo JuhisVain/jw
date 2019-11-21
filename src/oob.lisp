@@ -55,6 +55,21 @@
 	  (hq-subordinates superior-hq)
 	  (delete position (push new-hq (hq-subordinates superior-hq))))))
 
+(defun oob-transfer-hq (transfer hq)
+  "Changes the superior-hq of TRANSFER to HQ."
+  (declare ((or oob-pos sub-hq) transfer)
+	   (hq hq))
+  (etypecase transfer ; should have gone with objects...
+    (sub-hq
+     (setf (hq-subordinates (sub-hq-superior transfer))
+	   (delete transfer (hq-subordinates (sub-hq-superior transfer)) :test #'eq))
+     (setf (sub-hq-superior transfer) hq))
+    (oob-pos
+     (setf (hq-subordinates (oob-pos-superior transfer))
+	   (delete transfer (hq-subordinates (oob-pos-superior transfer)) :test #'eq))
+     (setf (oob-pos-superior transfer) hq)))
+  (pushnew transfer (hq-subordinates hq)))
+
 
 ;; HQs will use their WHEELED units with carry-space and full action-points to distribute supply
 ;; to subordinates. Might want a separate distribution for trains?
