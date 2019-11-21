@@ -395,7 +395,8 @@ estimate of total cost of moving from first arg to (X1, Y1)."
 		   (dirn (cadr neighbour))
 		   (new-cost (+ (car (gethash xyc came-from))
 				(funcall costfunc xyc xyn))))
-	      (when (and (not (gethash xyn came-from))
+	      (when (and (or (not (gethash xyn came-from))
+			     (< new-cost (car (gethash xyn came-from))))
 			 (<= new-cost max-range))
 		(heap-insert frontier (list xyn dirn) (- max-range (+ new-cost
 								      (funcall heuristic xyn xy1))))
