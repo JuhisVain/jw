@@ -78,7 +78,7 @@
 
 (defun total-supply-request (hq)
   "Return total supply requested by HQ and all underlings combined."
-  (declare ((or sub-hq supreme-hq) hq))
+  (declare (hq hq))
   (+
    (army-supply-request (oob-element-army hq))
    (apply #'+
@@ -163,7 +163,7 @@ takes to move from coordinates XY0 to XY1."
 	  (mapcar
 	   #'(lambda (sub)
 	       (let ((hq-army (hq-army hq))
-		     (sub-army (oob-pos-army sub)))
+		     (sub-army (oob-element-army sub)))
 
 		 ;; The HQ and subordinates might be on opposite sides of the map
 		 ;; -> breadth first fill can't be used.
@@ -171,7 +171,7 @@ takes to move from coordinates XY0 to XY1."
 
 		 (* ; request * range%
 		  (typecase sub
-		    (sub-hq (total-supply-request sub));Why is this unreachable?
+		    (sub-hq (total-supply-request sub))
 		    (t (army-supply-request sub-army)))
 		  (range-delivery-percentage
 		   (movetype-distance
@@ -181,8 +181,9 @@ takes to move from coordinates XY0 to XY1."
 	   (hq-subordinates hq)
 	   )))
 
-    (let ((req-capability (/ (min cargo-space (army-supplies (hq-army hq)))
-			     (apply #'+ sub-request-list))))
+    (let* ((total-req (apply #'+ sub-request-list))
+	   (req-capability (/ (min cargo-space total-req (army-supplies (hq-army hq)))
+			      total-req)))
       (loop
 	 for sub-request in sub-request-list
 	 for sub in (hq-subordinates hq)
