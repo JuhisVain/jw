@@ -126,8 +126,6 @@ takes to move from coordinates XY0 to XY1."
 					     (gethash movetype *unit-type-movecosts*)
 					     )
 				  1000000))
-		;;; If the above magic number is not :max-range (or more?)
-		;;; something happens and a* breaks.
 		:heuristic #'(lambda (from to)
 			       (* (distance (car from) (cdr from)
 					    (car to) (cdr to))
