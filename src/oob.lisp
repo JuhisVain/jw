@@ -164,11 +164,6 @@ takes to move from coordinates XY0 to XY1."
 	   #'(lambda (sub)
 	       (let ((hq-army (hq-army hq))
 		     (sub-army (oob-element-army sub)))
-
-		 ;; The HQ and subordinates might be on opposite sides of the map
-		 ;; -> breadth first fill can't be used.
-		 ;; However if done with a set max range of travel it could be used..
-
 		 (* ; request * range%
 		  (typecase sub
 		    (sub-hq (total-supply-request sub))
@@ -181,12 +176,14 @@ takes to move from coordinates XY0 to XY1."
 	   (hq-subordinates hq)
 	   )))
 
-    (let* ((total-req (apply #'+ sub-request-list))
+    (let* ((all-requests (cons (army-supply-request (hq-army hq))
+			       sub-request-list))
+	   (total-req (apply #'+ all-requests))
 	   (req-capability (/ (min cargo-space total-req (army-supplies (hq-army hq)))
 			      total-req)))
       (loop
-	 for sub-request in sub-request-list
-	 for sub in (hq-subordinates hq)
+	 for sub-request in all-requests
+	 for sub in (cons hq (hq-subordinates hq))
 	 do (hq-transfer-supply hq sub (* sub-request req-capability)))
       )
     
