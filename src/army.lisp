@@ -328,6 +328,7 @@ First element will be cons of roadtypeslist and river."
   (defmovetypeunits wheeled "Jeep" "Truck" "formula1")
   (defmovetypeunits towed "8.8cm Flak" "8-pounder")
   (defmovetypeunits rail "Pendolino" "steam-locomotive")
+  (defmovetypeunits moveable "Supply")
   (defmovecosts infantry (grass 40) (hill 50) (mountain 80) (nforest 50)
 		(sea 10000) (city 20) (stream 20) (river 50) (rail 20) (road 20))
   (defmovecosts cavalry (grass 30) (hill 40) (mountain 80) (nforest 50)
@@ -336,8 +337,10 @@ First element will be cons of roadtypeslist and river."
 		(sea 10000) (city 10) (stream 70) (river 90) (rail 10) (road 10))
   (defmovecosts towed (grass 60) (hill 80) (mountain 100) (nforest 70)
 		(sea 10000) (city 30) (stream 70) (river 90) (rail 30) (road 30))
-  (defmovecosts rail (grass 1000) (hill 1000) (mountain 1000) (nforest 1000)
-		(sea 10000) (city 1000) (stream 1000) (river 1000) (rail 10) (road 1000))
+  (defmovecosts rail (grass +inf+) (hill +inf+) (mountain +inf+) (nforest +inf+)
+		(sea +inf+) (city +inf+) (stream +inf+) (river +inf+) (rail 10) (road +inf+))
+  (defmovecosts moveable (grass +inf+) (hill +inf+) (mountain +inf+) (nforest +inf+)
+		(sea +inf+) (city +inf+) (stream +inf+) (river +inf+) (rail +inf+) (road +inf+))
   ;;; Should be possible to set priorityqueue default size based on lowest movecost of defmovecosts
 
   (mapcar
@@ -346,10 +349,14 @@ First element will be cons of roadtypeslist and river."
 	     (list
 	      (make-faction-unit :movement 'infantry :name "Commando")
 	      (make-faction-unit :movement 'cavalry :name "Dragoon")
-	      (make-faction-unit :movement 'wheeled :name "Jeep" :carry-space 2 :size 10)
-	      (make-faction-unit :movement 'wheeled :name "Truck" :carry-space 20 :size 25)
+	      (make-faction-unit :movement 'wheeled :name "Jeep"
+				 :carry-space 2 :size 10)
+	      (make-faction-unit :movement 'wheeled :name "Truck"
+				 :carry-space 20 :size 25)
 	      (make-faction-unit :movement 'towed :name "8.8cm Flak")
-	      (make-faction-unit :movement 'rail :name "Pendolino")))) ; etc..
+	      (make-faction-unit :movement 'rail :name "Pendolino")
+	      (make-faction-unit :movement 'moveable :name "Supply"
+				 :supply-use 0 :supply-space 0)))) ; etc..
    (world-factions *world*))
   
   nil ; No need to print previous
