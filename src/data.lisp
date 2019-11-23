@@ -1,5 +1,7 @@
 (in-package :war)
 
+(defconstant +inf+ most-positive-fixnum)
+
 (defmacro count+list (&body list)
   "Push LIST's length to beginning of LIST."
   `'(,(length list) ,@list))
