@@ -193,6 +193,37 @@ If ADVANCE is true ARMY will move to TARGET's position, if possible."
 		      (unit-stack-type troop))))
 	(army-troops army))))
 
+(defun army-validate-supply (army)
+  "Moves ARMY's excess supplies to a unit-stack and required supplies from
+unit-stack to army-supplies."
+  (let ((stockpile (army-supply-stockpiles army))
+	(deficit (- (army-supply-space army)
+		    (army-supplies army))))
+    (cond ((and stockpile ; not enough supply carried
+		(> deficit 0)
+		(> (unit-stack-count stockpile)
+		   deficit))
+	   (decf (unit-stack-count stockpile) deficit)
+	   (incf (army-supplies army) deficit))
+	  ((and stockpile ; not enough supply carried & not enough stockpile
+		(> deficit 0)
+		(<= (unit-stack-count stockpile)
+		    deficit))
+	   (incf (army-supplies army) (unit-stack-count stockpile))
+	   (setf (army-troops army)
+		 (delete stockpile (army-troops army) :test #'eq)))
+	  ((and stockpile ; Too much supply carried
+		(< deficit 0))
+	   (incf (army-supplies army) deficit)
+	   (decf (unit-stack-count stockpile) deficit))
+	  ((and (null stockpile) ; Too much supply carried
+		(< deficit 0))
+	   (incf (army-supplies army) deficit)
+	   (push (make-unit-stack :type (unit-type-by-name
+					 "Supply" (army-owner army))
+				  :count (- deficit))
+		 (army-troops army))))))
+
 (defun step-unit-to (army x y &optional (world *world*))
   "Places ARMY to coordinates (X,Y), which must be ARMY's current location's neighbour."
   (let ((direction (neighbourp (cons x y)
