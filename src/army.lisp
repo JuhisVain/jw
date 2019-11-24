@@ -180,6 +180,19 @@ If ADVANCE is true ARMY will move to TARGET's position, if possible."
 	(- (army-supply-space army) ; Replenish army stocks:
 	   (army-supplies army)))))
 
+(defun army-supply-stockpiles (army)
+  "Returns Army's supply stockpile unit-stack, or nil if not found."
+  ;;; TODO: Supply ought to be the same everywhere
+  ;; -> define a constant faction unit
+  (declare (army army))
+  (the (or null unit-stack)
+       (find-if
+	#'(lambda (troop)
+	    (string= "Supply"
+		     (faction-unit-name
+		      (unit-stack-type troop))))
+	(army-troops army))))
+
 (defun step-unit-to (army x y &optional (world *world*))
   "Places ARMY to coordinates (X,Y), which must be ARMY's current location's neighbour."
   (let ((direction (neighbourp (cons x y)
