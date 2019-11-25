@@ -350,7 +350,12 @@ First element will be cons of roadtypeslist and river."
 
 (defmacro defmovecosts (movement-type &rest terrain-costs)
   "Defines terrain specific entry costs for MOVEMENT-TYPE."
-  `(setf (gethash ',movement-type *unit-type-movecosts*) ',terrain-costs))
+  `(setf (gethash ',movement-type *unit-type-movecosts*)
+	 ',(mapcar #'(lambda (type-cost)
+		       (if (symbolp (cadr type-cost))
+			   (list (car type-cost) (symbol-value (cadr type-cost)))
+			   type-cost))
+		   terrain-costs)))
 
 ;; Maybe rename:
 (defmacro defmovetypeunits (move-type &rest unit-names)
