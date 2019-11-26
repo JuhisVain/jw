@@ -200,6 +200,24 @@ If ADVANCE is true ARMY will move to TARGET's position, if possible."
    (or (army-supply-stockpiles army)
        (return-from army-supply-stockpiles-count 0))))
 
+(defun increase-supply-stockpiles (army amount)
+  "Increases ARMY's supply stockpiles by AMOUNT and returns total."
+  (declare (army army) ((integer 0 *) amount))
+  (incf (unit-stack-count
+	 (or (army-supply-stockpiles army)
+	     (make-unit-stack :type (unit-type-by-name
+				     "Supply" (army-owner army))
+			      :count 0)))
+	amount))
+
+(defun decrease-supply-stockpiles (army amount)
+  "Decreases ARMY's supply stockpiles by AMOUNT and returns total."
+  (declare (army army) ((integer 0 *) amount))
+  ;; Should puke out errors if result is < 0 or no stockpiles at all.
+  (decf (unit-stack-count (army-supply-stockpiles army))
+	amount))
+  
+
 (defun army-validate-supply (army)
   "Moves ARMY's excess supplies to a unit-stack and required supplies from
 unit-stack to army-supplies."
