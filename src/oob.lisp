@@ -179,12 +179,15 @@ takes to move from coordinates XY0 to XY1."
     (let* ((all-requests (cons (army-supply-request (hq-army hq))
 			       sub-request-list))
 	   (total-req (apply #'+ all-requests))
-	   (req-capability (/ (min cargo-space total-req (army-supplies (hq-army hq)))
+	   (req-capability (/ (min cargo-space total-req
+				   (army-supply-stockpiles-count (hq-army hq)))
 			      total-req)))
       (loop
 	 for sub-request in all-requests
 	 for sub in (cons hq (hq-subordinates hq))
 	 do (hq-transfer-supply hq sub (* sub-request req-capability)))
       )
+
+
     
     ))
