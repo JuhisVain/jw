@@ -181,7 +181,7 @@ If ADVANCE is true ARMY will move to TARGET's position, if possible."
 	   (army-supplies army)))))
 
 (defun army-supply-stockpiles (army)
-  "Returns Army's supply stockpile unit-stack, or nil if not found."
+  "Returns ARMY's supply stockpile unit-stack, or nil if not found."
   ;;; TODO: Supply ought to be the same everywhere
   ;; -> define a constant faction unit
   (declare (army army))
@@ -192,6 +192,13 @@ If ADVANCE is true ARMY will move to TARGET's position, if possible."
 		     (faction-unit-name
 		      (unit-stack-type troop))))
 	(army-troops army))))
+
+(defun army-supply-stockpiles-count (army)
+  "Returns amount of ARMY's supply stockpile"
+  (declare (army army))
+  (unit-stack-count
+   (or (army-supply-stockpiles army)
+       (return-from army-supply-stockpiles-count 0))))
 
 (defun army-validate-supply (army)
   "Moves ARMY's excess supplies to a unit-stack and required supplies from
