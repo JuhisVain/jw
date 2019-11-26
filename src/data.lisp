@@ -167,7 +167,7 @@ in form: (READERNAME-SLOTNAME MOTHERSTRUCTNAME)."
 
  (defstruct unit-stack
    (type nil :type faction-unit)
-   (count 0 :type fixnum)
+   (count 0 :type (integer 0 *))
    (action-points 100 :type (integer 0 100))
    (experience 0 :type fixnum)
    (morale 0 :type fixnum)
