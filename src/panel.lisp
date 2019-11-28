@@ -149,7 +149,9 @@
 				      :x 56 :y 4
 				      :width 48 :height 48
 				      :icon (sdl-image:load-image "graphics/PANEL_BUTTON_TEST.png")
-				      :action #'(lambda () (format t "~&Quack quack!~%")))
+				      :action #'(lambda () (or (and (fboundp 't-set-ready)
+								    (t-set-ready))
+							       (format t "Quack quack!"))))
 		       (make-instance 'panel-button
 				      :x 108 :y 4
 				      :width 48 :height 48
