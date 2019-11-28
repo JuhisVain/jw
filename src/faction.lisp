@@ -70,18 +70,18 @@
 	 (faction-name (car (world-factions world))))
     "A")))
 
-(defun new-army (faction x y &optional counter-desc)
+(defun new-army (faction x y &key troops counter-desc)
   (let* ((coc (new-coc-position faction))
 	 (new-army (make-army :x x :y y
 			      :owner faction
 			      :coc coc
-			      :troops (let ((unit-type (unit-type-by-name "Commando" faction)))
-					(list
-					 (if unit-type ; if unit-lists have been setup:
-					     (make-unit-stack
-					      :type unit-type
-					      :count 0)
-					     )))
+			      :troops (or troops
+					  (let ((unit-type (unit-type-by-name "Commando" faction)))
+					    (list
+					     (if unit-type ; if unit-lists have been setup:
+						 (make-unit-stack
+						  :type unit-type
+						  :count 0)))))
 			      :counter
 			      (make-graphics
 			       :surface (description-to-counter faction 40 (or counter-desc '(land analysis)))
