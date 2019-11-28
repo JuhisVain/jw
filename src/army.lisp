@@ -152,7 +152,7 @@ If ADVANCE is true ARMY will move to TARGET's position, if possible."
 	*turn-readiness-replenishment*)))
 
 (defun army-supply-use (army)
-  "Returns amount of supplies ARMY should request to replenish or maintain itself."
+  "Returns amount of supply ARMY consumes in a round."
   (declare (army army))
   (apply #'+
 	 (mapcar #'(lambda (troop)
@@ -176,9 +176,8 @@ If ADVANCE is true ARMY will move to TARGET's position, if possible."
   "Returns how many units of supply to request from HQ."
   (* (/ (army-supply-req army)
 	100)
-     (+ (army-supply-use army) ; Use by turn
-	(- (army-supply-space army) ; Replenish army stocks:
-	   (army-supplies army)))))
+     (- (army-supply-space army) ; Replenish army stocks
+	(army-supplies army))))
 
 (defun army-supply-stockpiles (army)
   "Returns ARMY's supply stockpile unit-stack, or nil if not found."
