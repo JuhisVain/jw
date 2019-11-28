@@ -26,18 +26,100 @@
     ))
 
 (defun t-set-ready ()
-  (dolist (u *testunit*)
-    ;; Give supreme-hq some trucks & supplies:
-    (when (supreme-hq-p (army-coc u))
-      (push (make-unit-stack :type (unit-type-by-name "Truck" (army-owner (car *testunit*)))
-			     :count 10
-			     :readiness 100)
-	    (army-troops u))
-      (setf (army-supplies u) 500))
-    (dolist (uat (army-troops u))
-      (setf (unit-stack-readiness uat) 100)
-      (when (zerop (unit-stack-count (car (army-troops u))))
-	(setf (unit-stack-count (car (army-troops u))) 5)))))
+  (flet ((rand-desc ()
+	   (let ((seed (random 8)))
+	     (list (prog1 (cond ((eq seed 0) 'air)
+				((eq seed 1) 'space)
+				((eq seed 2) 'land)
+				((eq seed 3) 'surface)
+				((eq seed 4) 'subsurface)
+				((eq seed 5) 'equipment)
+				((eq seed 6) 'installation)
+				((eq seed 7) 'activity))
+		     (setf seed (random 6)))
+		   (prog1 (cond ((eq seed 0) 'air-assault-with-organic-lift)
+				((eq seed 1) 'air-defense)
+				((eq seed 2) 'amphibious)
+				((eq seed 3) 'analysis)
+				((eq seed 4) 'antitank)
+				((eq seed 5) 'broadcast-transmitter-antenna)))))))
+
+    (test-movecosts)
+    (road-from-to 'rail 7 0 7 5)
+    (loop for x from 2 to 14
+       do (loop for y from 0 to 8
+	     do (setf (tile-owner (tile-at x y)) (cadr (world-factions *world*)))))
+					  
+    
+    ;;HQ:
+    (army-validate-supply 
+     (new-army (cadr (world-factions *world*))
+	       11 6
+	       :troops (list
+			(make-unit-stack
+			 :type (unit-type-by-name "Supply"
+						  (cadr (world-factions *world*)))
+			 :count 20000
+			 :readiness 100)
+			(make-unit-stack
+			 :type (unit-type-by-name "Truck"
+						  (cadr (world-factions *world*)))
+			 :count 500
+			 :readiness 100))
+	       :counter-desc '(equipment cavalry)))
+
+    ;; cannon fodder under direct command of HQ
+    (mapcar #'(lambda (x y)
+		(new-army (cadr (world-factions *world*))
+		      x y
+		      :troops (list (make-unit-stack
+				     :type (unit-type-by-name "Commando"
+							      (cadr (world-factions *world*)))
+				     :count 250
+				     :readiness 100))
+		      :counter-desc (rand-desc)))
+	    '(7 7 7 7 9 5 6)
+	    '(0 1 2 3 1 6 7))
+    
+    ;;Sub hq
+    (oob-pos-promote
+     (army-coc
+      (new-army (cadr (world-factions *world*))
+		7 5
+		:troops (list
+			 (make-unit-stack
+			  :type (unit-type-by-name "Commando"
+						   (cadr (world-factions *world*)))
+			  :count 150
+			  :readiness 100)
+			 (make-unit-stack
+			  :type (unit-type-by-name "Truck"
+						   (cadr (world-factions *world*)))
+			  :count 100
+			  :readiness 100))
+		:counter-desc '(equipment cavalry))))
+
+    ;; Sub hq's underlings
+    (oob-transfer-hq (army-coc (car (tile-units (tile-at 5 6))))
+		     (army-coc (car (tile-units (tile-at 7 5)))))
+
+    (oob-transfer-hq (army-coc (car (tile-units (tile-at 6 7))))
+		     (army-coc (car (tile-units (tile-at 7 5)))))
+    
+      
+    '(dolist (u *testunit*)
+      ;; Give supreme-hq some trucks & supplies:
+      (when (supreme-hq-p (army-coc u))
+	(push (make-unit-stack :type (unit-type-by-name "Truck" (army-owner (car *testunit*)))
+			       :count 100
+			       :readiness 100)
+	      (army-troops u))
+	(setf (army-supplies u) 500))
+      (dolist (uat (army-troops u))
+	(setf (unit-stack-readiness uat) 100)
+	(when (zerop (unit-stack-count (car (army-troops u))))
+	  (setf (unit-stack-count (car (army-troops u))) 5))))
+    ))
 
 (defun print-coc (hq)
   (declare (hq hq))
