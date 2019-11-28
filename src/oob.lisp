@@ -70,12 +70,6 @@
      (setf (oob-pos-superior transfer) hq)))
   (pushnew transfer (hq-subordinates hq)))
 
-
-;; HQs will use their WHEELED units with carry-space and full action-points to distribute supply
-;; to subordinates. Might want a separate distribution for trains?
-;; Need to start at cannon fodder requesting supplies at bottom of tree and move up through HQs
-;; But also need HQs to know how much all of their subordinates need before can distribute...
-
 (defun total-supply-request (hq)
   "Return total supply requested by HQ and all underlings combined."
   (declare (hq hq))
@@ -147,6 +141,14 @@ takes to move from coordinates XY0 to XY1."
 				  (cadr (assoc 'rail ; fastest possible TODO: dunno what to do
 					       (gethash movetype *unit-type-movecosts*))))))
 	    )))
+
+
+;; HQs will use their WHEELED units with carry-space and full action-points to distribute supply
+;; to subordinates. Might want a separate distribution for trains?
+;; Need to start at cannon fodder requesting supplies at bottom of tree and move up through HQs
+;; But also need HQs to know how much all of their subordinates need before can distribute...
+
+;; Armies should consume (army-supply-use x) at either start or end of turn
 
 (defun supply-system (faction)
 
