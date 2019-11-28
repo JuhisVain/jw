@@ -105,20 +105,6 @@
 
     (oob-transfer-hq (army-coc (car (tile-units (tile-at 6 7))))
 		     (army-coc (car (tile-units (tile-at 7 5)))))
-    
-      
-    '(dolist (u *testunit*)
-      ;; Give supreme-hq some trucks & supplies:
-      (when (supreme-hq-p (army-coc u))
-	(push (make-unit-stack :type (unit-type-by-name "Truck" (army-owner (car *testunit*)))
-			       :count 100
-			       :readiness 100)
-	      (army-troops u))
-	(setf (army-supplies u) 500))
-      (dolist (uat (army-troops u))
-	(setf (unit-stack-readiness uat) 100)
-	(when (zerop (unit-stack-count (car (army-troops u))))
-	  (setf (unit-stack-count (car (army-troops u))) 5))))
     ))
 
 (defun print-coc (hq)
