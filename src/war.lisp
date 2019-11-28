@@ -51,22 +51,24 @@
 	(faction (car (member-if-not
 		       #'(lambda (faction) (string= (faction-name faction) "Free France"))
 		       (world-factions *world*)))))
-    (new-army faction x y (let ((seed (random 8)))
-			    (list (prog1 (cond ((eq seed 0) 'air)
-					       ((eq seed 1) 'space)
-					       ((eq seed 2) 'land)
-					       ((eq seed 3) 'surface)
-					       ((eq seed 4) 'subsurface)
-					       ((eq seed 5) 'equipment)
-					       ((eq seed 6) 'installation)
-					       ((eq seed 7) 'activity))
-				    (setf seed (random 6)))
-				  (prog1 (cond ((eq seed 0) 'air-assault-with-organic-lift)
-					       ((eq seed 1) 'air-defense)
-					       ((eq seed 2) 'amphibious)
-					       ((eq seed 3) 'analysis)
-					       ((eq seed 4) 'antitank)
-					       ((eq seed 5) 'broadcast-transmitter-antenna))))))))
+    (new-army faction x y
+	      :counter-desc
+	      (let ((seed (random 8)))
+		(list (prog1 (cond ((eq seed 0) 'air)
+				   ((eq seed 1) 'space)
+				   ((eq seed 2) 'land)
+				   ((eq seed 3) 'surface)
+				   ((eq seed 4) 'subsurface)
+				   ((eq seed 5) 'equipment)
+				   ((eq seed 6) 'installation)
+				   ((eq seed 7) 'activity))
+			(setf seed (random 6)))
+		      (prog1 (cond ((eq seed 0) 'air-assault-with-organic-lift)
+				   ((eq seed 1) 'air-defense)
+				   ((eq seed 2) 'amphibious)
+				   ((eq seed 3) 'analysis)
+				   ((eq seed 4) 'antitank)
+				   ((eq seed 5) 'broadcast-transmitter-antenna))))))))
 
 (defun set-test-unit ()
   (format t "~%Setting up testunit~&")
@@ -74,6 +76,7 @@
 	 ;;(null *testunit*) ;; no more units created
 	 (setf *testunit*
 	       (cons (new-army *current-pov-faction* 10 8
+			       :counter-desc
 			       (let ((seed (random 8)))
 				 (list (prog1 (cond ((eq seed 0) 'air)
 						    ((eq seed 1) 'space)
