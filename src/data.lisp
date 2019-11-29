@@ -357,7 +357,11 @@ Optional endfunc takes x y world, if returns true this function returns before f
 
 
 (defun a* (x0 y0 x1 y1 &key (max-range 1000000) (world *world*) costfunc endfunc heuristic)
-  "COSTFUNC takes takes two coordinate conses and returns the cost of moving from the first
+  "A* will return a hash-table with keys being target coordinate-conses and
+values being lists (cost-to-move coordinate-cons direction-to-move) as a
+direction to get to the target. Will return NIL if no path found.
+
+COSTFUNC takes takes two coordinate conses and returns the cost of moving from the first
 to the second.
 
 HEURISTIC takes two coordinate conses, any coord and end coord should return ??best case??
