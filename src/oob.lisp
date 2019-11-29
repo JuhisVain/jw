@@ -116,30 +116,33 @@
 
 (defun movetype-distance (faction movetype xy0 xy1)
   "The cost in action points that a troop of MOVETYPE belonging to FACTION
-takes to move from coordinates XY0 to XY1."
+takes to move from coordinates XY0 to XY1 while staying on tiles owned by 
+FACTION."
   (declare (faction faction) (symbol movetype)
 	   (coordinates xy0 xy1))
   (car ; the CAR of the destination's hash value is the cost to get there
    (gethash xy1
-	    (a* (car xy0) (cdr xy0)
-		(car xy1) (cdr xy1)
-		:costfunc #'(lambda (from to)
-			      ;; supply cannot travel through unknown or enemy lands:
-			      (if (eq (tile-owner (tile-at (car to) (cdr to)))
-				      faction)
-				  (step-cost nil (car from) (cdr from)
-					     (neighbourp from to)
-					     *world*
-					     faction
-					     nil
-					     (gethash movetype *unit-type-movecosts*)
-					     )
-				  1000000))
-		:heuristic #'(lambda (from to)
-			       (* (distance (car from) (cdr from)
-					    (car to) (cdr to))
-				  (cadr (assoc 'rail ; fastest possible TODO: dunno what to do
-					       (gethash movetype *unit-type-movecosts*))))))
+	    (or
+	     (a* (car xy0) (cdr xy0)
+		 (car xy1) (cdr xy1)
+		 :costfunc #'(lambda (from to)
+			       ;; supply cannot travel through unknown or enemy lands:
+			       (if (eq (tile-owner (tile-at (car to) (cdr to)))
+				       faction)
+				   (step-cost nil (car from) (cdr from)
+					      (neighbourp from to)
+					      *world*
+					      faction
+					      nil
+					      (gethash movetype *unit-type-movecosts*)
+					      )
+				   1000000))
+		 :heuristic #'(lambda (from to)
+				(* (distance (car from) (cdr from)
+					     (car to) (cdr to))
+				   (cadr (assoc 'rail ; fastest possible TODO: dunno what to do
+						(gethash movetype *unit-type-movecosts*))))))
+	     (return-from movetype-distance +inf+))
 	    )))
 
 
