@@ -411,7 +411,7 @@ First element will be cons of roadtypeslist and river."
   (defmovecosts towed (grass 60) (hill 80) (mountain 100) (nforest 70)
 		(sea 10000) (city 30) (stream 70) (river 90) (rail 30) (road 30))
   (defmovecosts rail (grass +inf+) (hill +inf+) (mountain +inf+) (nforest +inf+)
-		(sea +inf+) (city +inf+) (stream +inf+) (river +inf+) (rail 10) (road +inf+))
+		(sea +inf+) (city +inf+) (stream +inf+) (river +inf+) (rail 5) (road +inf+))
   (defmovecosts moveable (grass +inf+) (hill +inf+) (mountain +inf+) (nforest +inf+)
 		(sea +inf+) (city +inf+) (stream +inf+) (river +inf+) (rail +inf+) (road +inf+))
   ;;; Should be possible to set priorityqueue default size based on lowest movecost of defmovecosts
