@@ -145,6 +145,28 @@ FACTION."
 	     (return-from movetype-distance +inf+))
 	    )))
 
+(defun list-ranged-requests-by-movetype (hq movetype)
+  "Returns list of supply requests modified by range-delivery-percentage to
+reqesing army using movement type MOVETYPE. in same order as HQ's
+hq-subordinates."
+  (declare (hq hq))
+  (mapcar
+   #'(lambda (sub)
+       (let* ((hq-army (hq-army hq))
+	      (sub-army (oob-element-army sub))
+	      (deliver-percent
+	       (range-delivery-percentage
+		(movetype-distance
+		 (army-owner (hq-army hq))
+		 movetype
+		 (army-xy hq-army)
+		 (army-xy sub-army)))))
+	 (* ; request * range%
+	  (typecase sub
+	    (sub-hq (total-supply-request sub))
+	    (t (army-supply-request sub-army)))
+	  deliver-percent)))
+   (hq-subordinates hq)))
 
 ;; HQs will use their WHEELED units with carry-space and full action-points to distribute supply
 ;; to subordinates. Might want a separate distribution for trains?
@@ -165,21 +187,7 @@ FACTION."
   (let* ((hq (faction-chain-of-command faction))
 	 (cargo-space (hq-useable-cargo hq 'WHEELED))
 	 (sub-ranged-request-list
-	  (mapcar
-	   #'(lambda (sub)
-	       (let ((hq-army (hq-army hq))
-		     (sub-army (oob-element-army sub)))
-		 (* ; request * range%
-		  (typecase sub
-		    (sub-hq (total-supply-request sub))
-		    (t (army-supply-request sub-army)))
-		  (range-delivery-percentage
-		   (movetype-distance
-		    faction 'WHEELED (army-xy hq-army) (army-xy sub-army))))
-		 
-		 ))
-	   (hq-subordinates hq)
-	   )))
+	  (list-ranged-requests-by-movetype hq 'wheeled)))
 
     (let* ((all-requests (cons (army-supply-request (hq-army hq))
 			       sub-ranged-request-list))
