@@ -164,7 +164,7 @@ FACTION."
   ;; Wheeled supplies:
   (let* ((hq (faction-chain-of-command faction))
 	 (cargo-space (hq-useable-cargo hq 'WHEELED))
-	 (sub-request-list
+	 (sub-ranged-request-list
 	  (mapcar
 	   #'(lambda (sub)
 	       (let ((hq-army (hq-army hq))
@@ -182,7 +182,7 @@ FACTION."
 	   )))
 
     (let* ((all-requests (cons (army-supply-request (hq-army hq))
-			       sub-request-list))
+			       sub-ranged-request-list))
 	   (total-req (apply #'+ all-requests))
 	   (req-capability (/ (min cargo-space total-req
 				   (army-supply-stockpiles-count (hq-army hq)))
