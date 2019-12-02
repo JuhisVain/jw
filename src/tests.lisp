@@ -46,6 +46,16 @@
 
     (test-movecosts)
     (road-from-to 'rail 7 0 7 5)
+    
+    (road-from-to 'rail 7 0 6 0)
+    (road-from-to 'rail 6 0 4 0)
+    (road-from-to 'rail 4 0 2 0)
+    (road-from-to 'rail 2 0 1 0)
+    (road-from-to 'rail 1 0 1 1)
+    (road-from-to 'rail 1 1 2 4)
+    (road-from-to 'rail 11 6 19 22)
+    (road-from-to 'rail 19 22 20 23) ; 20,23 is one tile out of wheeled range
+    
     (loop for x from 2 to 14
        do (loop for y from 0 to 8
 	     do (setf (tile-owner (tile-at x y)) (cadr (world-factions *world*)))))
