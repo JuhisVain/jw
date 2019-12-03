@@ -55,6 +55,8 @@
     (road-from-to 'rail 1 1 2 4)
     (road-from-to 'rail 11 6 19 22)
     (road-from-to 'rail 19 22 20 23) ; 20,23 is one tile out of wheeled range
+
+    (road-from-to 'rail 7 5 11 6)
     
     (loop for x from 2 to 14
        do (loop for y from 0 to 8
@@ -74,7 +76,12 @@
 			(make-unit-stack
 			 :type (unit-type-by-name "Truck"
 						  (cadr (world-factions *world*)))
-			 :count 500
+			 :count 250
+			 :readiness 100)
+			(make-unit-stack
+			 :type (unit-type-by-name "Pendolino"
+						  (cadr (world-factions *world*)))
+			 :count 50
 			 :readiness 100))
 	       :counter-desc '(equipment cavalry)))
 
