@@ -427,7 +427,8 @@ First element will be cons of roadtypeslist and river."
 	      (make-faction-unit :movement 'wheeled :name "Truck"
 				 :carry-space 20 :size 25)
 	      (make-faction-unit :movement 'towed :name "8.8cm Flak")
-	      (make-faction-unit :movement 'rail :name "Pendolino")
+	      (make-faction-unit :movement 'rail :name "Pendolino"
+				 :carry-space 20 :size 50)
 	      (make-faction-unit :movement 'moveable :name "Supply"
 				 :supply-use 0 :supply-space 0)))) ; etc..
    (world-factions *world*))
