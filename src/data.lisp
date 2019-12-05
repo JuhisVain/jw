@@ -90,6 +90,7 @@ with data field in full."
   (production))
 
 (defstruct (city (:include location)))
+(defstruct (port (:include location)))
 
 (defstruct tile
   (owner nil :type (or faction null))

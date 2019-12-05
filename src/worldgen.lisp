@@ -1076,6 +1076,18 @@ NIL on failure."
 
     world))
 
+(defun create-port (x y &key (world *world*) (owner nil) (name nil) (production nil))
+  (let ((new-port
+	 (make-port :name (or name "Unnamed port")
+		    :owner owner
+		    :x x :y y
+		    :production production)))
+    (when world
+      (pushnew new-port (tile-location (tile-at x y world)))
+      (pushnew (random-variant 'port) (tile-variant (tile-at x y world)))
+      (finalize-tile-region x y world)
+      )))
+
 (defun create-city (x y &key (world *world*) (owner nil) (name nil) (production nil))
   (let ((new-city
 	 (make-city :name (or name (random-city-name owner *world*))
