@@ -414,6 +414,8 @@ First element will be cons of roadtypeslist and river."
 		(sea +inf+) (city +inf+) (port +inf+) (stream +inf+) (river +inf+) (rail 5) (road +inf+))
   (defmovecosts moveable (grass +inf+) (hill +inf+) (mountain +inf+) (nforest +inf+)
 		(sea +inf+) (city +inf+) (port +inf+) (stream +inf+) (river +inf+) (rail +inf+) (road +inf+))
+  (defmovecosts sea (grass +inf+) (hill +inf+) (mountain +inf+) (nforest +inf+)
+		(sea 10) (city 10) (port 10) (stream +inf+) (river +inf+) (rail +inf+) (road +inf+))
   ;;; Should be possible to set priorityqueue default size based on lowest movecost of defmovecosts
 
   (mapcar
@@ -429,6 +431,8 @@ First element will be cons of roadtypeslist and river."
 	      (make-faction-unit :movement 'towed :name "8.8cm Flak")
 	      (make-faction-unit :movement 'rail :name "Pendolino"
 				 :carry-space 20 :size 50)
+	      (make-faction-unit :movement 'sea :name "Cargo ship"
+				 :carry-space 100 :size 500)
 	      (make-faction-unit :movement 'moveable :name "Supply"
 				 :supply-use 0 :supply-space 0)))) ; etc..
    (world-factions *world*))

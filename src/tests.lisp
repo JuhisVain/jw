@@ -99,6 +99,16 @@
 		      :counter-desc (rand-desc)))
 	    '(7 7 7 7 9 5 6)
 	    '(0 1 2 3 1 6 7))
+
+    ;; Some ships
+    (new-army (cadr (world-factions *world*))
+	      10 10
+	      :troops (list (make-unit-stack
+			     :type
+			     (unit-type-by-name "Cargo ship"
+						(cadr (world-factions *world*)))
+			     :count 10
+			     :readiness 100)))
     
     ;;Sub hq
     (oob-pos-promote
