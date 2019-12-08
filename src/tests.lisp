@@ -57,16 +57,18 @@
     (road-from-to 'rail 19 22 20 23) ; 20,23 is one tile out of wheeled range
 
     (road-from-to 'rail 7 5 11 6)
+
+    (create-port 10 7)
     
     (loop for x from 2 to 14
        do (loop for y from 0 to 8
-	     do (setf (tile-owner (tile-at x y)) (cadr (world-factions *world*)))))
+	     do (change-tile-owner x y (cadr (world-factions *world*)))))
 					  
     
     ;;HQ:
     (army-validate-supply 
      (new-army (cadr (world-factions *world*))
-	       11 6
+	       10 7
 	       :troops (list
 			(make-unit-stack
 			 :type (unit-type-by-name "Supply"
