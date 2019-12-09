@@ -125,18 +125,18 @@ FACTION."
 	    (or
 	     (a* (car xy0) (cdr xy0)
 		 (car xy1) (cdr xy1)
-		 :costfunc #'(lambda (from to)
+		 :costfunc #'(lambda (from to) ;; No idea if my froms and tos are correct
 			       ;; supply cannot travel through unknown or enemy lands:
-			       (if (eq (tile-owner (tile-at (car to) (cdr to)))
+			       (if (eq (tile-owner (tile-at (car from) (cdr from)))
 				       faction)
-				   (step-cost nil (car from) (cdr from)
-					      (neighbourp from to)
+				   (step-cost nil (car to) (cdr to)
+					      (neighbourp to from)
 					      *world*
 					      faction
 					      nil
 					      (gethash movetype *unit-type-movecosts*)
 					      )
-				   1000000))
+				   +inf+))
 		 :heuristic #'(lambda (from to)
 				(* (distance (car from) (cdr from)
 					     (car to) (cdr to))
@@ -144,6 +144,17 @@ FACTION."
 						(gethash movetype *unit-type-movecosts*))))))
 	     (return-from movetype-distance +inf+))
 	    )))
+
+(defun list-requests (hq)
+  (declare (hq hq))
+  (mapcar
+   #'(lambda (sub)
+       (let ((sub-army (oob-element-army sub)))
+	 (typecase sub
+	   (sub-hq (total-supply-request sub))
+	   (t (army-supply-request sub-army)))
+	 ))
+   (hq-subordinates hq)))
 
 (defun list-ranged-requests-by-movetype (hq movetype)
   "Returns list of supply requests modified by range-delivery-percentage to
@@ -175,6 +186,10 @@ hq-subordinates."
 
 ;; Armies should consume (army-supply-use x) at either start or end of turn
 
+
+;;;; Do shipping first, then trains, then trucks -> only specialized units may transport supply
+;; boats should only be able to travel and transport port to port
+
 (defun supply-system (faction)
 
   (unless (faction-chain-of-command faction)
@@ -184,10 +199,10 @@ hq-subordinates."
   ;; Maybe supplies can be delivered using all troops?
 
   ;; Wheeled supplies:
-  (let* ((hq (faction-chain-of-command faction))
+  '(let* ((hq (faction-chain-of-command faction))
 	 (cargo-space (hq-useable-cargo hq 'WHEELED))
 	 (sub-ranged-request-list
-	  (list-ranged-requests-by-movetype hq 'wheeled)))
+	  (list-ranged-requests-by-movetype hq 'WHEELED)))
 
     (let* ((all-requests (cons (army-supply-request (hq-army hq))
 			       sub-ranged-request-list))
@@ -199,8 +214,26 @@ hq-subordinates."
 	 for sub-request in all-requests
 	 for sub in (cons hq (hq-subordinates hq))
 	 do (hq-transfer-supply hq sub (* sub-request req-capability)))
-      )
+      ))
+  
+  (let* ((hq (faction-chain-of-command faction)))
 
-
+    (mapcar #'(lambda (sub request)
+		(list
+		 (army-xy (oob-element-army sub))
+		 (movetype-distance faction 'WHEELED
+				    (army-xy (hq-army hq))
+				    (army-xy (oob-element-army sub)))
+		 (movetype-distance faction 'RAIL
+				    (army-xy (hq-army hq))
+				    (army-xy (oob-element-army sub)))
+		 (movetype-distance faction 'SEA
+				    (army-xy (hq-army hq))
+				    (army-xy (oob-element-army sub)))
+		 request))
+	    
+	    (hq-subordinates hq)
+	    (list-requests hq))
+    
     
     ))
