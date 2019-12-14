@@ -199,23 +199,29 @@ If ADVANCE is true ARMY will move to TARGET's position, if possible."
    (or (army-supply-stockpiles army)
        (return-from army-supply-stockpiles-count 0))))
 
-(defun increase-supply-stockpiles (army amount)
-  "Increases ARMY's supply stockpiles by AMOUNT and returns total."
-  (declare (army army) ((integer 0 *) amount))
-  (incf (unit-stack-count
-	 (or (army-supply-stockpiles army)
-	     (make-unit-stack :type (unit-type-by-name
-				     "Supply" (army-owner army))
-			      :count 0)))
-	amount))
-
-(defun decrease-supply-stockpiles (army amount)
-  "Decreases ARMY's supply stockpiles by AMOUNT and returns total."
-  (declare (army army) ((integer 0 *) amount))
-  ;; Should puke out errors if result is < 0 or no stockpiles at all.
-  (decf (unit-stack-count (army-supply-stockpiles army))
-	amount))
-  
+(defun inc-supply-stockpiles (army delta)
+  "Increments or decrements the supply stack of ARMY by DELTA.
+If there is no supply stack it will be created.
+If the supply stack's count is at zero it will be deleted.
+Will return amount of delta that was successfully deltaed."
+  (declare (army army) (integer delta))
+  (let ((stockpiles (or (army-supply-stockpiles army)
+			(car (push (make-unit-stack
+				    :type (unit-type-by-name
+					   "Supply" (army-owner army))
+				    :count 0)
+				   (army-troops army))))))
+    ;;TODO: log
+    (cond ((and (< delta 0)
+		(<= (unit-stack-count stockpiles) (abs delta)))
+	   (prog1
+	       (unit-stack-count stockpiles)
+	     (setf (army-troops army)
+		   (delete stockpiles
+			   (army-troops army)))))
+	  (t
+	   (incf (unit-stack-count stockpiles) delta)
+	   delta))))
 
 (defun army-validate-supply (army)
   "Moves ARMY's excess supplies to a unit-stack and required supplies from
