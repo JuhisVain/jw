@@ -154,3 +154,15 @@
     (when step
       (cons step
 	    (full-hash-path (cadr step) ht)))))
+
+
+(defun check-tile-variant-lists ()
+  "If this returns something other than nil, there's been some kind of worldgen
+screw up. Maybe with graphics priorities."
+  (let ((tiles nil))
+    (dotimes (x (1+ (world-width *world*)))
+      (dotimes (y (1+ (world-height *world*)))
+	(let ((f (car (tile-variant (tile-at x y)))))
+	  (if (or (eq f 'grass-a) (eq f 'sea-a)) nil
+	      (push (cons x y) tiles)))))
+    tiles))
