@@ -388,6 +388,7 @@ First element will be cons of roadtypeslist and river."
 		   terrain-costs)))
 
 ;; Maybe rename:
+;; *unit-types* isn't used anywhere ->this is useless
 (defmacro defmovetypeunits (move-type &rest unit-names)
   "Associate each UNIT-NAME with MOVE-TYPE."
   `(progn
