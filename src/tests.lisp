@@ -84,6 +84,11 @@
 			 :type (unit-type-by-name "Pendolino"
 						  (cadr (world-factions *world*)))
 			 :count 50
+			 :readiness 100)
+			(make-unit-stack
+			 :type (unit-type-by-name "Cargo ship"
+						  (cadr (world-factions *world*)))
+			 :count 1
 			 :readiness 100))
 	       :counter-desc '(equipment cavalry)))
 
