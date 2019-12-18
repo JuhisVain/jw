@@ -82,7 +82,18 @@
 			(oob-pos (army-supply-request (oob-element-army sub)))))
 		  (hq-subordinates hq)))))
 
-(defun hq-useable-cargo (hq move-type)
+(defun useable-cargo (stack)
+  "How much cargo a hq can move around using the STACK unit-stack."
+  (declare ((or null unit-stack) stack))
+  (unless stack (return-from useable-cargo 0)) ; unit-stack is null, abort.
+  (round
+   (* ;; total carry space * working capability percentage
+    (troop-carry-space stack)
+    (unit-stack-count stack)
+    (/ (unit-stack-action-points stack) 100)
+    (/ (unit-stack-readiness stack) 100))))
+
+(defun hq-useable-cargo-move-type-totals (hq move-type)
   "How much cargo HQ can move around using MOVE-TYPE cargo-movers."
   (declare (hq hq) (symbol move-type))
   (reduce #'+ (army-troops (hq-army hq))
@@ -190,8 +201,94 @@ hq-subordinates."
 ;;;; Do shipping first, then trains, then trucks -> only specialized units may transport supply
 ;; boats should only be able to travel and transport port to port
 
+
+
+;;;; i have no idea how to do what i want to do
+;;; -> just do balanced cargoships, balanced trains, balanced trucks
+
+(defun get-cargo-unit (move-type army)
+  "Return the designated supply carrier with movement MOVE-TYPE from ARMY's
+troops."
+  (find-if #'(lambda (x)
+	       ;; should maybe use symbols for names instead of strings.
+	       (string= 
+		(troop-name x)
+		(case move-type
+		  (wheeled "Truck")
+		  (sea "Cargo ship")
+		  (rail "Pendolino"))))
+	   (army-troops army)))
+	   
+
+(defun hq-supply-distribution (hq)
+  (declare (hq hq))
+  (let* ((totals (list-requests hq))
+	 (totals-left totals)
+	 (rv nil))
+
+    (dolist (movetype '(SEA
+			RAIL
+			WHEELED
+			))
+      (let*(;;Sub requests modified by range of current cargo carrier
+	    (ranged-requests (list-ranged-requests-by-movetype hq movetype))
+	    ;;Total of ranged requests of current carrier
+	    (requests-total (apply #'+ ranged-requests))
+	    ;;Amount of supply HQ can move with current carrier
+	    (cargo-cap (useable-cargo
+			(get-cargo-unit movetype (hq-army hq))))
+	    ;;Ranged requests multiplied by capability
+	    ;;Out of range leads to "wasted" cargo capability
+	    (total-delivery-rats (mapcar #'(lambda (range-req total-left)
+					     (* (min range-req
+						     total-left)
+						(/ (min cargo-cap
+							requests-total)
+						   requests-total)))
+					 ranged-requests
+					 totals-left))
+	    ;;Integer remainder of flooring total-deliveries
+	    (rem-total 0) ; todo: add to integers below
+	    ;;Floor fractions of capability ranged requests
+	    (total-delivery-ints (mapcar #'(lambda (delivery)
+					     (multiple-value-bind (int rem)
+						 (floor delivery)
+					       (incf rem-total rem)
+					       int))
+					 total-delivery-rats))
+	    )
+
+	(setf totals-left
+	      (mapcar #'- totals-left total-delivery-ints))
+
+	(push (list movetype
+		    totals-left
+		    ranged-requests
+		    requests-total
+		    cargo-cap
+		    total-delivery-rats
+		    total-delivery-ints
+		    rem-total)
+	      rv)
+
+	))
+      
+      
+    ;(list totals ranged-requests requests-total cargo-cap
+     ; total-delivery-rats total-delivery-ints rem-total totals-left)
+    (list totals totals-left)
+    rv
+      
+    ))
+
 (defun supply-system (faction)
 
+  
+  )
+
+;;Obsolete remove
+'(defun supply-system (faction)
+  (declare (optimize (debug 3)))
   (unless (faction-chain-of-command faction)
     (error "~&Faction ~a has no supreme HQ!~%" (faction-name faction)))
 
@@ -215,25 +312,47 @@ hq-subordinates."
 	 for sub in (cons hq (hq-subordinates hq))
 	 do (hq-transfer-supply hq sub (* sub-request req-capability)))
       ))
-  
+
   (let* ((hq (faction-chain-of-command faction)))
 
-    (mapcar #'(lambda (sub request)
-		(list
-		 (army-xy (oob-element-army sub))
-		 (movetype-distance faction 'WHEELED
-				    (army-xy (hq-army hq))
-				    (army-xy (oob-element-army sub)))
-		 (movetype-distance faction 'RAIL
-				    (army-xy (hq-army hq))
-				    (army-xy (oob-element-army sub)))
-		 (movetype-distance faction 'SEA
-				    (army-xy (hq-army hq))
-				    (army-xy (oob-element-army sub)))
-		 request))
-	    
-	    (hq-subordinates hq)
-	    (list-requests hq))
-    
-    
-    ))
+    (let* ((dataset
+	    (mapcar #'(lambda (sub request)
+			(list
+			 (army-xy (oob-element-army sub))
+			 (movetype-distance faction 'WHEELED
+					    (army-xy (hq-army hq))
+					    (army-xy (oob-element-army sub)))
+			 (movetype-distance faction 'RAIL
+					    (army-xy (hq-army hq))
+					    (army-xy (oob-element-army sub)))
+			 (movetype-distance faction 'SEA
+					    (army-xy (hq-army hq))
+					    (army-xy (oob-element-army sub)))
+			 request))
+		    
+		    (hq-subordinates hq)
+		    (list-requests hq)))
+	   ;; Add upp totals of reachables:
+	   (tot-wheel-dist (apply #'+ (mapcar #'cadr (remove-if #'(lambda (x) (= x +inf+))
+								dataset :key #'cadr))))
+	   (tot-rail-dist (apply #'+ (mapcar #'caddr (remove-if #'(lambda (x) (= x +inf+))
+								dataset :key #'caddr))))
+	   (tot-sea-dist (apply #'+ (mapcar #'cadddr (remove-if #'(lambda (x) (= x +inf+))
+								dataset :key #'cadddr))))
+	   )
+      
+      ;; (/ (MIN capacity-in-movement-category total-in-movement-category)
+      ;;    total-in-movement-category)
+      ;; 
+
+      (let* ((total-distance-in-movement-cat tot-wheel-dist)
+	     (capacity-in-movement-cat (hq-useable-cargo hq 'WHEELED))
+	     (capability (/ (min capacity-in-movement-cat
+				 total-distance-in-movement-cat)
+			    total-distance-in-movement-cat)))
+
+	capability
+	
+	)
+      (list tot-wheel-dist tot-rail-dist tot-sea-dist); debugging
+      )))
