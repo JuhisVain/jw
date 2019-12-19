@@ -222,64 +222,79 @@ troops."
 
 (defun hq-supply-distribution (hq)
   (declare (hq hq))
+
   (let* ((totals (list-requests hq))
 	 (totals-left totals)
 	 (rv nil))
 
-    (dolist (movetype '(SEA
-			RAIL
-			WHEELED
-			))
-      (let*(;;Sub requests modified by range of current cargo carrier
-	    (ranged-requests (list-ranged-requests-by-movetype hq movetype))
-	    ;;Total of ranged requests of current carrier
-	    (requests-total (apply #'+ ranged-requests))
-	    ;;Amount of supply HQ can move with current carrier
-	    (cargo-cap (useable-cargo
-			(get-cargo-unit movetype (hq-army hq))))
-	    ;;Ranged requests multiplied by capability
-	    ;;Out of range leads to "wasted" cargo capability
-	    (total-delivery-rats (mapcar #'(lambda (range-req total-left)
-					     (* (min range-req
-						     total-left)
-						(/ (min cargo-cap
-							requests-total)
-						   requests-total)))
-					 ranged-requests
-					 totals-left))
-	    ;;Integer remainder of flooring total-deliveries
-	    (rem-total 0) ; todo: add to integers below
-	    ;;Floor fractions of capability ranged requests
-	    (total-delivery-ints (mapcar #'(lambda (delivery)
-					     (multiple-value-bind (int rem)
-						 (floor delivery)
-					       (incf rem-total rem)
-					       int))
-					 total-delivery-rats))
-	    )
+    (flet
+	((movetype-distribution (movetype)
+	   (let*(;;Sub requests modified by range of current cargo carrier
+		 (ranged-requests (list-ranged-requests-by-movetype hq movetype))
+		 ;;Total of ranged requests of current carrier
+		 (requests-total (let ((reqtot (apply #'+ ranged-requests)))
+				   (if (zerop reqtot) ; no requests: abort
+				       (return-from movetype-distribution nil)
+				       reqtot)))
+		 ;;Amount of supply HQ can move with current carrier
+		 (cargo-cap (useable-cargo
+			     (get-cargo-unit movetype (hq-army hq))))
+		 ;;Ranged requests multiplied by capability
+		 ;;Out of range leads to "wasted" cargo capability
+		 (total-delivery-rats (mapcar #'(lambda (range-req total-left)
+						  (* (min range-req
+							  total-left)
+						     (/ (min cargo-cap
+							     requests-total)
+							requests-total)))
+					      ranged-requests
+					      totals-left))
+		 ;;Integer remainder of flooring total-deliveries
+		 (rem-total 0) ; todo: add to integers below
+		 ;;Floor fractions of capability ranged requests
+		 (total-delivery-ints (mapcar #'(lambda (delivery)
+						  (multiple-value-bind (int rem)
+						      (floor delivery)
+						    (incf rem-total rem)
+						    int))
+					      total-delivery-rats))
+		 )
 
-	(setf totals-left
-	      (mapcar #'- totals-left total-delivery-ints))
-
-	(push (list movetype
-		    totals-left
-		    ranged-requests
-		    requests-total
-		    cargo-cap
-		    total-delivery-rats
-		    total-delivery-ints
-		    rem-total)
-	      rv)
-
-	))
+	     (setf totals-left
+		   (mapcar #'- totals-left total-delivery-ints))
+	     
+	     ;;debug
+	     (push (list movetype
+			 totals-left
+			 ranged-requests
+			 requests-total
+			 cargo-cap
+			 total-delivery-rats
+			 total-delivery-ints
+			 rem-total)
+		   rv)
+	     ;;debug end
+	     
+	     total-delivery-ints)))
       
       
-    ;(list totals ranged-requests requests-total cargo-cap
-     ; total-delivery-rats total-delivery-ints rem-total totals-left)
-    (list totals totals-left)
-    rv
+
+      (dolist (movetype '(SEA
+			  RAIL
+			  WHEELED
+			  ))
+
+	(movetype-distribution movetype)
+	
+	)
       
-    ))
+      
+					;(list totals ranged-requests requests-total cargo-cap
+					; total-delivery-rats total-delivery-ints rem-total totals-left)
+      (list totals totals-left)
+      rv
+      
+      )))
 
 (defun supply-system (faction)
 
