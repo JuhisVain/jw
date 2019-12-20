@@ -220,6 +220,7 @@ troops."
 	   (army-troops army)))
 	   
 
+;;TODO: would be nice to log the amount of cargo carriers used...
 (defun hq-supply-distribution (hq)
   (declare (hq hq))
 
@@ -230,7 +231,11 @@ troops."
     (flet
 	((movetype-distribution (movetype)
 	   (let*(;;Sub requests modified by range of current cargo carrier
-		 (ranged-requests (list-ranged-requests-by-movetype hq movetype))
+		 ;;or what's left
+		 (ranged-requests
+		  (mapcar #'min
+			  totals-left
+			  (list-ranged-requests-by-movetype hq movetype)))
 		 ;;Total of ranged requests of current carrier
 		 (requests-total (let ((reqtot (apply #'+ ranged-requests)))
 				   (if (zerop reqtot) ; no requests: abort
@@ -241,14 +246,12 @@ troops."
 			     (get-cargo-unit movetype (hq-army hq))))
 		 ;;Ranged requests multiplied by capability
 		 ;;Out of range leads to "wasted" cargo capability
-		 (total-delivery-rats (mapcar #'(lambda (range-req total-left)
-						  (* (min range-req
-							  total-left)
+		 (total-delivery-rats (mapcar #'(lambda (range-req)
+						  (* range-req
 						     (/ (min cargo-cap
 							     requests-total)
 							requests-total)))
-					      ranged-requests
-					      totals-left))
+					      ranged-requests))
 		 ;;Integer remainder of flooring total-deliveries
 		 (rem-total 0) ; todo: add to integers below
 		 ;;Floor fractions of capability ranged requests
@@ -278,15 +281,15 @@ troops."
 	     total-delivery-ints)))
       
       
-
       (dolist (movetype '(SEA
 			  RAIL
 			  WHEELED
 			  ))
-
-	(movetype-distribution movetype)
-	
-	)
+	(loop for subordinate in (hq-subordinates hq)
+	   for delivery in (movetype-distribution movetype)
+	   do (hq-transfer-supply hq subordinate delivery)
+	   do (format t " using ~a~%" movetype)
+	     ))
       
       
 					;(list totals ranged-requests requests-total cargo-cap
