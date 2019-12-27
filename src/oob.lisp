@@ -289,6 +289,8 @@ troops."
 	   for delivery in (movetype-distribution movetype)
 	   do (hq-transfer-supply hq subordinate delivery)
 	   do (format t " using ~a~%" movetype)
+	   if (hq-p subordinate)
+	   do (hq-supply-distribution subordinate) ;ta-dah!
 	     ))
       
       
@@ -296,81 +298,10 @@ troops."
 					; total-delivery-rats total-delivery-ints rem-total totals-left)
       (list totals totals-left)
       rv
+      nil
       
       )))
 
 (defun supply-system (faction)
-
   
   )
-
-;;Obsolete remove
-'(defun supply-system (faction)
-  (declare (optimize (debug 3)))
-  (unless (faction-chain-of-command faction)
-    (error "~&Faction ~a has no supreme HQ!~%" (faction-name faction)))
-
-  ;; TODO: First it would be better to check railways supplies
-  ;; Maybe supplies can be delivered using all troops?
-
-  ;; Wheeled supplies:
-  '(let* ((hq (faction-chain-of-command faction))
-	 (cargo-space (hq-useable-cargo hq 'WHEELED))
-	 (sub-ranged-request-list
-	  (list-ranged-requests-by-movetype hq 'WHEELED)))
-
-    (let* ((all-requests (cons (army-supply-request (hq-army hq))
-			       sub-ranged-request-list))
-	   (total-req (apply #'+ all-requests))
-	   (req-capability (/ (min cargo-space total-req
-				   (army-supply-stockpiles-count (hq-army hq)))
-			      total-req)))
-      (loop
-	 for sub-request in all-requests
-	 for sub in (cons hq (hq-subordinates hq))
-	 do (hq-transfer-supply hq sub (* sub-request req-capability)))
-      ))
-
-  (let* ((hq (faction-chain-of-command faction)))
-
-    (let* ((dataset
-	    (mapcar #'(lambda (sub request)
-			(list
-			 (army-xy (oob-element-army sub))
-			 (movetype-distance faction 'WHEELED
-					    (army-xy (hq-army hq))
-					    (army-xy (oob-element-army sub)))
-			 (movetype-distance faction 'RAIL
-					    (army-xy (hq-army hq))
-					    (army-xy (oob-element-army sub)))
-			 (movetype-distance faction 'SEA
-					    (army-xy (hq-army hq))
-					    (army-xy (oob-element-army sub)))
-			 request))
-		    
-		    (hq-subordinates hq)
-		    (list-requests hq)))
-	   ;; Add upp totals of reachables:
-	   (tot-wheel-dist (apply #'+ (mapcar #'cadr (remove-if #'(lambda (x) (= x +inf+))
-								dataset :key #'cadr))))
-	   (tot-rail-dist (apply #'+ (mapcar #'caddr (remove-if #'(lambda (x) (= x +inf+))
-								dataset :key #'caddr))))
-	   (tot-sea-dist (apply #'+ (mapcar #'cadddr (remove-if #'(lambda (x) (= x +inf+))
-								dataset :key #'cadddr))))
-	   )
-      
-      ;; (/ (MIN capacity-in-movement-category total-in-movement-category)
-      ;;    total-in-movement-category)
-      ;; 
-
-      (let* ((total-distance-in-movement-cat tot-wheel-dist)
-	     (capacity-in-movement-cat (hq-useable-cargo hq 'WHEELED))
-	     (capability (/ (min capacity-in-movement-cat
-				 total-distance-in-movement-cat)
-			    total-distance-in-movement-cat)))
-
-	capability
-	
-	)
-      (list tot-wheel-dist tot-rail-dist tot-sea-dist); debugging
-      )))
