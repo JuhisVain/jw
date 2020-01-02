@@ -119,6 +119,8 @@
   "Moves supplies from a supply stack at army of oob-element ORIGIN to
 army of oob-element DESTINATION by AMOUNT of free supplies available at
 ORIGIN. Finally moves supply from unit-stack to army-supplies slot as required."
+  (declare (oob-element origin destination)
+	   ((integer 0 *) amount))
   ;;Some debug prints, this data should be logged at (inc-supply-stockpiles)
   '(format t "~&~a sends ~a supplies to ~a~%"
     (let ((oa (oob-element-army origin)))
@@ -134,7 +136,8 @@ ORIGIN. Finally moves supply from unit-stack to army-supplies slot as required."
    (- (inc-supply-stockpiles (oob-element-army origin)
 			     (- amount))))
   (army-validate-supply (oob-element-army origin))
-  (army-validate-supply (oob-element-army destination)))
+  (army-validate-supply (oob-element-army destination))
+  nil)
 
 (defun movetype-distance (faction movetype xy0 xy1)
   "The cost in action points that a troop of MOVETYPE belonging to FACTION
