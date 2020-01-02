@@ -116,14 +116,25 @@
 	(t 0/100)))
 
 (defun hq-transfer-supply (origin destination amount)
-  (format t "~&~a sends ~a supplies to ~a~%"
-	  (let ((oa (oob-element-army origin)))
-	    (cons (army-x oa)
-		  (army-y oa)))
-	  (floor amount)
-	  (let ((da (oob-element-army destination)))
-	    (cons (army-x da)
-		  (army-y da)))))
+  "Moves supplies from a supply stack at army of oob-element ORIGIN to
+army of oob-element DESTINATION by AMOUNT of free supplies available at
+ORIGIN. Finally moves supply from unit-stack to army-supplies slot as required."
+  ;;Some debug prints, this data should be logged at (inc-supply-stockpiles)
+  '(format t "~&~a sends ~a supplies to ~a~%"
+    (let ((oa (oob-element-army origin)))
+      (cons (army-x oa)
+	    (army-y oa)))
+    (floor amount)
+    (let ((da (oob-element-army destination)))
+      (cons (army-x da)
+	    (army-y da))))
+
+  (inc-supply-stockpiles
+   (oob-element-army destination)
+   (- (inc-supply-stockpiles (oob-element-army origin)
+			     (- amount))))
+  (army-validate-supply (oob-element-army origin))
+  (army-validate-supply (oob-element-army destination)))
 
 (defun movetype-distance (faction movetype xy0 xy1)
   "The cost in action points that a troop of MOVETYPE belonging to FACTION
@@ -253,7 +264,7 @@ troops."
 							requests-total)))
 					      ranged-requests))
 		 ;;Integer remainder of flooring total-deliveries
-		 (rem-total 0) ; todo: add to integers below
+		 (rem-total 0) ; todo: add to integers below TODOTODOTODO
 		 ;;Floor fractions of capability ranged requests
 		 (total-delivery-ints (mapcar #'(lambda (delivery)
 						  (multiple-value-bind (int rem)
