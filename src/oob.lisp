@@ -293,7 +293,8 @@ troops."
 	     ;;debug end
 	     
 	     total-delivery-ints)))
-      
+
+      ;;;; HQ must also deliver to itself!!!!
       
       (dolist (movetype '(SEA
 			  RAIL
@@ -316,6 +317,20 @@ troops."
       
       )))
 
+(defun list-oob-elements (hq)
+  "Recursively list HQ and HQ's order of battle for oob-elements."
+  (cons
+   hq
+   (loop for sub in (hq-subordinates hq)
+      if (hq-p sub)
+      append (list-oob-elements sub)
+      else
+      collect sub)))
+
+
+
 (defun supply-system (faction)
+  (hq-supply-distribution
+   (faction-chain-of-command faction))
   
   )
