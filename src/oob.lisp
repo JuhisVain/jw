@@ -327,10 +327,16 @@ troops."
       else
       collect sub)))
 
+(defmacro do-oob (var hq &body body)
+  (let ((all-units (gensym)))
+    `(do* ((,all-units (list-oob-elements ,hq) (cdr ,all-units))
+	   (,var (car ,all-units) (car ,all-units)))
+	  ((null ,var))
+       ,@body)))
 
 
 (defun supply-system (faction)
   (hq-supply-distribution
    (faction-chain-of-command faction))
-  
+  ;; consume here (do-oob )
   )
