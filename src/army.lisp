@@ -151,16 +151,45 @@ If ADVANCE is true ARMY will move to TARGET's position, if possible."
 	     *turn-readiness-replenishment*)
 	*turn-readiness-replenishment*)))
 
+(defun troop-maintenance-supply (stack)
+  "Returns the amount of supply required to maintain STACK readiness for one
+round."
+  (declare (unit-stack stack))
+  (* (faction-unit-supply-use (unit-stack-type stack))
+     (unit-stack-count stack)))
+
 (defun army-supply-use (army)
-  "Returns amount of supply ARMY consumes in a round."
+  "Returns ***values*** amounts of supply ARMY consumes to maintain
+itself and to replenish itself in a round."
   (declare (army army))
-  (apply #'+
-	 (mapcar #'(lambda (troop)
-		     (*
-		      (faction-unit-supply-use (unit-stack-type troop))
-		      (readiness-replenish-mod (unit-stack-readiness troop))
-		      (unit-stack-count troop)))
-		 (army-troops army))))
+  (let ((maintain 0)
+	(replenish 0))
+    (dolist (troop (army-troops army))
+      (let ((troop-maintain (troop-maintenance-supply troop)))
+	(incf maintain troop-maintain)
+	(incf replenish
+	      (* troop-maintain
+		 (readiness-replenish-mod (unit-stack-readiness troop))))))
+    (values maintain replenish)))
+
+(defun army-consume-supply (army)
+  (declare (army army))
+  (let* ((supply-use (army-supply-use army))
+	 (deficit (- (army-supplies army)
+		     supply-use)))
+    (cond ((>= deficit 0)
+	   (setf (army-supplies army) deficit)
+	   ;; todo: increase readiness if below 100
+	   )
+
+	  (t
+	   ;; reduce readiness
+	   ))
+    ;;(/
+    ;; (- (army-supplies army)
+;;	supply-use)
+  ;;   supply-use)
+    ))
 
 (defun army-supply-space (army)
   "Returns total amount of supplies ARMY can carry."
@@ -176,8 +205,11 @@ If ADVANCE is true ARMY will move to TARGET's position, if possible."
   "Returns how many units of supply to request from HQ."
   (* (/ (army-supply-req army)
 	100)
-     (- (army-supply-space army) ; Replenish army stocks
-	(army-supplies army))))
+
+     (+
+      (army-supply-use army) ; This round's consumption
+      (- (army-supply-space army) ; Replenish army stocks
+	 (army-supplies army)))))
 
 (defun army-supply-stockpiles (army)
   "Returns ARMY's supply stockpile unit-stack, or nil if not found."
