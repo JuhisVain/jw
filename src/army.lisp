@@ -141,7 +141,8 @@ If ADVANCE is true ARMY will move to TARGET's position, if possible."
 		   winner))))
 
 
-;;not too sure of these
+;;This is the maximum that a unit-stack's readiness may change by in a round?
+;; disregarding combat losses
 (defvar *turn-readiness-replenishment* 25)
 
 (defun readiness-replenish-mod (readiness)
@@ -191,19 +192,29 @@ itself and to replenish itself in a round."
 		      replenish)))
       (cond ((>= deficit 0)
 	     (setf (army-supplies army) deficit)
-	     
-	     ;; todo: increase readiness if below 100
+	     (dolist (troop (army-troops army))
+	       (troop-consume-supply troop (/ replenish maintain)))
+
 	     )
 	    
 	    (t
-	     ;; reduce readiness
+	     (setf (army-supplies army) 0)
+	     (dolist (troop (army-troops army))
+	       (troop-consume-supply troop (/ (+ replenish deficit)
+					      maintain)))
 	     ))
-      ;;(/
-      ;; (- (army-supplies army)
-      ;;	supply-use)
-      ;;   supply-use)
       )))
 
+;; Calling this consumption might be strange:
+(defun troop-consume-supply (troop &optional (act-consume-ratio 1))
+  "Modifies TROOP's readiness according to some magic number"
+  (setf (unit-stack-readiness troop)
+	(limit
+	 0
+	 (+ (unit-stack-readiness troop)
+	    (* *turn-readiness-replenishment*
+	       (1- act-consume-ratio)))
+	 100)))
 
 (defun army-supply-space (army)
   "Returns total amount of supplies ARMY can carry."
