@@ -141,6 +141,7 @@ If ADVANCE is true ARMY will move to TARGET's position, if possible."
 		   winner))))
 
 
+;;not too sure of these
 (defvar *turn-readiness-replenishment* 25)
 
 (defun readiness-replenish-mod (readiness)
@@ -158,6 +159,16 @@ round."
   (* (faction-unit-supply-use (unit-stack-type stack))
      (unit-stack-count stack)))
 
+(defun troop-replenish-supply (troop &optional maintenance)
+  "Returns amount of supply required by unit-stack TROOP to replenish it's
+readiness. Integer MAINTENANCE representing supply required to maintain
+readiness may be supplied for a performance placebo effect."
+  (declare (unit-stack troop)
+	   ((or null (integer 0 *)) maintenance))
+  (* (or maintenance
+	 (troop-maintenance-supply troop))
+     (readiness-replenish-mod (unit-stack-readiness troop))))
+
 (defun army-supply-use (army)
   "Returns ***values*** amounts of supply ARMY consumes to maintain
 itself and to replenish itself in a round."
@@ -168,28 +179,31 @@ itself and to replenish itself in a round."
       (let ((troop-maintain (troop-maintenance-supply troop)))
 	(incf maintain troop-maintain)
 	(incf replenish
-	      (* troop-maintain
-		 (readiness-replenish-mod (unit-stack-readiness troop))))))
+	      (troop-replenish-supply troop troop-maintain)
+	      )))
     (values maintain replenish)))
 
 (defun army-consume-supply (army)
   (declare (army army))
-  (let* ((supply-use (army-supply-use army))
-	 (deficit (- (army-supplies army)
-		     supply-use)))
-    (cond ((>= deficit 0)
-	   (setf (army-supplies army) deficit)
-	   ;; todo: increase readiness if below 100
-	   )
+  (multiple-value-bind (maintain replenish)
+      (army-supply-use army)
+    (let ((deficit (- (army-supplies army)
+		      replenish)))
+      (cond ((>= deficit 0)
+	     (setf (army-supplies army) deficit)
+	     
+	     ;; todo: increase readiness if below 100
+	     )
+	    
+	    (t
+	     ;; reduce readiness
+	     ))
+      ;;(/
+      ;; (- (army-supplies army)
+      ;;	supply-use)
+      ;;   supply-use)
+      )))
 
-	  (t
-	   ;; reduce readiness
-	   ))
-    ;;(/
-    ;; (- (army-supplies army)
-;;	supply-use)
-  ;;   supply-use)
-    ))
 
 (defun army-supply-space (army)
   "Returns total amount of supplies ARMY can carry."
