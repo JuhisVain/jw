@@ -13,6 +13,14 @@
     (apply #'concatenate
 	   (cons 'string (mapcar #'princ-to-string to-concs))))))
 
+(defun limit (lower-limit number upper-limit)
+  "Returns NUMBER within LIMITs."
+  (declare (number lower-limit number upper-limit))
+  (cond ((< lower-limit number upper-limit)
+	 number)
+	((< number lower-limit) lower-limit)
+	((> number upper-limit) upper-limit)))
+
 (defun chance (percent)
   (declare (number percent))
   (if (< (random 100) percent) t))
