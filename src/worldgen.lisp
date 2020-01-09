@@ -1000,14 +1000,20 @@ outskirt towards direction."
 	  when (equal crd xy1)
 	  return dir)))
 
-;;   TODO: might want to handle complete masks in some way (as in no field outskirts on sea tiles etc..)
+;;TODO: might want to handle complete masks in some way
+;;     (as in no field outskirts on sea tiles etc..)
+;; more todo: There's sorting happening elsewhere as well
+;; but then again this function isn't called that often...
+;; note: performance testing indicates sorting is pretty cheap
+;; at least for a mostly sorted world
 (defun finalize-tile (x y &optional (world *world*))
   (setf (tile-variant (tile-at x y world))
-	(remove-duplicates
-	 (append
-	  (collect-overflowing-graphics x y world)
-	  (pull-outskirts x y world)
-	  (collect-border-graphics x y world)))))
+	(sort-variant-list
+	 (remove-duplicates
+	  (append
+	   (collect-overflowing-graphics x y world)
+	   (pull-outskirts x y world)
+	   (collect-border-graphics x y world))))))
 
 (defun has-variants (primary-symbol &optional seed)
   "If given no seed, returns list containing variant symbols, or NIL on failure.
@@ -1136,8 +1142,10 @@ NIL on failure."
 
 
 (defun add-road (x y type direction &optional (world *world*))
-  "Adds a single piece of roadway of type TYPE running from tile X Y to tile towards DIRECTION."
-  (when (member direction +std-long-dirs+) (setf direction (short-dir direction)))
+  "Adds a single piece of roadway of type TYPE running from tile X Y to tile
+towards DIRECTION."
+  (when (member direction +std-long-dirs+)
+    (setf direction (short-dir direction)))
   (let* ((tile (tile-at x y world))
 	 (destination (neighbour-tile x y direction world))
 	 (old-road-list (assoc direction (tile-road-links tile))))
@@ -1148,7 +1156,8 @@ NIL on failure."
 
     (if old-road-list ; Has this direction already been created?
 	(let* ((tail (cdr old-road-list)) ; store cdr to avoid crazy looping
-	       (destination-roads (assoc (oppdir direction) (tile-road-links destination)))
+	       (destination-roads (assoc (oppdir direction)
+					 (tile-road-links destination)))
 	       (dest-tail (cdr destination-roads)))
 	  (rplacd old-road-list (cons type tail))
 	  (rplacd destination-roads (cons type dest-tail))
@@ -1158,7 +1167,8 @@ NIL on failure."
 		   (tile-road-links tile))
 	  (pushnew (list (oppdir direction) type) 
 		   (tile-road-links destination))
-	  (finalize-tile-region x y))))) ; Not efficient to form variant lists here but way easier to test
+	  ;; Not efficient to form variant lists here but way easier to test
+	  (finalize-tile-region x y)))))
 
 
 (defun add-river (x y size location-on-tile &optional (world *world*))
