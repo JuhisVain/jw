@@ -25,7 +25,7 @@
 		    (:print-object oob-pos-printer))
   (superior nil :type (or sub-hq supreme-hq)))
 
-(defmacro do-oob (var hq &body body)
+(defmacro do-oob ((var hq) &body body)
   (let ((all-units (gensym)))
     `(do* ((,all-units (list-oob-elements ,hq) (cdr ,all-units))
 	   (,var (car ,all-units) (car ,all-units)))
@@ -337,5 +337,7 @@ troops."
 (defun supply-system (faction)
   (hq-supply-distribution
    (faction-chain-of-command faction))
-  ;; consume here (do-oob )
+  (do-oob (position (faction-chain-of-command faction))
+    (army-validate-supply (oob-element-army position))
+    (army-consume-supply (oob-element-army position)))
   )

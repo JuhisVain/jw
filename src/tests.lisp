@@ -171,3 +171,36 @@ screw up. Maybe with graphics priorities."
 	  (if (or (eq f 'grass-a) (eq f 'sea-a)) nil
 	      (push (cons x y) tiles)))))
     tiles))
+
+(defun test-supply-system (times)
+  (let ((xxx nil))
+    (do-oob (x (faction-chain-of-command
+		(cadr (world-factions *world*))))
+      (push (unit-stack-readiness
+	     (car (army-troops
+		   (oob-element-army x))))
+	    xxx))
+    (format t "superHQ supply: ~a~%"
+	    (army-supply-stockpiles
+	     (oob-element-army (faction-chain-of-command
+				(cadr (world-factions *world*))))))
+    (format t "Old readiness: ~a" xxx)
+
+    (dotimes (count times)
+      (format t "~&:::Iteration ~a:::~%" count)
+      (setf xxx nil)
+      
+      (supply-system (cadr (world-factions *world*)))
+      
+      (do-oob (x (faction-chain-of-command
+		  (cadr (world-factions *world*))))
+	(push (unit-stack-readiness
+	       (car (army-troops
+		     (oob-element-army x))))
+	      xxx))
+      (format t "superHQ supply: ~a~%"
+	    (army-supply-stockpiles
+	     (oob-element-army (faction-chain-of-command
+				(cadr (world-factions *world*))))))
+      (format t "Readiness now: ~a" xxx)
+    )))
