@@ -206,14 +206,15 @@ itself and to replenish itself in a round."
       )))
 
 ;; Calling this consumption might be strange:
-(defun troop-consume-supply (troop &optional (act-consume-ratio 1))
-  "Modifies TROOP's readiness according to some magic number"
+(defun troop-consume-supply (troop &optional (actual-consume-ratio 1))
+  "Modifies TROOP's readiness using ratio actual consumption by consumption
+required to maintain unit ACTUAL-CONSUME-RATIO."
   (setf (unit-stack-readiness troop)
 	(limit
 	 0
 	 (+ (unit-stack-readiness troop)
 	    (* *turn-readiness-replenishment*
-	       (1- act-consume-ratio)))
+	       (1- actual-consume-ratio)))
 	 100)))
 
 (defun army-supply-space (army)
