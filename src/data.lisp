@@ -16,7 +16,7 @@
 (defun limit (lower-limit number upper-limit)
   "Returns NUMBER within LIMITs."
   (declare (number lower-limit number upper-limit))
-  (cond ((< lower-limit number upper-limit)
+  (cond ((<= lower-limit number upper-limit)
 	 number)
 	((< number lower-limit) lower-limit)
 	((> number upper-limit) upper-limit)))
