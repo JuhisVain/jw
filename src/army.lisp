@@ -185,25 +185,22 @@ itself and to replenish itself in a round."
     (values maintain replenish)))
 
 (defun army-consume-supply (army)
+  "Consumes ARMY's army-supplies to modify readiness of ARMY's troops."
   (declare (army army))
   (multiple-value-bind (maintain replenish)
       (army-supply-use army)
     (let ((deficit (- (army-supplies army)
 		      replenish)))
       (cond ((>= deficit 0)
-	     (setf (army-supplies army) deficit)
 	     (dolist (troop (army-troops army))
 	       (troop-consume-supply troop (/ replenish maintain)))
-
-	     )
+	     (setf (army-supplies army) deficit))
 	    
 	    (t
-	     (setf (army-supplies army) 0)
 	     (dolist (troop (army-troops army))
-	       (troop-consume-supply troop (/ (+ replenish deficit)
+	       (troop-consume-supply troop (/ (army-supplies army)
 					      maintain)))
-	     ))
-      )))
+	     (setf (army-supplies army) 0))))))
 
 ;; Calling this consumption might be strange:
 (defun troop-consume-supply (troop &optional (actual-consume-ratio 1))
