@@ -209,9 +209,10 @@ required to maintain unit ACTUAL-CONSUME-RATIO."
   (setf (unit-stack-readiness troop)
 	(limit
 	 0
-	 (+ (unit-stack-readiness troop)
-	    (* *turn-readiness-replenishment*
-	       (1- actual-consume-ratio)))
+	 (round 
+	  (+ (unit-stack-readiness troop)
+	     (* *turn-readiness-replenishment*
+		(1- actual-consume-ratio))))
 	 100)))
 
 (defun army-supply-space (army)
