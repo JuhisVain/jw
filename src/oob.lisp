@@ -245,6 +245,11 @@ troops."
 (defun hq-supply-distribution (hq)
   (declare (hq hq))
 
+  ;; Move supply from stockpile to use for this HQ
+  ;; this will give HQ full supplies as long as stockpiles last
+  (army-validate-supply (hq-army hq))
+  ;;Todo: HQ should not be so greedy
+
   (let* ((totals (list-requests hq))
 	 (totals-left totals)
 	 (rv nil))
@@ -300,8 +305,6 @@ troops."
 	     ;;debug end
 	     
 	     total-delivery-ints)))
-
-      ;;;; HQ must also deliver to itself!!!!
       
       (dolist (movetype '(SEA
 			  RAIL
@@ -315,9 +318,6 @@ troops."
 	   do (hq-supply-distribution subordinate) ;ta-dah!
 	     ))
       
-      
-					;(list totals ranged-requests requests-total cargo-cap
-					; total-delivery-rats total-delivery-ints rem-total totals-left)
       (list totals totals-left)
       rv
       nil
