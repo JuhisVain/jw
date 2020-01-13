@@ -194,6 +194,11 @@ screw up. Maybe with graphics priorities."
       
       (do-oob (x (faction-chain-of-command
 		  (cadr (world-factions *world*))))
+	(let ((ss (army-supply-stockpiles (oob-element-army x))))
+	  (when (and ss (not (hq-p x)))
+	    (format t "Army at ~a has ~a stockpile~%"
+		    (army-xy (oob-element-army x))
+		    (unit-stack-count ss))))
 	(push (unit-stack-readiness
 	       (car (army-troops
 		     (oob-element-army x))))
