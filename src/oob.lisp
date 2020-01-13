@@ -25,13 +25,9 @@
 		    (:print-object oob-pos-printer))
   (superior nil :type (or sub-hq supreme-hq)))
 
-;; ?? This is just (dolist (unit (list-oob-elements hq))..) ??
 (defmacro do-oob ((var hq) &body body)
-  (let ((all-units (gensym)))
-    `(do* ((,all-units (list-oob-elements ,hq) (cdr ,all-units))
-	   (,var (car ,all-units) (car ,all-units)))
-	  ((null ,var))
-       ,@body)))
+  `(dolist (,var (list-oob-elements ,hq))
+     ,@body))
 
 (defun oob-pos-printer (this stream)
   (declare (oob-pos this))
