@@ -139,8 +139,8 @@ ORIGIN. Finally moves supply from unit-stack to army-supplies slot as required."
    (oob-element-army destination)
    (- (inc-supply-stockpiles (oob-element-army origin)
 			     (- amount))))
-  (army-validate-supply (oob-element-army origin))
-  (army-validate-supply (oob-element-army destination))
+  ;(army-validate-supply (oob-element-army origin))
+  ;(army-validate-supply (oob-element-army destination))
   nil)
 
 (defun movetype-distance (faction movetype xy0 xy1)
@@ -310,13 +310,12 @@ troops."
 	(loop for subordinate in (hq-subordinates hq)
 	   for delivery in (movetype-distribution movetype)
 	   do (hq-transfer-supply hq subordinate delivery)
-	   do (format t " using ~a~%" movetype)
 	   if (hq-p subordinate)
 	   do (hq-supply-distribution subordinate) ;ta-dah!
 	     ))
       
-      (list totals totals-left)
-      rv
+      ;;(list totals totals-left)
+      ;;rv
       nil
       
       )))
@@ -334,7 +333,7 @@ troops."
 (defun supply-system (faction)
   (hq-supply-distribution
    (faction-chain-of-command faction))
-  (do-oob (position (faction-chain-of-command faction))
-    (army-validate-supply (oob-element-army position))
-    (army-consume-supply (oob-element-army position)))
+  (do-oob (position (faction-chain-of-command faction))    
+    (army-consume-supply (oob-element-army position))
+    (army-validate-supply (oob-element-army position)))
   )
