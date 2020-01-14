@@ -189,18 +189,32 @@ itself and to replenish itself in a round."
   (declare (army army))
   (multiple-value-bind (maintain replenish)
       (army-supply-use army)
-    (let ((deficit (- (army-supplies army)
-		      replenish)))
+    (let* ((total-supplies (+ (army-supplies army)
+			      (army-supply-stockpiles-count army)))
+	   (deficit (- total-supplies
+		       replenish)))
       (cond ((>= deficit 0)
 	     (dolist (troop (army-troops army))
 	       (troop-consume-supply troop (/ replenish maintain)))
-	     (setf (army-supplies army) deficit))
+	     (setf (army-supplies army)
+		   (- ;3: reduce remaining consumption from army-supplies
+		    (army-supplies army)
+		    (+ replenish ;2: reduce (negative) overflow from total consumption
+		       ;;1: reduce consumption from stockpile:
+		       (inc-supply-stockpiles army (- replenish))) 
+		   ;;;;deficit ;remove
+		    )))
 	    
 	    (t
 	     (dolist (troop (army-troops army))
-	       (troop-consume-supply troop (/ (army-supplies army)
+	       (troop-consume-supply troop (/ total-supplies
 					      maintain)))
-	     (setf (army-supplies army) 0))))))
+	     (unless (zerop
+		      (decf (army-supplies army)
+			    (- total-supplies
+			       (inc-supply-stockpiles army (- total-supplies)))))
+	       (error "Total supplies not zero!!")
+	       ))))))
 
 ;; Calling this consumption might be strange:
 (defun troop-consume-supply (troop &optional (actual-consume-ratio 1))
@@ -262,16 +276,19 @@ If the supply stack's count is at zero it will be deleted.
 Will return amount of delta that was successfully deltaed."
   (declare (army army) (integer delta))
   (let ((stockpiles (or (army-supply-stockpiles army)
-			(car (push (make-unit-stack
-				    :type (unit-type-by-name
-					   "Supply" (army-owner army))
-				    :count 0)
-				   (army-troops army))))))
+			;; avoid creating useless stack if possible:
+			(if (> delta 0)
+			    (car (push (make-unit-stack
+					:type (unit-type-by-name
+					       "Supply" (army-owner army))
+					:count 0)
+				       (army-troops army)))
+			    (return-from inc-supply-stockpiles 0)))))
     ;;TODO: log
     (cond ((and (< delta 0)
 		(<= (unit-stack-count stockpiles) (abs delta)))
 	   (prog1
-	       (unit-stack-count stockpiles)
+	       (- (unit-stack-count stockpiles))
 	     (setf (army-troops army)
 		   (delete stockpiles
 			   (army-troops army)))))
