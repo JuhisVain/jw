@@ -201,20 +201,15 @@ itself and to replenish itself in a round."
 		    (army-supplies army)
 		    (+ replenish ;2: reduce (negative) overflow from total consumption
 		       ;;1: reduce consumption from stockpile:
-		       (inc-supply-stockpiles army (- replenish))) 
-		   ;;;;deficit ;remove
-		    )))
+		       (inc-supply-stockpiles army (- replenish))))))
 	    
 	    (t
 	     (dolist (troop (army-troops army))
 	       (troop-consume-supply troop (/ total-supplies
 					      maintain)))
-	     (unless (zerop
-		      (decf (army-supplies army)
-			    (- total-supplies
-			       (inc-supply-stockpiles army (- total-supplies)))))
-	       (error "Total supplies not zero!!")
-	       ))))))
+	     (decf (army-supplies army)
+		   (- total-supplies
+		      (inc-supply-stockpiles army (- total-supplies)))))))))
 
 ;; Calling this consumption might be strange:
 (defun troop-consume-supply (troop &optional (actual-consume-ratio 1))
