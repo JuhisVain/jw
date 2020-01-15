@@ -384,7 +384,9 @@ Aborted if new enemy discovered."
        (swamp :large (1 0 0) :small (1 0 0))
        (mountain :large (80 -5 -8) :small (80 0 0) :overrides (:outskirts-everywhere))
        (hill :large (45 -9 -3) :small (80 0 0) :overrides (:outskirts-everywhere))
-       (port :large (110 20 5) :small (110 0 0)))
+       (port :large (110 20 5) :small (110 0 0))
+       (mine :large (110 16 10) :small (110 0 0))
+       (pumpjack :large (110 17 17) :small (110 0 0)))
 
      :border '((stream
 		:large (:north (55 24 -8)
