@@ -99,6 +99,8 @@ with data field in full."
 
 (defstruct (city (:include location)))
 (defstruct (port (:include location)))
+(defstruct (mine (:include location)))
+(defstruct (pumpjack (:include location)))
 
 (defstruct tile
   (owner nil :type (or faction null))
