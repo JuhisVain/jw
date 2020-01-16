@@ -1082,6 +1082,30 @@ NIL on failure."
 
     world))
 
+(defmacro create-location
+    (type x y
+     &key (world *world*) (owner nil) (name nil) (production nil)
+     &aux (is-city (eq type 'city)))
+  (let ((new-loc (gensym (symbol-name (conc-syms 'new- type))))
+	(make-loc (conc-syms 'make- type)))
+    `(let ((,new-loc
+	    (,make-loc
+	     :name ,(or name
+			(if is-city `(random-city-name ,owner ,world)
+			    (concatenate 'string "Unnamed "
+					 (string-downcase (symbol-name type)))))
+	     :owner ,owner
+	     :x ,x :y ,y
+	     :production ,production)))
+       (when ,world
+	 (pushnew ,new-loc (tile-location (tile-at ,x ,y ,world)))
+	 (pushnew (random-variant ',type) (tile-variant (tile-at ,x ,y ,world)))
+	 (finalize-tile-region ,x ,y ,world)
+	 (pushnew ,new-loc ,(if is-city `(world-cities ,world)
+			       `(world-locations ,world))))
+       ,new-loc)))
+    
+
 (defun create-port (x y &key (world *world*) (owner nil) (name nil) (production nil))
   (let ((new-port
 	 (make-port :name (or name "Unnamed port")
