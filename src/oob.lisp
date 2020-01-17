@@ -11,7 +11,9 @@
 (defstruct (hq (:include oob-element))
   (general nil :type (or general null))
   (subordinates nil)
-  (supply-sources nil))
+  (supply-sources nil)
+  (send-surplus-upstream :type boolean)
+  (send-production-upstream :type boolean))
 
 (defstruct (supreme-hq (:include hq)
 		       (:print-object supreme-hq-printer))
@@ -229,6 +231,9 @@ hq-subordinates."
 ;;; Maybe allow sub-hqs to be programmed to send supply (or anything) up the oob
 ;; as well. These depots could then sit on cities to send production to their
 ;; superiors and on harbors to transfer by ships etc..
+
+;; subordinate field armies should not have the capability to juggle resources
+;; automatically, thus only HQs stationed on cities will be able to send up.
 
 (defun get-cargo-unit (move-type army)
   "Return the designated supply carrier with movement MOVE-TYPE from ARMY's
