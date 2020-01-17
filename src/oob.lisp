@@ -215,14 +215,20 @@ hq-subordinates."
 
 ;; Armies should consume (army-supply-use x) at either start or end of turn
 
-
 ;;;; Do shipping first, then trains, then trucks -> only specialized units may transport supply
 ;; boats should only be able to travel and transport port to port
 
-
-
 ;;;; i have no idea how to do what i want to do
 ;;; -> just do balanced cargoships, balanced trains, balanced trucks
+
+;; 17.1.2020 update
+;;;; It might be better to have the player design the long distance
+;; super-hq to sub hqs routes and have a simple flood filled region for sub-hq
+;; to subordiates..
+
+;;; Maybe allow sub-hqs to be programmed to send supply (or anything) up the oob
+;; as well. These depots could then sit on cities to send production to their
+;; superiors and on harbors to transfer by ships etc..
 
 (defun get-cargo-unit (move-type army)
   "Return the designated supply carrier with movement MOVE-TYPE from ARMY's
