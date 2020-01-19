@@ -11,7 +11,6 @@
 (defstruct (hq (:include oob-element))
   (general nil :type (or general null))
   (subordinates nil)
-  (supply-sources nil)
   (send-surplus-upstream nil :type boolean)
   (send-production-upstream nil :type boolean))
 
