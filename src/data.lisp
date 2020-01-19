@@ -267,7 +267,12 @@ X Y coordinates places unit outside of WORLD."
 	 (locations (tile-location tile)))
     (setf (tile-owner tile) faction)
     (dolist (loc locations)
-      (setf (location-owner loc) faction))))
+      (let ((old-owner (location-owner loc)))
+	(setf (faction-locations old-owner)
+	      (delete loc (faction-locations old-owner)
+		      :test #'eq)))
+      (setf (location-owner loc) faction)
+      (pushnew loc (faction-locations faction)))))
 
 (defun coord-in-bounds (coord-pair &optional (world *world*))
   (and (<= 0 (car coord-pair) (world-width world))
