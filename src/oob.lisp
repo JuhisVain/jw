@@ -12,8 +12,8 @@
   (general nil :type (or general null))
   (subordinates nil)
   (supply-sources nil)
-  (send-surplus-upstream :type boolean)
-  (send-production-upstream :type boolean))
+  (send-surplus-upstream nil :type boolean)
+  (send-production-upstream nil :type boolean))
 
 (defstruct (supreme-hq (:include hq)
 		       (:print-object supreme-hq-printer))
