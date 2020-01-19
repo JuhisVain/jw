@@ -263,6 +263,8 @@ X Y coordinates places unit outside of WORLD."
 
 ;; A stronger army moving to a tile might also take control of neighbourhood?
 (defun change-tile-owner (x y faction)
+  "Changes tile-owner and location-owner of any location on tile at X,Y to
+FACTION."
   (let* ((tile (tile-at x y))
 	 (locations (tile-location tile)))
     (setf (tile-owner tile) faction)
