@@ -14,6 +14,8 @@
 					;key is enemy army, value is ??
   (unit-types)
   (locations) ; list of locations controlled by this faction
+  (materiel 0 :type (integer 0 *))
+  (fuel 0 :type (integer 0 *))
   )
 
 (defstruct unit-info
