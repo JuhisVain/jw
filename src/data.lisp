@@ -270,9 +270,10 @@ FACTION."
     (setf (tile-owner tile) faction)
     (dolist (loc locations)
       (let ((old-owner (location-owner loc)))
-	(setf (faction-locations old-owner)
-	      (delete loc (faction-locations old-owner)
-		      :test #'eq)))
+	(when old-owner
+	  (setf (faction-locations old-owner)
+		(delete loc (faction-locations old-owner)
+			:test #'eq))))
       (setf (location-owner loc) faction)
       (pushnew loc (faction-locations faction)))))
 
