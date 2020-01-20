@@ -344,8 +344,8 @@ troops."
 
   (dolist (location (faction-locations faction))
     (typecase location
-      (mine (incf (faction-materiel faction) (mine-production)))
-      (pumpjack (incf (faction-fuel  faction) (pumpjack-production)))
+      (mine (incf (faction-materiel faction) (mine-production location)))
+      (pumpjack (incf (faction-fuel faction) (pumpjack-production location)))
       ;;else produce units from city..
       ))
   
