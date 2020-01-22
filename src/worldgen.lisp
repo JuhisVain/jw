@@ -1084,7 +1084,7 @@ NIL on failure."
 
 (defmacro create-location
     (type x y
-     &key (world *world*) (owner nil) (name nil) (production nil)
+     &key (world '*world*) (owner nil) (name nil) (production nil)
      &aux (is-city (eq type 'city)))
   (let ((new-loc (gensym (symbol-name (conc-syms 'new- type))))
 	(make-loc (conc-syms 'make- type)))
@@ -1104,7 +1104,6 @@ NIL on failure."
 	 (pushnew ,new-loc ,(if is-city `(world-cities ,world)
 			       `(world-locations ,world))))
        ,new-loc)))
-    
 
 (defun create-port (x y &key (world *world*) (owner nil) (name nil) (production nil))
   (let ((new-port
@@ -1133,9 +1132,10 @@ NIL on failure."
     new-city))
 
 (defun random-city-name (&optional (owner nil) (world *world*))
-  (let ((city-name-list (if (null owner) (getf (world-theme world) :city-names)
+  (let ((city-name-list ;;(if (null owner) 
+			    (getf (world-theme world) :city-names)
 			    ;;TODO: else get name from owner faction's name list
-			    )))
+			    ));;)
     (nth (random (1+ (car city-name-list))) (cdr city-name-list))))
 
 ;;This is a utility function for tile graphics editing
