@@ -69,19 +69,18 @@
 		     :production 100)
 
     (create-location city 11 6
-		     :owner (cadr (world-factions *world*))
-		     :production
-		     ;; TODO: think this through
-		     (list (cons 100
-				 (unit-type-by-name
-				  "Supply"
-				  (cadr (world-factions *world*))))))
+    		     :owner (cadr (world-factions *world*))
+    		     :production
+    		     ;; TODO: think this through
+    		     (list (cons 100
+    				 (unit-type-by-name
+    				  "Supply"
+    				  (cadr (world-factions *world*))))))
     
     (loop for x from 2 to 14
        do (loop for y from 0 to 8
 	     do (change-tile-owner x y (cadr (world-factions *world*)))))
-					  
-    
+
     ;;HQ:
     (army-validate-supply 
      (new-army (cadr (world-factions *world*))
@@ -110,15 +109,17 @@
 	       :counter-desc '(equipment cavalry)))
 
     ;; cannon fodder under direct command of HQ
-    (mapcar #'(lambda (x y)
-		(new-army (cadr (world-factions *world*))
-		      x y
-		      :troops (list (make-unit-stack
-				     :type (unit-type-by-name "Commando"
-							      (cadr (world-factions *world*)))
-				     :count 250
-				     :readiness 100))
-		      :counter-desc (rand-desc)))
+    (mapcar
+     #'(lambda (x y)
+	 (new-army (cadr (world-factions *world*))
+		   x y
+		   :troops (list (make-unit-stack
+				  :type (unit-type-by-name
+					 "Commando"
+					 (cadr (world-factions *world*)))
+				  :count 250
+				  :readiness 100))
+		   :counter-desc (rand-desc)))
 	    '(7 7 7 7 9 5 6)
 	    '(0 1 2 3 1 6 7))
 
