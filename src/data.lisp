@@ -181,12 +181,16 @@ in form: (READERNAME-SLOTNAME MOTHERSTRUCTNAME)."
    (movement nil :type symbol)
    (name nil :type string)
    (vision) ; TODO
-   (carry-space 0 :type fixnum) ; How many sizes worth of units this thing can carry
-   (size 1 :type fixnum)
-   (supply-use 2 :type fixnum) ; Supplies used in a turn based on readiness ???
-   (supply-space 4 :type fixnum) ; How many supplies this thing can carry
-   (fuel-use 0 :type fixnum) ; Fuel used per 100 move-points
-   (combat-values) ; TODO: a structure containing data on fighting on terrain against what?? 
+   (carry-space 0 :type (integer 0 *)) ; How many sizes worth of units this thing can carry
+   (size 1 :type (integer 1 *))
+   (supply-use 2 :type (integer 0 *)) ; Supplies used in a turn based on readiness ???
+   (supply-space 4 :type (integer 0 *)) ; How many supplies this thing can carry
+   (fuel-use 0 :type (integer 0 *)) ; Fuel used per 100 move-points
+   (combat-values) ; TODO: a structure containing data on fighting on terrain against what??
+   ;; Costs to produce a single (?) unit of this type:
+   (cost-manpower 0 :type (integer 0 *))
+   (cost-materiel 0 :type (integer 0 *))
+   (cost-fuel 0 :type (integer 0 *))
    )
 
  (defstruct unit-stack
