@@ -102,6 +102,19 @@ with data field in full."
 (defstruct (mine (:include location)))
 (defstruct (pumpjack (:include location)))
 
+(defmethod location-produce ((location mine))
+  (incf (faction-materiel (mine-owner location))
+	(mine-production location)))
+
+(defmethod location-produce ((location pumpjack))
+  (incf (faction-fuel (pumpjack-owner location))
+	(pumpjack-production location)))
+
+(defmethod location-produce ((location city))
+  (dolist (prod (city-production location))
+    ;; now I'll actually require the costs to produce units
+    ))
+
 (defstruct tile
   (owner nil :type (or faction null))
   (type (list 'sea)) ;things within tile that affect unit movement

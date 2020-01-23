@@ -343,11 +343,7 @@ troops."
 (defun supply-system (faction)
 
   (dolist (location (faction-locations faction))
-    (typecase location
-      (mine (incf (faction-materiel faction) (mine-production location)))
-      (pumpjack (incf (faction-fuel faction) (pumpjack-production location)))
-      ;;else produce units from city..
-      ))
+    (location-produce location))
   
   (hq-supply-distribution
    (faction-chain-of-command faction))
