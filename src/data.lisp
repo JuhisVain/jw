@@ -102,6 +102,8 @@ with data field in full."
 (defstruct (mine (:include location)))
 (defstruct (pumpjack (:include location)))
 
+(defgeneric location-produce (location))
+
 (defmethod location-produce ((location mine))
   (incf (faction-materiel (mine-owner location))
 	(mine-production location)))
