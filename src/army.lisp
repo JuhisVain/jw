@@ -504,19 +504,35 @@ First element will be cons of roadtypeslist and river."
    #'(lambda (faction)
        (setf (faction-unit-types faction)
 	     (list
-	      (make-faction-unit :movement 'infantry :name "Commando")
-	      (make-faction-unit :movement 'cavalry :name "Dragoon")
+	      (make-faction-unit :movement 'infantry :name "Commando"
+				 :cost-manpower 1
+				 :cost-materiel 1)
+	      (make-faction-unit :movement 'cavalry :name "Dragoon"
+				 :cost-manpower 2
+				 :cost-materiel 1)
 	      (make-faction-unit :movement 'wheeled :name "Jeep"
-				 :carry-space 2 :size 10)
+				 :carry-space 2 :size 10
+				 :cost-manpower 2
+				 :cost-materiel 10)
 	      (make-faction-unit :movement 'wheeled :name "Truck"
-				 :carry-space 20 :size 25)
-	      (make-faction-unit :movement 'towed :name "8.8cm Flak")
+				 :carry-space 20 :size 25
+				 :cost-manpower 2
+				 :cost-materiel 10)
+	      (make-faction-unit :movement 'towed :name "8.8cm Flak"
+				 :cost-manpower 5
+				 :cost-materiel 5)
 	      (make-faction-unit :movement 'rail :name "Pendolino"
-				 :carry-space 20 :size 50)
+				 :carry-space 20 :size 50
+				 :cost-manpower 5
+				 :cost-materiel 10)
 	      (make-faction-unit :movement 'sea :name "Cargo ship"
-				 :carry-space 100 :size 500)
+				 :carry-space 100 :size 500
+				 :cost-manpower 20
+				 :cost-materiel 50)
 	      (make-faction-unit :movement 'moveable :name "Supply"
-				 :supply-use 0 :supply-space 0)))) ; etc..
+				 :supply-use 0 :supply-space 0
+				 :cost-manpower 0
+				 :cost-materiel 1)))) ; etc..
    (world-factions *world*))
   
   nil ; No need to print previous
