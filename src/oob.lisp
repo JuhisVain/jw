@@ -340,6 +340,31 @@ troops."
       else
       collect sub)))
 
+(defun unit-production-total-costs (faction)
+  (let ((total-materiel-cost 0)
+	(total-fuel-cost 0)
+	(total-manpower-cost 0))
+    (dolist (city (loop for loc in (faction-locations faction)
+		     when (city-p loc) ;todo: add city list to faction struct
+		     collect loc))
+      (dolist (count-product (location-production city))
+	(incf
+	 total-materiel-cost
+	 (* (car count-product)
+	    (faction-unit-cost-materiel (cdr count-product))))
+	(incf
+	 total-fuel-cost
+	 (* (car count-product)
+	    (faction-unit-cost-fuel (cdr count-product))))
+	(incf
+	 total-manpower-cost
+	 (* (car count-product)
+	    (faction-unit-cost-manpower (cdr count-product))))
+	))
+    (list total-materiel-cost
+	  total-fuel-cost
+	  total-manpower-cost)))
+
 (defun supply-system (faction)
 
   (dolist (location (faction-locations faction))
