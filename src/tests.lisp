@@ -62,20 +62,21 @@
 
     (create-location mine 8 4
 		     :owner (cadr (world-factions *world*))
-		     :production 100)
+		     :manpower 100)
 
     (create-location pumpjack 8 5
 		     :owner (cadr (world-factions *world*))
-		     :production 100)
+		     :manpower 100)
 
-    (create-location city 11 6
-    		     :owner (cadr (world-factions *world*))
-    		     :production
-    		     ;; TODO: think this through
-    		     (list (cons 100
-    				 (unit-type-by-name
-    				  "Supply"
-    				  (cadr (world-factions *world*))))))
+    (setf (city-unit-production
+	   (create-location city 11 6
+			    :owner (cadr (world-factions *world*))
+			    :manpower 150))
+	  (list (cons 100
+		      (unit-type-by-name
+		       "Supply"
+		       (cadr (world-factions *world*))))))
+
     
     (loop for x from 2 to 14
        do (loop for y from 0 to 8

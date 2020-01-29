@@ -95,9 +95,12 @@ with data field in full."
   (name)
   (owner)
   (x) (y)
-  (production))
+  (manpower 0 :type (integer 0 *)) ; represent power to produce in situ
+  )
 
-(defstruct (city (:include location)))
+(defstruct (city (:include location))
+  (unit-production nil :type list) ; ((ratio-of-total . faction-unit) ...)
+  )
 (defstruct (port (:include location)))
 (defstruct (mine (:include location)))
 (defstruct (pumpjack (:include location)))
@@ -106,15 +109,15 @@ with data field in full."
 
 (defmethod location-produce ((location mine))
   (incf (faction-materiel (mine-owner location))
-	(mine-production location)))
+	(mine-manpower location)))
 
 (defmethod location-produce ((location pumpjack))
   (incf (faction-fuel (pumpjack-owner location))
-	(pumpjack-production location)))
+	(pumpjack-manpower location)))
 
 (defmethod location-produce ((location city))
-  (dolist (prod (city-production location))
-    ;; now I'll actually require the costs to produce units
+  (dolist (prod (city-unit-production location))
+    
     ))
 
 (defstruct tile

@@ -1084,7 +1084,7 @@ NIL on failure."
 
 (defmacro create-location
     (type x y
-     &key (world '*world*) (owner nil) (name nil) (production nil)
+     &key (world '*world*) (owner nil) (name nil) (manpower nil)
      &aux (is-city (eq type 'city)))
   (let ((new-loc (gensym (symbol-name (conc-syms 'new- type))))
 	(make-loc (conc-syms 'make- type)))
@@ -1096,7 +1096,7 @@ NIL on failure."
 					 (string-downcase (symbol-name type)))))
 	     :owner ,owner
 	     :x ,x :y ,y
-	     :production ,production)))
+	     :manpower ,manpower)))
        (when ,world
 	 (pushnew ,new-loc (tile-location (tile-at ,x ,y ,world)))
 	 (pushnew (random-variant ',type) (tile-variant (tile-at ,x ,y ,world)))
@@ -1110,7 +1110,7 @@ NIL on failure."
 	 (make-port :name (or name "Unnamed port")
 		    :owner owner
 		    :x x :y y
-		    :production production)))
+		    :manpower (or production 0))))
     (when world
       (pushnew new-port (tile-location (tile-at x y world)))
       (pushnew (random-variant 'port) (tile-variant (tile-at x y world)))
