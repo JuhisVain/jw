@@ -195,7 +195,6 @@ in form: (READERNAME-SLOTNAME MOTHERSTRUCTNAME)."
    ;; Costs to produce a single (?) unit of this type:
    (cost-manpower 0 :type (integer 0 *))
    (cost-materiel 0 :type (integer 0 *))
-   (cost-fuel 0 :type (integer 0 *))
    )
 
  (defstruct unit-stack
