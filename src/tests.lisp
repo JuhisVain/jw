@@ -80,6 +80,8 @@
     
     (loop for x from 2 to 14
        do (loop for y from 0 to 8
+	     ;; NOTE: This is the thing that actually adds above locations
+	     ;;to faction' lists
 	     do (change-tile-owner x y (cadr (world-factions *world*)))))
 
     ;;HQ:
