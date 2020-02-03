@@ -531,8 +531,8 @@ First element will be cons of roadtypeslist and river."
 				 :cost-materiel 50)
 	      (make-faction-unit :movement 'moveable :name "Supply"
 				 :supply-use 0 :supply-space 0
-				 :cost-manpower 0
-				 :cost-materiel 1)))) ; etc..
+				 :cost-manpower 1
+				 :cost-materiel 0)))) ; etc..
    (world-factions *world*))
   
   nil ; No need to print previous
