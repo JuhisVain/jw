@@ -75,6 +75,41 @@
 	  (list (cons 100
 		      (unit-type-by-name
 		       "Supply"
+		       (cadr (world-factions *world*)))))
+	  
+	  (city-unit-production
+	   (create-location city 6 2
+			    :owner (cadr (world-factions *world*))
+			    :manpower 150))
+	  (list (cons 100
+		      (unit-type-by-name
+		       "Supply"
+		       (cadr (world-factions *world*))))
+		(cons 100
+		      (unit-type-by-name
+		       "Truck"
+		       (cadr (world-factions *world*)))))
+	  
+	  (city-unit-production
+	   (create-location city 6 4
+			    :owner (cadr (world-factions *world*))
+			    :manpower 200))
+	  (list (cons 20
+		      (unit-type-by-name
+		       "Supply"
+		       (cadr (world-factions *world*))))
+		(cons 180
+		      (unit-type-by-name
+		       "Commando"
+		       (cadr (world-factions *world*)))))
+	  
+	  (city-unit-production
+	   (create-location city 6 6
+			    :owner (cadr (world-factions *world*))
+			    :manpower 100))
+	  (list (cons 2
+		      (unit-type-by-name
+		       "Supply"
 		       (cadr (world-factions *world*))))))
 
     
