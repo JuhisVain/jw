@@ -564,6 +564,19 @@ First element will be cons of roadtypeslist and river."
 	       (string= (faction-unit-name unit-type) name))
 	   (faction-unit-types faction)))
 
+(defun army-add-troops (army &rest troops)
+  "Adds TROOPS to ARMY by either creating a new unit-stack or increasing count
+of already existing stack of same type."
+  (dolist (new-troop troops)
+    (pushnew new-troop (army-troops army)
+	     :test #'(lambda (new old)
+		       (if (eq (unit-stack-type new)
+			       (unit-stack-type old))
+			   (progn (incf (unit-stack-count old)
+					(unit-stack-count new))
+				  t)
+			   nil)))))
+
 (defun dumb-tiles-within (range)
   "How many hexes within RANGE from a hex."
   (+ 1 ; Center
