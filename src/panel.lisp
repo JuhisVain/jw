@@ -149,9 +149,18 @@
 				      :x 56 :y 4
 				      :width 48 :height 48
 				      :icon (sdl-image:load-image "graphics/PANEL_BUTTON_TEST.png")
-				      :action #'(lambda () (or (and (fboundp 't-set-ready)
-								    (t-set-ready))
-							       (format t "Quack quack!"))))
+				      :action #'(lambda ()
+						  (defvar *t-set-ready* nil)
+						  (or (and
+						       (not *t-set-ready*)
+						       (fboundp 't-set-ready)
+						       (progn (t-set-ready)
+							      (setf *t-set-ready* t)))
+						      (and *t-set-ready*
+							   (unit-production-system
+							    (cadr (world-factions *world*)))
+							   nil)
+						      (format t "Quack quack!"))))
 		       (make-instance 'panel-button
 				      :x 108 :y 4
 				      :width 48 :height 48

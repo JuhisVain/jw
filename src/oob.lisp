@@ -340,34 +340,175 @@ troops."
       else
       collect sub)))
 
-(defun unit-production-total-costs (faction)
-  (let ((total-materiel-cost 0)
-	(total-fuel-cost 0))
+(defun steps-from-supreme-hq (oob-element)
+  "Returns the Bacon number of OOB-ELEMENT when Kevin Bacon is supreme HQ."
+  (declare (oob-element oob-element))
+  (labels ((count-to-supreme (oob-element &optional (count 0))
+	   ;; should have used CLOS for multiple inheritance..
+	   (typecase oob-element
+	     (oob-pos
+	      (count-to-supreme (oob-pos-superior oob-element) (1+ count)))
+	     (sub-hq
+	      (count-to-supreme (sub-hq-superior oob-element) (1+ count)))
+	     (supreme-hq
+	      count))))
+    (count-to-supreme oob-element)))
+
+(defun highest-oob (oob-element-list)
+  "Returns oob-element in OOB-ELEMENT-LIST closest to supreme HQ."
+  (labels ((get-higher (oob-element-list highest min-steps)
+	     (when (null oob-element-list)
+	       (return-from get-higher highest))
+	     (let ((current-steps
+		    (steps-from-supreme-hq
+		     (car oob-element-list))))
+	       (if
+		(< current-steps
+		   min-steps)
+		(get-higher (cdr oob-element-list)
+			    (car oob-element-list)
+			    current-steps)
+		(get-higher (cdr oob-element-list)
+			    highest
+			    min-steps)))))
+    (get-higher oob-element-list
+		nil ; will return this if list empty
+		+inf+)))
+
+(defun unit-production-total-materiel-cost (faction)
+  (let ((total-materiel-cost 0))
     (dolist (city (loop for loc in (faction-locations faction)
 		     when (city-p loc) ;todo: add city list to faction struct
 		     collect loc))
-
+      
       ;; Cars of city production conses are shares of total production
-      (let ((denominator
+      (let ((total-proportion
 	     (reduce #'+
 		     (city-unit-production city)
 		     :key #'car)))
-      
+	
 	(dolist (num-product (city-unit-production city))
-	  (let ((rational-production
+	  (let ((proportional-production
 		 (* (city-manpower city)
-		    (/ (car num-product) denominator))))
+		    (/ (car num-product) total-proportion))))
 	    (incf
 	     total-materiel-cost
-	     (* rational-production
+	     (* proportional-production
 		(faction-unit-cost-materiel (cdr num-product))))
-	    (incf
-	     total-fuel-cost
-	     (* rational-production
-		(faction-unit-cost-fuel (cdr num-product))))
+	    
+
 	    ))))
-    (list total-materiel-cost
-	  total-fuel-cost)))
+    total-materiel-cost))
+
+(defun unit-production-system (faction)
+  (unit-prod-sub-system
+   faction
+   (loop for loc in (faction-locations faction)
+      when (city-p loc)
+      collect loc)
+   0))
+
+(defun unit-prod-sub-system (faction city-list total-materiel-cost)
+  
+  (when (null city-list) (return-from unit-prod-sub-system total-materiel-cost))
+  
+  ;; Cars of city production conses are shares of total production
+  (let* ((city (car city-list))
+	 
+	 (total-proportion
+	  (reduce #'+
+		  (city-unit-production city)
+		  :key #'car))
+	 
+	 (production-amount-list
+	  (mapcar #'(lambda (prop-prod)
+		      (estimate-production (/ (car prop-prod)
+					      total-proportion)
+					   (cdr prop-prod)
+					   (city-manpower city)))
+		  (city-unit-production city)))
+	 
+	 (tentative-total-manpower ; actual may be reduced due to shortages
+	  (apply #'+ production-amount-list))
+	 
+	 ;; The amount of materiel to be used for each element:
+	 (tentative-materiel-use-list
+	  (mapcar #'(lambda (prop-prod count)
+		      (* count
+			 (faction-unit-cost-materiel (cdr prop-prod))))
+		  (city-unit-production city)
+		  production-amount-list))
+	 
+	 ;; Total of above
+	 (total-materiel-cost-here
+	  (apply #'+ tentative-materiel-use-list)))
+
+    (setf total-materiel-cost
+	  (unit-prod-sub-system
+	   faction (cdr city-list) (+ total-materiel-cost
+				      total-materiel-cost-here)))
+
+    (let ((materiel-capability
+	   (min 1 (/ (faction-materiel faction)
+		     total-materiel-cost))))
+      (loop for prod in (city-unit-production city)
+	 for count in production-amount-list
+	 do (format t "Producing ~a of ~a using ~a materiel~%"
+		    (floor (* count materiel-capability)) ;; amount of units produced
+		    (faction-unit-name (cdr prod))
+		    (* (floor (* count materiel-capability)) ;; actual cost
+		       (faction-unit-cost-materiel (cdr prod))))
+	 do (produce-unit (tile-at (city-x city) (city-y city))
+			  (cdr prod)
+			  (floor (* count materiel-capability)))
+	   )
+      )
+    
+    (format t "~a~% - ~a~%"
+	    (cons(city-x city)(city-y city))
+					;tentative-materiel-use-list
+	    1 ;(faction)
+	    ))
+	
+  total-materiel-cost)
+
+(defun produce-unit (tile unit count)
+  (declare (tile tile)
+	   (faction-unit unit)
+	   ((integer 0 *) count))
+
+  (when (<= count 0)
+    (return-from produce-unit))
+  
+  (let ((top-dog
+	 (highest-oob
+	  (mapcar #'army-coc
+		  (tile-units tile))))
+	(stack
+	 (make-unit-stack :type unit
+			  :count count
+			  ;; readiness and morale ought to be better than 0
+			  )))
+    (if top-dog
+	(army-add-troops
+	 (oob-element-army top-dog) stack)
+	(new-army (tile-owner tile)
+		  ;; there should be a location here:
+		  (location-x (car (tile-location tile)))
+		  (location-y (car (tile-location tile)))
+		  :troops (list stack))
+    )))
+
+(defun estimate-production (proportion production-type manpower)
+  "PROPORTION should be rational of MANPOWER to use and PRODUCTION-TYPE
+faction-unit struct to be produced using amount MANPOWER. Returns values
+total count of production & leftover manpower."
+  (declare (rational proportion)
+	   (faction-unit production-type)
+	   ((integer 0 *) manpower))
+  (floor (* manpower proportion)
+	 (faction-unit-cost-manpower production-type)))
+
 
 (defun supply-system (faction)
 
