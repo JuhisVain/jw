@@ -282,6 +282,24 @@ X Y coordinates places unit outside of WORLD."
     (change-tile-owner x y (army-owner unit))
     (pushnew unit (tile-units (tile-at x y world)))))
 
+(defmethod change-location-owner ((location location) new-owner)
+  (let ((old-owner (location-owner location)))
+    (when old-owner
+      (setf (faction-locations old-owner)
+	    (delete location (faction-locations old-owner)
+		    :test #'eq)))
+    (setf (location-owner location) new-owner)
+    (pushnew location (faction-locations new-owner))))
+
+(defmethod change-location-owner ((location city) new-owner)
+  (let ((old-owner (location-owner location)))
+    (when old-owner
+      (setf (faction-cities old-owner)
+	    (delete location (faction-cities old-owner)
+		    :test #'eq)))
+    (setf (location-owner location) new-owner)
+    (pushnew location (faction-cities new-owner))))
+
 ;; A stronger army moving to a tile might also take control of neighbourhood?
 (defun change-tile-owner (x y faction)
   "Changes tile-owner and location-owner of any location on tile at X,Y to
@@ -290,13 +308,7 @@ FACTION."
 	 (locations (tile-location tile)))
     (setf (tile-owner tile) faction)
     (dolist (loc locations)
-      (let ((old-owner (location-owner loc)))
-	(when old-owner
-	  (setf (faction-locations old-owner)
-		(delete loc (faction-locations old-owner)
-			:test #'eq))))
-      (setf (location-owner loc) faction)
-      (pushnew loc (faction-locations faction)))))
+      (change-location-owner loc faction))))
 
 (defun coord-in-bounds (coord-pair &optional (world *world*))
   (and (<= 0 (car coord-pair) (world-width world))

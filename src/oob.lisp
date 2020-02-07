@@ -377,9 +377,7 @@ troops."
 
 (defun unit-production-total-materiel-cost (faction)
   (let ((total-materiel-cost 0))
-    (dolist (city (loop for loc in (faction-locations faction)
-		     when (city-p loc) ;todo: add city list to faction struct
-		     collect loc))
+    (dolist (city (faction-cities faction))
       
       ;; Cars of city production conses are shares of total production
       (let ((total-proportion
@@ -403,9 +401,7 @@ troops."
 (defun unit-production-system (faction)
   (unit-prod-sub-system
    faction
-   (loop for loc in (faction-locations faction)
-      when (city-p loc)
-      collect loc)
+   (faction-cities faction)
    0))
 
 (defun unit-prod-sub-system (faction city-list total-materiel-cost)
