@@ -13,6 +13,7 @@
   (enemy-unit-info (make-hash-table :test 'eq)) ; List of enemies seen on previous / this turn
 					;key is enemy army, value is ??
   (unit-types)
+  (cities)
   (locations) ; list of locations controlled by this faction
   (materiel 0 :type (integer 0 *))
   (fuel 0 :type (integer 0 *))
