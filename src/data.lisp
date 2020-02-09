@@ -115,11 +115,6 @@ with data field in full."
   (incf (faction-fuel (pumpjack-owner location))
 	(pumpjack-manpower location)))
 
-(defmethod location-produce ((location city))
-  (dolist (prod (city-unit-production location))
-    
-    ))
-
 (defstruct tile
   (owner nil :type (or faction null))
   (type (list 'sea)) ;things within tile that affect unit movement
