@@ -109,11 +109,19 @@ with data field in full."
 
 (defmethod location-produce ((location mine))
   (incf (faction-materiel (mine-owner location))
-	(mine-manpower location)))
+	(mine-manpower location))
+  (datalog (mine-owner location) 'materiel-production
+	   (list (cons (location-x location)
+		       (location-y location))
+		 (mine-manpower location))))
 
 (defmethod location-produce ((location pumpjack))
   (incf (faction-fuel (pumpjack-owner location))
-	(pumpjack-manpower location)))
+	(pumpjack-manpower location))
+  (datalog (pumpjack-owner location) 'fuel-production
+	   (list (cons (location-x location)
+		       (location-y location))
+		 (pumpjack-manpower location))))
 
 (defstruct tile
   (owner nil :type (or faction null))
