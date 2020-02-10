@@ -199,7 +199,7 @@ itself and to replenish itself in a round."
 		       replenish)))
       (cond ((>= deficit 0)
 	     (dolist (troop (army-troops army))
-	       (troop-consume-supply troop (/ replenish maintain)))
+	       (troop-change-readiness troop replenish maintain))
 	     (setf (army-supplies army)
 		   (- ;3: reduce remaining consumption from army-supplies
 		    (army-supplies army)
@@ -209,23 +209,25 @@ itself and to replenish itself in a round."
 	    
 	    (t
 	     (dolist (troop (army-troops army))
-	       (troop-consume-supply troop (/ total-supplies
-					      maintain)))
+	       (troop-change-readiness troop
+				       total-supplies
+				       maintain))
 	     (decf (army-supplies army)
 		   (- total-supplies
 		      (inc-supply-stockpiles army (- total-supplies)))))))))
 
-;; Calling this consumption might be strange:
-(defun troop-consume-supply (troop &optional (actual-consume-ratio 1))
-  "Modifies TROOP's readiness using ratio actual consumption by consumption
-required to maintain unit ACTUAL-CONSUME-RATIO."
+(defun troop-change-readiness (troop &optional (actual 1) (maintain 1))
+  "Modifies TROOP's readiness using ratio (/ ACTUAL MAINTAIN)
+actual consumption by consumption required to maintain unit."
   (setf (unit-stack-readiness troop)
 	(limit
 	 0
 	 (round 
 	  (+ (unit-stack-readiness troop)
 	     (* *turn-readiness-replenishment*
-		(1- actual-consume-ratio))))
+		(if (zerop maintain)
+		    1 ; increase readiness by *turn-readiness-replenishment*
+		    (1- (/ actual maintain))))))
 	 100)))
 
 (defun army-supply-space (army)
