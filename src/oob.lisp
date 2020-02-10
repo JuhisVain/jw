@@ -507,13 +507,21 @@ total count of production & leftover manpower."
 
 
 (defun supply-system (faction)
-
+  "To be executed at start of FACTION's turn
+1. produces fuel and materiel resources from respective production locations
+2. does city production
+3. distributes supply through chain of command tree
+4. armies consume supply"
   (dolist (location (faction-locations faction))
     (location-produce location))
+
+  (unit-production-system faction)
+
+  (when (faction-chain-of-command faction)
+    (hq-supply-distribution
+     (faction-chain-of-command faction))
   
-  (hq-supply-distribution
-   (faction-chain-of-command faction))
-  (do-oob (position (faction-chain-of-command faction))    
-    (army-consume-supply (oob-element-army position))
-    (army-validate-supply (oob-element-army position)))
+    (do-oob (position (faction-chain-of-command faction))    
+      (army-consume-supply (oob-element-army position))
+      (army-validate-supply (oob-element-army position))))
   )

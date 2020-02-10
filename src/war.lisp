@@ -104,7 +104,7 @@
 
 (defvar *world* nil)
 
-(defun end-turn () ; TODO: faction arg should be useless, use world's current-turn faction
+(defun end-turn ()
   (let ((faction (world-current-turn *world*)))
     (clrhash *cpf-vision*)
 
@@ -119,9 +119,11 @@
 		     (car (world-factions *world*)))))
     ))
 
-(defun new-turn () ; TODO: use world's current-turn faction
+(defun new-turn ()
   (let ((faction (world-current-turn *world*)))
     (setup-new-turn-vision faction)
+
+    (supply-system faction) ; produce & consume units, supply, resources
 
     ;;; Reset action points (and other stats) for armies:
     ;; TODO: might want to "reset" to less than full if cohesion or whatever not full
