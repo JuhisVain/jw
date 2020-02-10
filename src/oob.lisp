@@ -492,8 +492,14 @@ troops."
 		  ;; there should be a location here:
 		  (location-x (car (tile-location tile)))
 		  (location-y (car (tile-location tile)))
-		  :troops (list stack))
-    )))
+		  :troops (list stack)))
+
+    ;; Pay for it:
+    (decf (faction-materiel (tile-owner tile))
+	  (* (faction-unit-cost-materiel unit)
+	     (unit-stack-count stack)))
+    
+    ))
 
 (defun estimate-production (proportion production-type manpower)
   "PROPORTION should be rational of MANPOWER to use and PRODUCTION-TYPE
