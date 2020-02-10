@@ -107,6 +107,11 @@ with data field in full."
 
 (defgeneric location-produce (location))
 
+(defmethod location-produce ((location port))
+  (declare (ignore location))
+  ;; Ports do nothing for now
+  )
+
 (defmethod location-produce ((location mine))
   (incf (faction-materiel (mine-owner location))
 	(mine-manpower location))
