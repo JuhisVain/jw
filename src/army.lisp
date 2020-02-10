@@ -189,6 +189,10 @@ itself and to replenish itself in a round."
   (declare (army army))
   (multiple-value-bind (maintain replenish)
       (army-supply-use army)
+    (assert (if (zerop maintain)
+		(zerop replenish)
+		t))
+    
     (let* ((total-supplies (+ (army-supplies army)
 			      (army-supply-stockpiles-count army)))
 	   (deficit (- total-supplies
